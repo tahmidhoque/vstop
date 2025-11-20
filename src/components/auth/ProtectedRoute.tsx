@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { getSession } from '@/lib/auth'
-import { PasswordType } from '@prisma/client'
+import { PasswordType } from '@/generated/enums'
 
 interface ProtectedRouteProps {
   children: React.ReactNode

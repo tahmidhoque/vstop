@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { OrderStatus } from '@prisma/client'
+import { OrderStatus } from '@/generated/enums'
 import OrderEditModal from './OrderEditModal'
 import {
   updateOrderStatus,

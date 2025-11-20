@@ -109,7 +109,14 @@ export default function ProductsPageClient({
               {editingProduct ? 'Edit Product' : 'Add New Product'}
             </h2>
             <ProductForm
-              product={editingProduct || undefined}
+              product={
+                editingProduct
+                  ? {
+                      ...editingProduct,
+                      price: Number(editingProduct.price),
+                    }
+                  : undefined
+              }
               onSubmit={editingProduct ? handleUpdate : handleCreate}
               onCancel={handleCancel}
             />

@@ -5,6 +5,11 @@
 export function formatDate(date: Date | string): string {
   const dateObj = typeof date === 'string' ? new Date(date) : date
   
+  // Check if date is valid
+  if (isNaN(dateObj.getTime())) {
+    return 'Invalid date'
+  }
+  
   // Use a consistent locale format (en-GB for DD/MM/YYYY format)
   return dateObj.toLocaleString('en-GB', {
     day: '2-digit',

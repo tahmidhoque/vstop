@@ -2,7 +2,7 @@
 
 import { db } from './db'
 import { revalidatePath } from 'next/cache'
-import { OrderStatus } from '@prisma/client'
+import { OrderStatus } from '@/generated/enums'
 import type { BasketItem } from '@/types'
 
 export async function createOrder(username: string, items: BasketItem[]) {

@@ -1,4 +1,5 @@
-export type { PasswordType, OrderStatus } from '@prisma/client'
+export type { PasswordType, OrderStatus } from '@/generated/enums'
+import type { OrderStatus } from '@/generated/enums'
 
 export interface BasketItem {
   productId: string

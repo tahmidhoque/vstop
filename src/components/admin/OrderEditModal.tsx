@@ -19,7 +19,13 @@ export default function OrderEditModal({
   const [username, setUsername] = useState(order.username)
   const [items, setItems] = useState<BasketItem[]>([])
   const [products, setProducts] = useState<
-    Array<{ id: string; name: string; price: number; stock: number }>
+    Array<{
+      id: string
+      name: string
+      price: number
+      stock: number
+      variants?: Array<{ id: string; flavour: string; stock: number }>
+    }>
   >([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -33,6 +39,11 @@ export default function OrderEditModal({
           name: p.name,
           price: Number(p.price),
           stock: p.stock,
+          variants: p.variants?.map((v) => ({
+            id: v.id,
+            flavour: v.flavour,
+            stock: v.stock,
+          })),
         }))
       )
     }
