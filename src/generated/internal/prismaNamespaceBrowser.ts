@@ -55,7 +55,9 @@ export const ModelName = {
   Product: 'Product',
   ProductVariant: 'ProductVariant',
   Order: 'Order',
-  OrderItem: 'OrderItem'
+  OrderItem: 'OrderItem',
+  Offer: 'Offer',
+  ProductOffer: 'ProductOffer'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -127,10 +129,37 @@ export const OrderItemScalarFieldEnum = {
   variantId: 'variantId',
   flavour: 'flavour',
   quantity: 'quantity',
-  priceAtTime: 'priceAtTime'
+  priceAtTime: 'priceAtTime',
+  offerId: 'offerId'
 } as const
 
 export type OrderItemScalarFieldEnum = (typeof OrderItemScalarFieldEnum)[keyof typeof OrderItemScalarFieldEnum]
+
+
+export const OfferScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  description: 'description',
+  quantity: 'quantity',
+  price: 'price',
+  active: 'active',
+  startDate: 'startDate',
+  endDate: 'endDate',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type OfferScalarFieldEnum = (typeof OfferScalarFieldEnum)[keyof typeof OfferScalarFieldEnum]
+
+
+export const ProductOfferScalarFieldEnum = {
+  id: 'id',
+  productId: 'productId',
+  offerId: 'offerId',
+  createdAt: 'createdAt'
+} as const
+
+export type ProductOfferScalarFieldEnum = (typeof ProductOfferScalarFieldEnum)[keyof typeof ProductOfferScalarFieldEnum]
 
 
 export const SortOrder = {

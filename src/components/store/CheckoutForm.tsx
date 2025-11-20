@@ -3,22 +3,22 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { BasketItem } from '@/types'
+import { calculateOffers, type Offer } from '@/lib/offer-utils'
 
 interface CheckoutFormProps {
   items: BasketItem[]
+  offers?: Offer[]
   onSubmit: (username: string, items: BasketItem[]) => Promise<void>
 }
 
-export default function CheckoutForm({ items, onSubmit }: CheckoutFormProps) {
+export default function CheckoutForm({ items, offers = [], onSubmit }: CheckoutFormProps) {
   const [username, setUsername] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const router = useRouter()
 
-  const total = items.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0
-  )
+  const basketTotal = calculateOffers(items, offers)
+  const { subtotal, discounts, total, appliedOffers } = basketTotal
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -47,7 +47,7 @@ export default function CheckoutForm({ items, onSubmit }: CheckoutFormProps) {
         <div className="space-y-3 mb-4">
           {items.map((item) => (
             <div
-              key={item.productId}
+              key={`${item.productId}-${item.variantId || 'base'}`}
               className="flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0"
             >
               <div>
@@ -62,9 +62,47 @@ export default function CheckoutForm({ items, onSubmit }: CheckoutFormProps) {
             </div>
           ))}
         </div>
-        <div className="flex justify-between items-center pt-4 border-t border-gray-200">
-          <span className="text-lg font-semibold">Total:</span>
-          <span className="text-2xl font-bold">£{total.toFixed(2)}</span>
+
+        {appliedOffers.length > 0 && (
+          <div className="mb-4 pt-4 border-t border-gray-200">
+            <h3 className="text-sm font-semibold text-green-700 mb-2">
+              Applied Offers:
+            </h3>
+            <div className="space-y-2">
+              {appliedOffers.map((offer) => (
+                <div
+                  key={offer.offerId}
+                  className="text-sm bg-green-50 border border-green-200 rounded p-2"
+                >
+                  <div className="font-medium text-green-800">
+                    {offer.offerName}
+                  </div>
+                  <div className="text-green-700">
+                    Save £{offer.discount.toFixed(2)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="space-y-2 pt-4 border-t border-gray-200">
+          <div className="flex justify-between text-sm">
+            <span className="text-gray-600">Subtotal:</span>
+            <span className="text-gray-900">£{subtotal.toFixed(2)}</span>
+          </div>
+          {discounts > 0 && (
+            <div className="flex justify-between text-sm">
+              <span className="text-green-600">Discounts:</span>
+              <span className="text-green-600 font-semibold">
+                -£{discounts.toFixed(2)}
+              </span>
+            </div>
+          )}
+          <div className="flex justify-between items-center pt-2 border-t border-gray-200">
+            <span className="text-lg font-semibold">Total:</span>
+            <span className="text-2xl font-bold">£{total.toFixed(2)}</span>
+          </div>
         </div>
       </div>
 

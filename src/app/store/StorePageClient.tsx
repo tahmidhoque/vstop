@@ -4,8 +4,9 @@ import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import ProductCard from '@/components/store/ProductCard'
 import Basket from '@/components/store/Basket'
-import { getProducts } from '@/lib/actions'
+import { getProducts, getOffers } from '@/lib/actions'
 import type { BasketItem } from '@/types'
+import type { Offer } from '@/lib/offer-utils'
 
 export default function StorePageClient() {
   const [products, setProducts] = useState<
@@ -15,20 +16,33 @@ export default function StorePageClient() {
       price: number
       stock: number
       variants?: Array<{ id: string; flavour: string; stock: number }>
+      offers?: Array<{
+        id: string
+        name: string
+        description?: string | null
+        quantity: number
+        price: number
+        active: boolean
+      }>
     }>
   >([])
   const [basket, setBasket] = useState<BasketItem[]>([])
+  const [offers, setOffers] = useState<Offer[]>([])
   const [loading, setLoading] = useState(true)
   const router = useRouter()
   const searchParams = useSearchParams()
 
   useEffect(() => {
-    // Load products
-    async function loadProducts() {
+    // Load products and offers
+    async function loadData() {
       try {
-        const data = await getProducts()
+        const [productsData, offersData] = await Promise.all([
+          getProducts(),
+          getOffers(),
+        ])
+
         setProducts(
-          data.map((p) => ({
+          productsData.map((p: { id: string; name: string; price: number; stock: number; variants?: Array<{ id: string; flavour: string; stock: number }>; offers?: Array<{ id: string; name: string; description?: string | null; quantity: number; price: number; active: boolean }> }) => ({
             id: p.id,
             name: p.name,
             price: Number(p.price),
@@ -38,16 +52,19 @@ export default function StorePageClient() {
               flavour: v.flavour,
               stock: v.stock,
             })),
+            offers: p.offers || [],
           }))
         )
+
+        setOffers(offersData)
       } catch (err) {
-        console.error('Failed to load products:', err)
+        console.error('Failed to load data:', err)
       } finally {
         setLoading(false)
       }
     }
 
-    loadProducts()
+    loadData()
 
     // Load basket from localStorage
     const savedBasket = localStorage.getItem('basket')
@@ -197,6 +214,7 @@ export default function StorePageClient() {
                     price={product.price}
                     stock={product.stock}
                     variants={product.variants}
+                    offers={product.offers || []}
                     onAddToBasket={handleAddToBasket}
                   />
                 ))}
@@ -205,6 +223,7 @@ export default function StorePageClient() {
           </div>
           <Basket
             items={basket}
+            offers={offers}
             onUpdateQuantity={handleUpdateQuantity}
             onRemove={handleRemove}
             onCheckout={handleCheckout}

@@ -55,13 +55,20 @@ export default function AdminDashboardClient({
         </div>
 
         {/* Navigation */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <Link
             href="/admin/products"
             className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:border-blue-500 hover:shadow-md transition-all block"
           >
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Products</h3>
             <p className="text-sm text-gray-600">Manage products and stock levels</p>
+          </Link>
+          <Link
+            href="/admin/offers"
+            className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:border-blue-500 hover:shadow-md transition-all block"
+          >
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Offers</h3>
+            <p className="text-sm text-gray-600">Create and manage special offers</p>
           </Link>
           <Link
             href="/admin/orders"

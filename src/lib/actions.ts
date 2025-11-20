@@ -254,6 +254,11 @@ export async function getProducts() {
       variants: {
         orderBy: { flavour: 'asc' },
       },
+      offers: {
+        include: {
+          offer: true,
+        },
+      },
     },
     orderBy: { createdAt: 'desc' },
   })
@@ -265,7 +270,169 @@ export async function getProducts() {
     variants: product.variants.map((variant) => ({
       ...variant,
     })),
+    offers: product.offers.map((po) => ({
+      ...po.offer,
+      price: Number(po.offer.price),
+    })),
   }))
+}
+
+export async function getOffers() {
+  const offers = await db.offer.findMany({
+    include: {
+      products: {
+        include: {
+          product: true,
+        },
+      },
+    },
+    orderBy: { createdAt: 'desc' },
+  })
+  
+  // Convert Decimal to number and map to simpler structure
+  return offers.map((offer) => ({
+    id: offer.id,
+    name: offer.name,
+    description: offer.description,
+    quantity: offer.quantity,
+    price: Number(offer.price),
+    active: offer.active,
+    startDate: offer.startDate,
+    endDate: offer.endDate,
+    productIds: offer.products.map((po) => po.productId),
+  }))
+}
+
+export async function getOffer(id: string) {
+  const offer = await db.offer.findUnique({
+    where: { id },
+    include: {
+      products: {
+        include: {
+          product: true,
+        },
+      },
+    },
+  })
+  
+  if (!offer) return null
+  
+  // Convert Decimal to number and map to simpler structure
+  return {
+    id: offer.id,
+    name: offer.name,
+    description: offer.description,
+    quantity: offer.quantity,
+    price: Number(offer.price),
+    active: offer.active,
+    startDate: offer.startDate,
+    endDate: offer.endDate,
+    productIds: offer.products.map((po) => po.productId),
+  }
+}
+
+export async function createOffer(data: {
+  name: string
+  description?: string
+  quantity: number
+  price: number
+  active?: boolean
+  startDate?: Date | null
+  endDate?: Date | null
+  productIds: string[]
+}) {
+  const offer = await db.offer.create({
+    data: {
+      name: data.name,
+      description: data.description || null,
+      quantity: data.quantity,
+      price: data.price,
+      active: data.active ?? true,
+      startDate: data.startDate || null,
+      endDate: data.endDate || null,
+      products: {
+        create: data.productIds.map((productId) => ({
+          productId,
+        })),
+      },
+    },
+    include: {
+      products: true,
+    },
+  })
+
+  revalidatePath('/admin/offers')
+  revalidatePath('/store')
+  return offer
+}
+
+export async function updateOffer(
+  id: string,
+  data: {
+    name?: string
+    description?: string | null
+    quantity?: number
+    price?: number
+    active?: boolean
+    startDate?: Date | null
+    endDate?: Date | null
+    productIds?: string[]
+  }
+) {
+  const existing = await db.offer.findUnique({
+    where: { id },
+    include: { products: true },
+  })
+
+  if (!existing) {
+    throw new Error('Offer not found')
+  }
+
+  // Update offer
+  const offer = await db.offer.update({
+    where: { id },
+    data: {
+      name: data.name,
+      description: data.description !== undefined ? data.description : undefined,
+      quantity: data.quantity,
+      price: data.price,
+      active: data.active,
+      startDate: data.startDate !== undefined ? data.startDate : undefined,
+      endDate: data.endDate !== undefined ? data.endDate : undefined,
+    },
+    include: { products: true },
+  })
+
+  // Handle product associations
+  if (data.productIds !== undefined) {
+    // Delete existing associations
+    await db.productOffer.deleteMany({
+      where: { offerId: id },
+    })
+
+    // Create new associations
+    if (data.productIds.length > 0) {
+      await db.productOffer.createMany({
+        data: data.productIds.map((productId) => ({
+          offerId: id,
+          productId,
+        })),
+      })
+    }
+  }
+
+  revalidatePath('/admin/offers')
+  revalidatePath('/store')
+  return offer
+}
+
+export async function deleteOffer(id: string) {
+  await db.offer.delete({
+    where: { id },
+  })
+
+  revalidatePath('/admin/offers')
+  revalidatePath('/store')
 }
 
 export async function getProduct(id: string) {

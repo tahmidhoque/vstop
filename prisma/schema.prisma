@@ -38,6 +38,7 @@ model Product {
   updatedAt DateTime        @updatedAt
   variants  ProductVariant[]
   orderItems OrderItem[]
+  offers    ProductOffer[]
 }
 
 model ProductVariant {
@@ -71,11 +72,44 @@ model OrderItem {
   flavour     String?
   quantity    Int
   priceAtTime Decimal         @db.Decimal(10, 2)
+  offerId     String?
   order       Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product     Product         @relation(fields: [productId], references: [id])
   variant     ProductVariant? @relation("OrderItemVariant", fields: [variantId], references: [id])
+  offer       Offer?          @relation(fields: [offerId], references: [id], onDelete: SetNull)
 
   @@index([orderId])
   @@index([productId])
   @@index([variantId])
+  @@index([offerId])
+}
+
+model Offer {
+  id          String       @id @default(cuid())
+  name        String
+  description String?
+  quantity    Int          // e.g., 2 for "Any 2 for £X"
+  price       Decimal      @db.Decimal(10, 2) // e.g., £15 for 2 items
+  active      Boolean      @default(true)
+  startDate   DateTime?
+  endDate     DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  products    ProductOffer[]
+  orderItems  OrderItem[]
+
+  @@index([active])
+}
+
+model ProductOffer {
+  id        String   @id @default(cuid())
+  productId String
+  offerId   String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  offer     Offer    @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([productId, offerId])
+  @@index([productId])
+  @@index([offerId])
 }

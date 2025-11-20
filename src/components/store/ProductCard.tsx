@@ -9,12 +9,22 @@ interface Variant {
   stock: number
 }
 
+interface Offer {
+  id: string
+  name: string
+  description?: string | null
+  quantity: number
+  price: number
+  active: boolean
+}
+
 interface ProductCardProps {
   id: string
   name: string
   price: number
   stock: number
   variants?: Variant[]
+  offers?: Offer[]
   onAddToBasket: (item: BasketItem) => void
 }
 
@@ -24,8 +34,11 @@ export default function ProductCard({
   price,
   stock,
   variants = [],
+  offers = [],
   onAddToBasket,
 }: ProductCardProps) {
+  // Get active offers
+  const activeOffers = offers.filter((offer) => offer.active)
   const [selectedVariant, setSelectedVariant] = useState<Variant | null>(
     variants.length > 0 ? null : null
   )
@@ -64,7 +77,21 @@ export default function ProductCard({
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 flex flex-col">
-      <h3 className="text-lg font-semibold text-gray-900 mb-2">{name}</h3>
+      <div className="flex items-start justify-between mb-2">
+        <h3 className="text-lg font-semibold text-gray-900">{name}</h3>
+        {activeOffers.length > 0 && (
+          <div className="flex flex-col gap-1 ml-2">
+            {activeOffers.map((offer) => (
+              <span
+                key={offer.id}
+                className="px-2 py-1 text-xs font-semibold bg-green-100 text-green-800 rounded whitespace-nowrap"
+              >
+                {offer.name}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
 
       {variants.length > 0 && (
         <div className="mb-3">

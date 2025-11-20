@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from 'react'
 import type { BasketItem } from '@/types'
+import { calculateOffers, type Offer } from '@/lib/offer-utils'
 
 interface BasketProps {
   items: BasketItem[]
+  offers?: Offer[]
   onUpdateQuantity: (productId: string, quantity: number, variantId?: string) => void
   onRemove: (productId: string, variantId?: string) => void
   onCheckout: () => void
@@ -12,16 +14,15 @@ interface BasketProps {
 
 export default function Basket({
   items,
+  offers = [],
   onUpdateQuantity,
   onRemove,
   onCheckout,
 }: BasketProps) {
   const [isOpen, setIsOpen] = useState(false)
 
-  const total = items.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0
-  )
+  const basketTotal = calculateOffers(items, offers)
+  const { subtotal, discounts, total, appliedOffers } = basketTotal
 
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0)
 
@@ -72,7 +73,10 @@ export default function Basket({
           </div>
           <BasketContent
             items={items}
+            subtotal={subtotal}
+            discounts={discounts}
             total={total}
+            appliedOffers={appliedOffers}
             onUpdateQuantity={onUpdateQuantity}
             onRemove={onRemove}
             onCheckout={() => {
@@ -90,7 +94,10 @@ export default function Basket({
         </div>
         <BasketContent
           items={items}
+          subtotal={subtotal}
+          discounts={discounts}
           total={total}
+          appliedOffers={appliedOffers}
           onUpdateQuantity={onUpdateQuantity}
           onRemove={onRemove}
           onCheckout={onCheckout}
@@ -102,13 +109,25 @@ export default function Basket({
 
 function BasketContent({
   items,
+  subtotal,
+  discounts,
   total,
+  appliedOffers,
   onUpdateQuantity,
   onRemove,
   onCheckout,
 }: {
   items: BasketItem[]
+  subtotal: number
+  discounts: number
   total: number
+  appliedOffers: Array<{
+    offerId: string
+    offerName: string
+    appliedQuantity: number
+    discount: number
+    items: BasketItem[]
+  }>
   onUpdateQuantity: (productId: string, quantity: number, variantId?: string) => void
   onRemove: (productId: string, variantId?: string) => void
   onCheckout: () => void
@@ -170,11 +189,48 @@ function BasketContent({
             </div>
           </div>
         ))}
+
+        {appliedOffers.length > 0 && (
+          <div className="mt-4 pt-4 border-t border-gray-200">
+            <h4 className="text-sm font-semibold text-green-700 mb-2">
+              Applied Offers:
+            </h4>
+            <div className="space-y-2">
+              {appliedOffers.map((offer) => (
+                <div
+                  key={offer.offerId}
+                  className="text-sm bg-green-50 border border-green-200 rounded p-2"
+                >
+                  <div className="font-medium text-green-800">
+                    {offer.offerName}
+                  </div>
+                  <div className="text-green-700">
+                    Save £{offer.discount.toFixed(2)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
       <div className="border-t border-gray-200 p-4 bg-gray-50">
-        <div className="flex justify-between items-center mb-4">
-          <span className="text-lg font-semibold">Total:</span>
-          <span className="text-2xl font-bold">£{total.toFixed(2)}</span>
+        <div className="space-y-2 mb-4">
+          <div className="flex justify-between text-sm">
+            <span className="text-gray-600">Subtotal:</span>
+            <span className="text-gray-900">£{subtotal.toFixed(2)}</span>
+          </div>
+          {discounts > 0 && (
+            <div className="flex justify-between text-sm">
+              <span className="text-green-600">Discounts:</span>
+              <span className="text-green-600 font-semibold">
+                -£{discounts.toFixed(2)}
+              </span>
+            </div>
+          )}
+          <div className="flex justify-between items-center pt-2 border-t border-gray-200">
+            <span className="text-lg font-semibold">Total:</span>
+            <span className="text-2xl font-bold">£{total.toFixed(2)}</span>
+          </div>
         </div>
         <button
           onClick={onCheckout}

@@ -39,7 +39,7 @@ export default function OrderEditModal({
           name: p.name,
           price: Number(p.price),
           stock: p.stock,
-          variants: p.variants?.map((v) => ({
+          variants: p.variants?.map((v: { id: string; flavour: string; stock: number }) => ({
             id: v.id,
             flavour: v.flavour,
             stock: v.stock,

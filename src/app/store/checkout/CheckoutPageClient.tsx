@@ -3,26 +3,40 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import CheckoutForm from '@/components/store/CheckoutForm'
-import { createOrder } from '@/lib/actions'
+import { createOrder, getOffers } from '@/lib/actions'
 import type { BasketItem } from '@/types'
+import type { Offer } from '@/lib/offer-utils'
 
 export default function CheckoutPageClient() {
   const [basket, setBasket] = useState<BasketItem[]>([])
+  const [offers, setOffers] = useState<Offer[]>([])
   const router = useRouter()
 
   useEffect(() => {
-    const savedBasket = localStorage.getItem('basket')
-    if (savedBasket) {
+    async function loadData() {
+      const savedBasket = localStorage.getItem('basket')
+      if (savedBasket) {
+        try {
+          setBasket(JSON.parse(savedBasket))
+        } catch (err) {
+          console.error('Failed to load basket:', err)
+        }
+      }
+
+      if (!savedBasket || JSON.parse(savedBasket).length === 0) {
+        router.push('/store')
+        return
+      }
+
       try {
-        setBasket(JSON.parse(savedBasket))
+        const offersData = await getOffers()
+        setOffers(offersData)
       } catch (err) {
-        console.error('Failed to load basket:', err)
+        console.error('Failed to load offers:', err)
       }
     }
 
-    if (!savedBasket || JSON.parse(savedBasket).length === 0) {
-      router.push('/store')
-    }
+    loadData()
   }, [router])
 
   const handleSubmit = async (username: string, items: BasketItem[]) => {
@@ -40,7 +54,7 @@ export default function CheckoutPageClient() {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
-      <CheckoutForm items={basket} onSubmit={handleSubmit} />
+      <CheckoutForm items={basket} offers={offers} onSubmit={handleSubmit} />
     </div>
   )
 }
