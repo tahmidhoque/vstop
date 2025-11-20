@@ -17,6 +17,7 @@ enum PasswordType {
 
 enum OrderStatus {
   PENDING
+  UNFULFILLED
   FULFILLED
   CANCELLED
 }

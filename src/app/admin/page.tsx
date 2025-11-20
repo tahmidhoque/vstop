@@ -17,6 +17,7 @@ export default async function AdminDashboard() {
   ])
 
   const pendingOrders = orders.filter((o) => o.status === 'PENDING').length
+  const unfulfilledOrders = orders.filter((o) => o.status === 'UNFULFILLED').length
   const lowStockProducts = products.filter((p) => p.stock < 10).length
   const recentOrders = orders.slice(0, 5)
 
@@ -24,6 +25,7 @@ export default async function AdminDashboard() {
     <ProtectedRoute requiredType="ADMIN" redirectTo="/admin/login">
       <AdminDashboardClient
         pendingOrders={pendingOrders}
+        unfulfilledOrders={unfulfilledOrders}
         lowStockProducts={lowStockProducts}
         recentOrders={recentOrders}
       />

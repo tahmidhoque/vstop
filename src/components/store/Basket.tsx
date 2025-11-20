@@ -41,11 +41,12 @@ export default function Basket({
       {/* Mobile basket toggle button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-4 right-4 md:hidden bg-blue-600 text-white px-6 py-3 rounded-full shadow-lg font-medium flex items-center gap-2 min-h-[44px] z-40"
+        className="fixed bottom-4 right-4 md:hidden bg-blue-600 text-white px-5 py-3 rounded-full shadow-lg font-medium flex items-center gap-2 min-h-[48px] min-w-[48px] z-40 active:bg-blue-700 transition-colors"
+        aria-label="Open basket"
       >
         <span>Basket</span>
         {itemCount > 0 && (
-          <span className="bg-white text-blue-600 rounded-full px-2 py-1 text-xs font-bold">
+          <span className="bg-white text-blue-600 rounded-full px-2 py-0.5 text-xs font-bold min-w-[20px] text-center">
             {itemCount}
           </span>
         )}
@@ -53,22 +54,25 @@ export default function Basket({
 
       {/* Basket panel */}
       <div
-        className={`fixed inset-0 bg-black bg-opacity-50 z-30 md:hidden ${
-          isOpen ? 'block' : 'hidden'
+        className={`fixed inset-0 bg-black bg-opacity-50 z-30 md:hidden transition-opacity ${
+          isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
         }`}
         onClick={() => setIsOpen(false)}
       >
         <div
-          className="absolute bottom-0 left-0 right-0 bg-white rounded-t-lg max-h-[80vh] overflow-y-auto"
+          className={`absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl max-h-[85vh] overflow-y-auto transform transition-transform duration-300 ease-out ${
+            isOpen ? 'translate-y-0' : 'translate-y-full'
+          }`}
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="sticky top-0 bg-white border-b border-gray-200 p-4 flex items-center justify-between">
+          <div className="sticky top-0 bg-white border-b border-gray-200 p-4 flex items-center justify-between z-10">
             <h2 className="text-xl font-bold">Basket</h2>
             <button
               onClick={() => setIsOpen(false)}
-              className="text-gray-600 hover:text-gray-900"
+              className="text-gray-600 hover:text-gray-900 min-h-[44px] min-w-[44px] flex items-center justify-center"
+              aria-label="Close basket"
             >
-              ✕
+              <span className="text-2xl">×</span>
             </button>
           </div>
           <BasketContent
@@ -154,7 +158,7 @@ function BasketContent({
                 Remove
               </button>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 sm:gap-3">
               <button
                 onClick={() =>
                   onUpdateQuantity(
@@ -163,11 +167,12 @@ function BasketContent({
                     item.variantId
                   )
                 }
-                className="w-8 h-8 rounded border border-gray-300 flex items-center justify-center hover:bg-gray-50 min-h-[44px] min-w-[44px]"
+                className="w-10 h-10 sm:w-8 sm:h-8 rounded border border-gray-300 flex items-center justify-center hover:bg-gray-50 active:bg-gray-100 min-h-[44px] min-w-[44px] text-lg sm:text-base"
+                aria-label="Decrease quantity"
               >
                 −
               </button>
-              <span className="w-12 text-center font-medium">
+              <span className="w-12 text-center font-medium text-base">
                 {item.quantity}
               </span>
               <button
@@ -179,11 +184,12 @@ function BasketContent({
                   )
                 }
                 disabled={item.quantity >= item.stock}
-                className="w-8 h-8 rounded border border-gray-300 flex items-center justify-center hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] min-w-[44px]"
+                className="w-10 h-10 sm:w-8 sm:h-8 rounded border border-gray-300 flex items-center justify-center hover:bg-gray-50 active:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] min-w-[44px] text-lg sm:text-base"
+                aria-label="Increase quantity"
               >
                 +
               </button>
-              <span className="ml-auto font-semibold">
+              <span className="ml-auto font-semibold text-base sm:text-sm">
                 £{(item.price * item.quantity).toFixed(2)}
               </span>
             </div>

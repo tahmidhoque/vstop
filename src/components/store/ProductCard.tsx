@@ -76,11 +76,11 @@ export default function ProductCard({
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 flex flex-col">
-      <div className="flex items-start justify-between mb-2">
-        <h3 className="text-lg font-semibold text-gray-900">{name}</h3>
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-4 flex flex-col">
+      <div className="flex items-start justify-between mb-2 gap-2">
+        <h3 className="text-base sm:text-lg font-semibold text-gray-900 flex-1">{name}</h3>
         {activeOffers.length > 0 && (
-          <div className="flex flex-col gap-1 ml-2">
+          <div className="flex flex-col gap-1 flex-shrink-0">
             {activeOffers.map((offer) => (
               <span
                 key={offer.id}
@@ -104,7 +104,7 @@ export default function ProductCard({
               const variant = variants.find((v) => v.id === e.target.value)
               setSelectedVariant(variant || null)
             }}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm min-h-[44px]"
+            className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm min-h-[44px]"
           >
             <option value="">Choose a flavour...</option>
             {variants.map((variant) => (
@@ -117,10 +117,10 @@ export default function ProductCard({
       )}
 
       <div className="mt-auto">
-        <p className="text-2xl font-bold text-gray-900 mb-2">
+        <p className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
           £{Number(price).toFixed(2)}
         </p>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <span
             className={`text-sm ${
               isOutOfStock
@@ -139,7 +139,7 @@ export default function ProductCard({
           <button
             onClick={handleAdd}
             disabled={isOutOfStock || (variants.length > 0 && !selectedVariant)}
-            className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-h-[44px]"
+            className="w-full sm:w-auto px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-h-[44px] active:bg-blue-800"
           >
             Add to Basket
           </button>

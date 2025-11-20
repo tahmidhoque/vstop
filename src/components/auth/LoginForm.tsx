@@ -35,7 +35,7 @@ export default function LoginForm({ type, onSubmit }: LoginFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="w-full max-w-md space-y-6">
+    <form onSubmit={handleSubmit} className="w-full max-w-md space-y-4 sm:space-y-6">
       <div>
         <label
           htmlFor="password"
@@ -49,7 +49,7 @@ export default function LoginForm({ type, onSubmit }: LoginFormProps) {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[44px]"
           placeholder="Enter password"
           disabled={loading}
         />
@@ -64,7 +64,7 @@ export default function LoginForm({ type, onSubmit }: LoginFormProps) {
       <button
         type="submit"
         disabled={loading}
-        className="w-full py-3 px-4 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        className="w-full py-3 px-4 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 active:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-h-[44px]"
       >
         {loading ? 'Signing in...' : 'Sign In'}
       </button>

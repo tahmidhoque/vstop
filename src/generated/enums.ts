@@ -19,6 +19,7 @@ export type PasswordType = (typeof PasswordType)[keyof typeof PasswordType]
 
 export const OrderStatus = {
   PENDING: 'PENDING',
+  UNFULFILLED: 'UNFULFILLED',
   FULFILLED: 'FULFILLED',
   CANCELLED: 'CANCELLED'
 } as const

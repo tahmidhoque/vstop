@@ -197,19 +197,20 @@ export default function OrderEditModal({
   )
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between">
-          <h2 className="text-xl font-bold text-gray-900">Edit Order</h2>
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-0 sm:p-4">
+      <div className="bg-white rounded-none sm:rounded-lg shadow-xl max-w-2xl w-full h-full sm:h-auto sm:max-h-[90vh] overflow-y-auto flex flex-col">
+        <div className="sticky top-0 bg-white border-b border-gray-200 p-4 sm:p-6 flex items-center justify-between z-10">
+          <h2 className="text-lg sm:text-xl font-bold text-gray-900">Edit Order</h2>
           <button
             onClick={onClose}
-            className="text-gray-600 hover:text-gray-900 text-2xl"
+            className="text-gray-600 hover:text-gray-900 text-2xl min-h-[44px] min-w-[44px] flex items-center justify-center"
+            aria-label="Close"
           >
             ×
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6">
+        <form onSubmit={handleSubmit} className="p-4 sm:p-6 flex-1">
           <div className="mb-6">
             <label
               htmlFor="username"
@@ -223,7 +224,7 @@ export default function OrderEditModal({
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[44px]"
               disabled={loading}
             />
           </div>
@@ -242,7 +243,7 @@ export default function OrderEditModal({
                   e.target.value = ''
                 }
               }}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[44px]"
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[44px] text-base"
               disabled={loading}
             >
               <option value="">Select a product...</option>
@@ -287,7 +288,7 @@ export default function OrderEditModal({
                         £{item.price.toFixed(2)} each
                       </p>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 sm:gap-3">
                       <button
                         type="button"
                         onClick={() =>
@@ -297,12 +298,13 @@ export default function OrderEditModal({
                             item.variantId
                           )
                         }
-                        className="w-8 h-8 rounded border border-gray-300 flex items-center justify-center hover:bg-gray-100 min-h-[44px] min-w-[44px]"
+                        className="w-10 h-10 sm:w-8 sm:h-8 rounded border border-gray-300 flex items-center justify-center hover:bg-gray-100 active:bg-gray-200 min-h-[44px] min-w-[44px] text-lg sm:text-base"
                         disabled={loading}
+                        aria-label="Decrease quantity"
                       >
                         −
                       </button>
-                      <span className="w-12 text-center font-medium">
+                      <span className="w-12 text-center font-medium text-base">
                         {item.quantity}
                       </span>
                       <button
@@ -315,17 +317,18 @@ export default function OrderEditModal({
                           )
                         }
                         disabled={item.quantity >= item.stock || loading}
-                        className="w-8 h-8 rounded border border-gray-300 flex items-center justify-center hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] min-w-[44px]"
+                        className="w-10 h-10 sm:w-8 sm:h-8 rounded border border-gray-300 flex items-center justify-center hover:bg-gray-100 active:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] min-w-[44px] text-lg sm:text-base"
+                        aria-label="Increase quantity"
                       >
                         +
                       </button>
-                      <span className="ml-4 font-semibold w-20 text-right">
+                      <span className="ml-auto sm:ml-4 font-semibold text-sm sm:text-base flex-shrink-0">
                         £{(item.price * item.quantity).toFixed(2)}
                       </span>
                       <button
                         type="button"
                         onClick={() => handleRemove(item.productId, item.variantId)}
-                        className="ml-2 text-red-600 hover:text-red-700 text-sm min-h-[44px] px-2"
+                        className="text-red-600 hover:text-red-700 active:text-red-800 text-sm min-h-[44px] px-2 sm:ml-2"
                         disabled={loading}
                       >
                         Remove
@@ -350,19 +353,19 @@ export default function OrderEditModal({
             </div>
           )}
 
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-3">
             <button
               type="button"
               onClick={onClose}
               disabled={loading}
-              className="flex-1 py-2 px-4 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-h-[44px]"
+              className="w-full sm:flex-1 py-2.5 px-4 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 active:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-h-[44px]"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading || items.length === 0}
-              className="flex-1 py-2 px-4 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-h-[44px]"
+              className="w-full sm:flex-1 py-2.5 px-4 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 active:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-h-[44px]"
             >
               {loading ? 'Saving...' : 'Save Changes'}
             </button>

@@ -24,11 +24,11 @@ export default async function HomePage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-12">
+    <div className="min-h-screen flex items-center justify-center px-3 sm:px-4 py-8 sm:py-12">
       <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome</h1>
-          <p className="text-gray-600">Please enter your password to access the store</p>
+        <div className="text-center mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Welcome</h1>
+          <p className="text-sm sm:text-base text-gray-600">Please enter your password to access the store</p>
         </div>
         <LoginForm type="customer" onSubmit={handleLogin} />
       </div>

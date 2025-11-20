@@ -248,6 +248,49 @@ export async function updateOrder(
   revalidatePath('/admin/orders')
 }
 
+export async function deleteOrder(orderId: string) {
+  const order = await db.order.findUnique({
+    where: { id: orderId },
+    include: { items: true },
+  })
+
+  if (!order) {
+    throw new Error('Order not found')
+  }
+
+  // Restore stock if order is not cancelled (cancelled orders already had stock restored)
+  if (order.status !== 'CANCELLED') {
+    for (const item of order.items) {
+      if (item.variantId) {
+        await db.productVariant.update({
+          where: { id: item.variantId },
+          data: {
+            stock: {
+              increment: item.quantity,
+            },
+          },
+        })
+      } else {
+        await db.product.update({
+          where: { id: item.productId },
+          data: {
+            stock: {
+              increment: item.quantity,
+            },
+          },
+        })
+      }
+    }
+  }
+
+  // Delete the order (items will be deleted automatically due to cascade)
+  await db.order.delete({
+    where: { id: orderId },
+  })
+
+  revalidatePath('/admin/orders')
+}
+
 export async function getProducts() {
   const products = await db.product.findMany({
     include: {
@@ -637,5 +680,75 @@ export async function getOrder(id: string) {
           }
         : null,
     })),
+  }
+}
+
+export async function getReportsData(startDate: Date, endDate: Date) {
+  // Set startDate to beginning of day and endDate to end of day
+  const start = new Date(startDate)
+  start.setHours(0, 0, 0, 0)
+  
+  const end = new Date(endDate)
+  end.setHours(23, 59, 59, 999)
+
+  const orders = await db.order.findMany({
+    where: {
+      createdAt: {
+        gte: start,
+        lte: end,
+      },
+    },
+    include: {
+      items: {
+        include: {
+          product: true,
+          variant: true,
+        },
+      },
+    },
+    orderBy: { createdAt: 'desc' },
+  })
+
+  const totalOrders = orders.length
+  const cancelledOrders = orders.filter((o) => o.status === 'CANCELLED').length
+  const fulfilledOrders = orders.filter((o) => o.status === 'FULFILLED').length
+  const unfulfilledOrders = orders.filter((o) => o.status === 'UNFULFILLED').length
+
+  // Calculate total sales from non-cancelled orders
+  const totalSales = orders
+    .filter((order) => order.status !== 'CANCELLED')
+    .reduce((sum, order) => {
+      const orderTotal = order.items.reduce(
+        (itemSum, item) => itemSum + Number(item.priceAtTime) * item.quantity,
+        0
+      )
+      return sum + orderTotal
+    }, 0)
+
+  // Convert Decimal to number for client component serialization
+  const ordersWithItems = orders.map((order) => ({
+    ...order,
+    items: order.items.map((item) => ({
+      ...item,
+      priceAtTime: Number(item.priceAtTime),
+      product: {
+        ...item.product,
+        price: Number(item.product.price),
+      },
+      variant: item.variant
+        ? {
+            ...item.variant,
+          }
+        : null,
+    })),
+  }))
+
+  return {
+    totalOrders,
+    cancelledOrders,
+    fulfilledOrders,
+    unfulfilledOrders,
+    totalSales,
+    orders: ordersWithItems,
   }
 }

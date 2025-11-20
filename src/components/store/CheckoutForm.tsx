@@ -39,24 +39,24 @@ export default function CheckoutForm({ items, offers = [], onSubmit }: CheckoutF
   }
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Checkout</h1>
+    <div className="max-w-2xl mx-auto px-3 sm:px-4">
+      <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">Checkout</h1>
 
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-        <h2 className="text-lg font-semibold mb-4">Order Summary</h2>
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 mb-4 sm:mb-6">
+        <h2 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Order Summary</h2>
         <div className="space-y-3 mb-4">
           {items.map((item) => (
             <div
               key={`${item.productId}-${item.variantId || 'base'}`}
-              className="flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0"
+              className="flex justify-between items-start sm:items-center py-2 border-b border-gray-100 last:border-b-0 gap-2"
             >
-              <div>
-                <p className="font-medium">{item.name}</p>
-                <p className="text-sm text-gray-600">
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-sm sm:text-base truncate">{item.name}</p>
+                <p className="text-xs sm:text-sm text-gray-600">
                   {item.quantity} × £{item.price.toFixed(2)}
                 </p>
               </div>
-              <p className="font-semibold">
+              <p className="font-semibold text-sm sm:text-base flex-shrink-0">
                 £{(item.price * item.quantity).toFixed(2)}
               </p>
             </div>
@@ -100,13 +100,13 @@ export default function CheckoutForm({ items, offers = [], onSubmit }: CheckoutF
             </div>
           )}
           <div className="flex justify-between items-center pt-2 border-t border-gray-200">
-            <span className="text-lg font-semibold">Total:</span>
-            <span className="text-2xl font-bold">£{total.toFixed(2)}</span>
+            <span className="text-base sm:text-lg font-semibold">Total:</span>
+            <span className="text-xl sm:text-2xl font-bold">£{total.toFixed(2)}</span>
           </div>
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
         <div className="mb-6">
           <label
             htmlFor="username"
@@ -120,11 +120,11 @@ export default function CheckoutForm({ items, offers = [], onSubmit }: CheckoutF
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             required
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[44px]"
             placeholder="Enter your name"
             disabled={loading}
           />
-          <p className="mt-2 text-sm text-gray-600">
+          <p className="mt-2 text-xs sm:text-sm text-gray-600">
             This helps us identify who placed the order
           </p>
         </div>
@@ -135,19 +135,19 @@ export default function CheckoutForm({ items, offers = [], onSubmit }: CheckoutF
           </div>
         )}
 
-        <div className="flex gap-4">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
           <button
             type="button"
             onClick={() => router.back()}
             disabled={loading}
-            className="flex-1 py-3 px-4 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-h-[44px]"
+            className="w-full sm:flex-1 py-3 px-4 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 active:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-h-[44px]"
           >
             Back
           </button>
           <button
             type="submit"
             disabled={loading || items.length === 0}
-            className="flex-1 py-3 px-4 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-h-[44px]"
+            className="w-full sm:flex-1 py-3 px-4 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 active:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-h-[44px]"
           >
             {loading ? 'Placing Order...' : 'Place Order'}
           </button>
