@@ -248,7 +248,7 @@ export default function ProductForm({
                   type="button"
                   onClick={() => handleRemoveVariant(index)}
                   disabled={loading}
-                  className="px-3 py-2 text-red-600 hover:text-red-700 text-sm font-medium"
+                  className="px-3 py-2 text-red-600 hover:text-red-700 active:text-red-800 text-sm font-medium whitespace-nowrap min-h-[44px] flex items-center transition-colors"
                 >
                   Remove
                 </button>

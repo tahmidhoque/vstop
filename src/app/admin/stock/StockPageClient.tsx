@@ -15,6 +15,14 @@ interface StockPageClientProps {
 }
 
 export default function StockPageClient({ products }: StockPageClientProps) {
+  // Calculate total stock for each product
+  const calculateTotalStock = (product: Product): number => {
+    if (product.variants && product.variants.length > 0) {
+      return product.variants.reduce((total, variant) => total + variant.stock, 0);
+    }
+    return product.stock || 0;
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="bg-white border-b border-gray-200">
@@ -57,6 +65,15 @@ export default function StockPageClient({ products }: StockPageClientProps) {
                         </div>
                         {product.variants && product.variants.length > 0 ? (
                           <div className="mt-3">
+                            <div
+                              className={`text-base font-semibold mb-3 py-2 px-3 rounded ${
+                                calculateTotalStock(product) <= 5
+                                  ? "text-orange-600 bg-orange-50"
+                                  : "text-gray-900 bg-blue-50"
+                              }`}
+                            >
+                              Total Stock: {calculateTotalStock(product)}
+                            </div>
                             <div className="text-sm font-semibold text-gray-900 mb-3">
                               Variants:
                             </div>
@@ -135,7 +152,16 @@ export default function StockPageClient({ products }: StockPageClientProps) {
                         <td className="px-6 py-5">
                           {product.variants && product.variants.length > 0 ? (
                             <div>
-                              <div className="text-sm font-semibold text-gray-900 mb-3">
+                              <div
+                                className={`text-base font-semibold mb-3 py-2 px-3 rounded inline-block ${
+                                  calculateTotalStock(product) <= 5
+                                    ? "text-orange-600 bg-orange-50"
+                                    : "text-gray-900 bg-blue-50"
+                                }`}
+                              >
+                                Total Stock: {calculateTotalStock(product)}
+                              </div>
+                              <div className="text-sm font-semibold text-gray-900 mb-3 mt-4">
                                 Variants:
                               </div>
                               <div className="space-y-2">

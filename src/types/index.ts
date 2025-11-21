@@ -18,6 +18,8 @@ export interface OrderWithItems {
   status: OrderStatus;
   createdAt: Date;
   updatedAt: Date;
+  manualDiscount?: number | string | null;
+  totalOverride?: number | string | null;
   items: Array<{
     id: string;
     quantity: number;

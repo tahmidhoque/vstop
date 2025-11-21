@@ -94,7 +94,7 @@ export default function ReportsPageClient({
           <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">
             Date Range
           </h2>
-          <div className="flex flex-col gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
             <div className="flex-1">
               <label
                 htmlFor="start-date"
@@ -127,15 +127,15 @@ export default function ReportsPageClient({
                 disabled={isPending}
               />
             </div>
-            <div className="flex items-end">
-              <button
-                onClick={handleDateRangeChange}
-                disabled={isPending}
-                className="w-full sm:w-auto px-6 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 active:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 min-h-[44px] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                {isPending ? "Loading..." : "Update Report"}
-              </button>
-            </div>
+          </div>
+          <div className="flex items-end">
+            <button
+              onClick={handleDateRangeChange}
+              disabled={isPending}
+              className="w-full sm:w-auto px-6 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 active:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 min-h-[44px] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {isPending ? "Loading..." : "Update Report"}
+            </button>
           </div>
         </div>
 

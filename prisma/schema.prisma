@@ -60,13 +60,15 @@ model ProductVariant {
 }
 
 model Order {
-  id         String      @id @default(cuid())
-  orderNumber String    @unique
-  username   String
-  status     OrderStatus @default(PENDING)
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
-  items      OrderItem[]
+  id             String      @id @default(cuid())
+  orderNumber    String      @unique
+  username       String
+  status         OrderStatus @default(PENDING)
+  manualDiscount Decimal?    @db.Decimal(10, 2)
+  totalOverride  Decimal?    @db.Decimal(10, 2)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  items          OrderItem[]
 }
 
 model OrderItem {

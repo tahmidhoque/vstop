@@ -4,6 +4,11 @@ import { db } from "./db";
 import { revalidatePath } from "next/cache";
 import { OrderStatus } from "@/generated/enums";
 import type { BasketItem } from "@/types";
+import {
+  calculateDiscountedPrices,
+  isOfferActive,
+  type Offer,
+} from "./offer-utils";
 
 export async function createOrder(username: string, items: BasketItem[]) {
   // Validate stock availability
@@ -29,6 +34,41 @@ export async function createOrder(username: string, items: BasketItem[]) {
     }
   }
 
+  // Fetch active offers
+  const offersData = await db.offer.findMany({
+    where: { active: true },
+    include: {
+      products: {
+        include: {
+          product: true,
+        },
+      },
+    },
+  });
+
+  // Convert to Offer format
+  const offers: Offer[] = offersData
+    .filter((offer) => {
+      const now = new Date();
+      if (offer.startDate && new Date(offer.startDate) > now) return false;
+      if (offer.endDate && new Date(offer.endDate) < now) return false;
+      return true;
+    })
+    .map((offer) => ({
+      id: offer.id,
+      name: offer.name,
+      description: offer.description,
+      quantity: offer.quantity,
+      price: Number(offer.price),
+      active: offer.active,
+      startDate: offer.startDate,
+      endDate: offer.endDate,
+      productIds: offer.products.map((po) => po.productId),
+    }));
+
+  // Calculate discounted prices
+  const discountedPrices = calculateDiscountedPrices(items, offers);
+
   // Generate order number - use a transaction-safe approach
   // Get the highest order number and increment, or start at 1
   const lastOrder = await db.order.findFirst({
@@ -53,13 +93,21 @@ export async function createOrder(username: string, items: BasketItem[]) {
       username,
       status: "PENDING",
       items: {
-        create: items.map((item) => ({
-          productId: item.productId,
-          variantId: item.variantId || null,
-          flavour: item.flavour || null,
-          quantity: item.quantity,
-          priceAtTime: item.price,
-        })),
+        create: items.map((item) => {
+          const key = `${item.productId}-${item.variantId || "base"}`;
+          const discounted = discountedPrices.get(key);
+          const finalPrice = discounted ? discounted.price : item.price;
+          const offerId = discounted?.offerId || null;
+
+          return {
+            productId: item.productId,
+            variantId: item.variantId || null,
+            flavour: item.flavour || null,
+            quantity: item.quantity,
+            priceAtTime: finalPrice,
+            offerId,
+          };
+        }),
       },
     },
   });
@@ -165,6 +213,8 @@ export async function updateOrder(
   orderId: string,
   username: string,
   items: BasketItem[],
+  manualDiscount: number | null = null,
+  totalOverride: number | null = null,
 ) {
   const order = await db.order.findUnique({
     where: { id: orderId },
@@ -219,6 +269,62 @@ export async function updateOrder(
     }
   }
 
+  // Fetch active offers
+  const offersData = await db.offer.findMany({
+    where: { active: true },
+    include: {
+      products: {
+        include: {
+          product: true,
+        },
+      },
+    },
+  });
+
+  // Convert to Offer format
+  const offers: Offer[] = offersData
+    .filter((offer) => {
+      const now = new Date();
+      if (offer.startDate && new Date(offer.startDate) > now) return false;
+      if (offer.endDate && new Date(offer.endDate) < now) return false;
+      return true;
+    })
+    .map((offer) => ({
+      id: offer.id,
+      name: offer.name,
+      description: offer.description,
+      quantity: offer.quantity,
+      price: Number(offer.price),
+      active: offer.active,
+      startDate: offer.startDate,
+      endDate: offer.endDate,
+      productIds: offer.products.map((po) => po.productId),
+    }));
+
+  // Get current product prices for discount calculation
+  // We need to fetch products to get their current prices
+  const productIds = [...new Set(items.map((item) => item.productId))];
+  const products = await db.product.findMany({
+    where: { id: { in: productIds } },
+    include: { variants: true },
+  });
+
+  // Create items with current product prices for discount calculation
+  const itemsWithProductPrices = items.map((item) => {
+    const product = products.find((p) => p.id === item.productId);
+    if (!product) return item;
+
+    // Use current product price, not the edited price
+    const currentPrice = Number(product.price);
+    return {
+      ...item,
+      price: currentPrice,
+    };
+  });
+
+  // Calculate discounted prices using current product prices
+  const discountedPrices = calculateDiscountedPrices(itemsWithProductPrices, offers);
+
   // Delete old items and create new ones
   await db.orderItem.deleteMany({
     where: { orderId },
@@ -228,14 +334,25 @@ export async function updateOrder(
     where: { id: orderId },
     data: {
       username,
+      manualDiscount: manualDiscount !== null ? manualDiscount : null,
+      totalOverride: totalOverride !== null ? totalOverride : null,
       items: {
-        create: items.map((item) => ({
-          productId: item.productId,
-          variantId: item.variantId || null,
-          flavour: item.flavour || null,
-          quantity: item.quantity,
-          priceAtTime: item.price,
-        })),
+        create: items.map((item) => {
+          const key = `${item.productId}-${item.variantId || "base"}`;
+          const discounted = discountedPrices.get(key);
+          // Use discounted price if available, otherwise use the manually edited price from items
+          const finalPrice = discounted ? discounted.price : item.price;
+          const offerId = discounted?.offerId || null;
+
+          return {
+            productId: item.productId,
+            variantId: item.variantId || null,
+            flavour: item.flavour || null,
+            quantity: item.quantity,
+            priceAtTime: finalPrice,
+            offerId,
+          };
+        }),
       },
     },
   });
@@ -653,6 +770,10 @@ export async function getOrders() {
   // Convert Decimal to number for client component serialization
   return orders.map((order) => ({
     ...order,
+    manualDiscount: order.manualDiscount
+      ? Number(order.manualDiscount)
+      : null,
+    totalOverride: order.totalOverride ? Number(order.totalOverride) : null,
     items: order.items.map((item) => ({
       ...item,
       priceAtTime: Number(item.priceAtTime),
@@ -687,6 +808,10 @@ export async function getOrder(id: string) {
   // Convert Decimal to number for client component serialization
   return {
     ...order,
+    manualDiscount: order.manualDiscount
+      ? Number(order.manualDiscount)
+      : null,
+    totalOverride: order.totalOverride ? Number(order.totalOverride) : null,
     items: order.items.map((item) => ({
       ...item,
       priceAtTime: Number(item.priceAtTime),
@@ -740,16 +865,32 @@ export async function getReportsData(startDate: Date, endDate: Date) {
   const totalSales = orders
     .filter((order) => order.status !== "CANCELLED")
     .reduce((sum, order) => {
-      const orderTotal = order.items.reduce(
+      // If total override is set, use it
+      if (order.totalOverride) {
+        return sum + Number(order.totalOverride);
+      }
+
+      // Calculate subtotal
+      const subtotal = order.items.reduce(
         (itemSum, item) => itemSum + Number(item.priceAtTime) * item.quantity,
         0,
       );
-      return sum + orderTotal;
+
+      // Apply manual discount if set
+      const manualDiscount = order.manualDiscount
+        ? Number(order.manualDiscount)
+        : 0;
+
+      return sum + Math.max(0, subtotal - manualDiscount);
     }, 0);
 
   // Convert Decimal to number for client component serialization
   const ordersWithItems = orders.map((order) => ({
     ...order,
+    manualDiscount: order.manualDiscount
+      ? Number(order.manualDiscount)
+      : null,
+    totalOverride: order.totalOverride ? Number(order.totalOverride) : null,
     items: order.items.map((item) => ({
       ...item,
       priceAtTime: Number(item.priceAtTime),

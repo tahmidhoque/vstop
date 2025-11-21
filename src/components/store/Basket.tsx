@@ -152,52 +152,56 @@ function BasketContent({
             key={`${item.productId}-${item.variantId || "base"}`}
             className="border-b border-gray-200 pb-4 last:border-b-0"
           >
-            <div className="flex items-start justify-between mb-2">
-              <div className="flex-1">
-                <h3 className="font-medium text-gray-900">{item.name}</h3>
-                <p className="text-sm text-gray-600">
+            <div className="flex items-start justify-between mb-3 sm:mb-2 gap-2">
+              <div className="flex-1 min-w-0">
+                <h3 className="font-medium text-gray-900 text-sm sm:text-base truncate">
+                  {item.name}
+                </h3>
+                <p className="text-xs sm:text-sm text-gray-600 mt-0.5">
                   £{item.price.toFixed(2)} each
                 </p>
               </div>
               <button
                 onClick={() => onRemove(item.productId, item.variantId)}
-                className="text-red-600 hover:text-red-700 text-sm"
+                className="text-red-600 hover:text-red-700 active:text-red-800 text-sm font-medium whitespace-nowrap px-2 py-1 min-h-[44px] flex items-center transition-colors"
               >
                 Remove
               </button>
             </div>
-            <div className="flex items-center gap-2 sm:gap-3">
-              <button
-                onClick={() =>
-                  onUpdateQuantity(
-                    item.productId,
-                    Math.max(0, item.quantity - 1),
-                    item.variantId,
-                  )
-                }
-                className="w-10 h-10 sm:w-8 sm:h-8 rounded border border-gray-300 flex items-center justify-center hover:bg-gray-50 active:bg-gray-100 min-h-[44px] min-w-[44px] text-lg sm:text-base"
-                aria-label="Decrease quantity"
-              >
-                −
-              </button>
-              <span className="w-12 text-center font-medium text-base">
-                {item.quantity}
-              </span>
-              <button
-                onClick={() =>
-                  onUpdateQuantity(
-                    item.productId,
-                    Math.min(item.stock, item.quantity + 1),
-                    item.variantId,
-                  )
-                }
-                disabled={item.quantity >= item.stock}
-                className="w-10 h-10 sm:w-8 sm:h-8 rounded border border-gray-300 flex items-center justify-center hover:bg-gray-50 active:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] min-w-[44px] text-lg sm:text-base"
-                aria-label="Increase quantity"
-              >
-                +
-              </button>
-              <span className="ml-auto font-semibold text-base sm:text-sm">
+            <div className="flex items-center justify-between gap-2 sm:gap-3">
+              <div className="flex items-center gap-2 sm:gap-1">
+                <button
+                  onClick={() =>
+                    onUpdateQuantity(
+                      item.productId,
+                      Math.max(0, item.quantity - 1),
+                      item.variantId,
+                    )
+                  }
+                  className="w-10 h-10 sm:w-8 sm:h-8 rounded-lg border border-gray-300 flex items-center justify-center hover:bg-gray-50 active:bg-gray-100 min-h-[44px] min-w-[44px] text-lg sm:text-base transition-colors"
+                  aria-label="Decrease quantity"
+                >
+                  −
+                </button>
+                <span className="w-12 text-center font-medium text-base min-w-[48px]">
+                  {item.quantity}
+                </span>
+                <button
+                  onClick={() =>
+                    onUpdateQuantity(
+                      item.productId,
+                      Math.min(item.stock, item.quantity + 1),
+                      item.variantId,
+                    )
+                  }
+                  disabled={item.quantity >= item.stock}
+                  className="w-10 h-10 sm:w-8 sm:h-8 rounded-lg border border-gray-300 flex items-center justify-center hover:bg-gray-50 active:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] min-w-[44px] text-lg sm:text-base transition-colors"
+                  aria-label="Increase quantity"
+                >
+                  +
+                </button>
+              </div>
+              <span className="ml-auto font-semibold text-base sm:text-sm text-gray-900 min-w-[70px] text-right">
                 £{(item.price * item.quantity).toFixed(2)}
               </span>
             </div>

@@ -76,9 +76,9 @@ export default function ProductCard({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-4 flex flex-col">
-      <div className="flex items-start justify-between mb-2 gap-2">
-        <h3 className="text-base sm:text-lg font-semibold text-gray-900 flex-1">
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-4 flex flex-col h-full">
+      <div className="flex items-start justify-between mb-2 sm:mb-3 gap-2">
+        <h3 className="text-base sm:text-lg font-semibold text-gray-900 flex-1 min-w-0 truncate">
           {name}
         </h3>
         {activeOffers.length > 0 && (
@@ -96,7 +96,7 @@ export default function ProductCard({
       </div>
 
       {variants.length > 0 && (
-        <div className="mb-3">
+        <div className="mb-3 sm:mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Select Flavour:
           </label>
@@ -119,13 +119,13 @@ export default function ProductCard({
         </div>
       )}
 
-      <div className="mt-auto">
-        <p className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
+      <div className="mt-auto pt-2">
+        <p className="text-xl sm:text-2xl font-bold text-gray-900 mb-2 sm:mb-3">
           £{Number(price).toFixed(2)}
         </p>
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
           <span
-            className={`text-sm ${
+            className={`text-sm font-medium ${
               isOutOfStock
                 ? "text-red-600"
                 : displayStock <= 5

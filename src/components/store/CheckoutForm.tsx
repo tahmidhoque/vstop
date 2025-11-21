@@ -65,17 +65,17 @@ export default function CheckoutForm({
           {items.map((item) => (
             <div
               key={`${item.productId}-${item.variantId || "base"}`}
-              className="flex justify-between items-start sm:items-center py-2 border-b border-gray-100 last:border-b-0 gap-2"
+              className="flex flex-col sm:flex-row sm:justify-between sm:items-center py-2 sm:py-2.5 border-b border-gray-100 last:border-b-0 gap-2 sm:gap-3"
             >
               <div className="flex-1 min-w-0">
-                <p className="font-medium text-sm sm:text-base truncate">
+                <p className="font-medium text-sm sm:text-base truncate mb-1 sm:mb-0">
                   {item.name}
                 </p>
                 <p className="text-xs sm:text-sm text-gray-600">
                   {item.quantity} × £{item.price.toFixed(2)}
                 </p>
               </div>
-              <p className="font-semibold text-sm sm:text-base flex-shrink-0">
+              <p className="font-semibold text-sm sm:text-base flex-shrink-0 text-gray-900 self-end sm:self-auto">
                 £{(item.price * item.quantity).toFixed(2)}
               </p>
             </div>

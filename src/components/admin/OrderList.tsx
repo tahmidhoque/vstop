@@ -56,10 +56,23 @@ export default function OrderList({ orders }: OrderListProps) {
   };
 
   const totalValue = (order: OrderWithItems) => {
-    return order.items.reduce(
+    // If total override is set, use it
+    if (order.totalOverride) {
+      return Number(order.totalOverride);
+    }
+
+    // Calculate subtotal
+    const subtotal = order.items.reduce(
       (sum, item) => sum + Number(item.priceAtTime) * item.quantity,
       0,
     );
+
+    // Apply manual discount if set
+    const manualDiscount = order.manualDiscount
+      ? Number(order.manualDiscount)
+      : 0;
+
+    return Math.max(0, subtotal - manualDiscount);
   };
 
   return (
@@ -158,29 +171,50 @@ export default function OrderList({ orders }: OrderListProps) {
                   >
                     {order.status}
                   </span>
-                  <span className="text-base sm:text-lg font-bold text-gray-900">
-                    £{totalValue(order).toFixed(2)}
-                  </span>
+                  <div className="flex flex-col items-end">
+                    <span className="text-base sm:text-lg font-bold text-gray-900">
+                      £{totalValue(order).toFixed(2)}
+                    </span>
+                    {(order.manualDiscount || order.totalOverride) && (
+                      <span className="text-xs text-gray-500 mt-0.5">
+                        {order.totalOverride
+                          ? "Override"
+                          : order.manualDiscount
+                            ? `-£${Number(order.manualDiscount).toFixed(2)}`
+                            : ""}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
 
               <div className="border-t border-gray-200 pt-3 sm:pt-4 mb-4">
-                <h4 className="text-xs sm:text-sm font-medium text-gray-700 mb-2">
+                <h4 className="text-xs sm:text-sm font-medium text-gray-700 mb-2 sm:mb-3">
                   Items:
                 </h4>
-                <div className="space-y-1.5 sm:space-y-2">
+                <div className="space-y-2 sm:space-y-2">
                   {order.items.map((item) => (
                     <div
                       key={item.id}
-                      className="flex justify-between text-xs sm:text-sm text-gray-600 gap-2"
+                      className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-2 text-xs sm:text-sm text-gray-600"
                     >
-                      <span className="flex-1 min-w-0 truncate">
-                        {item.product.name}
-                        {item.flavour && ` (${item.flavour})`} × {item.quantity}
+                      <span className="flex-1 min-w-0">
+                        <span className="truncate block">
+                          {item.product.name}
+                          {item.flavour && ` (${item.flavour})`}
+                        </span>
+                        <span className="text-gray-500 sm:hidden">
+                          × {item.quantity}
+                        </span>
                       </span>
-                      <span className="flex-shrink-0">
-                        £{Number(item.priceAtTime).toFixed(2)}
-                      </span>
+                      <div className="flex items-center justify-between sm:justify-end gap-2 sm:gap-3 flex-shrink-0">
+                        <span className="sm:hidden text-gray-700 font-medium">
+                          × {item.quantity}
+                        </span>
+                        <span className="font-medium text-gray-700">
+                          £{Number(item.priceAtTime).toFixed(2)}
+                        </span>
+                      </div>
                     </div>
                   ))}
                 </div>
