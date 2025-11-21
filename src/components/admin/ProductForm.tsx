@@ -14,12 +14,14 @@ interface ProductFormProps {
     name: string;
     price: number;
     stock: number;
+    visible?: boolean;
     variants?: Variant[];
   };
   onSubmit: (data: {
     name: string;
     price: number;
     stock: number;
+    visible?: boolean;
     variants: Variant[];
   }) => Promise<void>;
   onCancel: () => void;
@@ -33,6 +35,7 @@ export default function ProductForm({
   const [name, setName] = useState(product?.name || "");
   const [price, setPrice] = useState(product?.price.toString() || "");
   const [stock, setStock] = useState(product?.stock.toString() || "0");
+  const [visible, setVisible] = useState(product?.visible ?? true);
   const [variants, setVariants] = useState<Variant[]>(product?.variants || []);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -95,6 +98,7 @@ export default function ProductForm({
         name: name.trim(),
         price: priceNum,
         stock: stockNum,
+        visible,
         variants: validVariants,
       });
     } catch (err) {
@@ -167,6 +171,25 @@ export default function ProductForm({
           className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[44px]"
           disabled={loading}
         />
+      </div>
+
+      <div>
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={visible}
+            onChange={(e) => setVisible(e.target.checked)}
+            disabled={loading}
+            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+          />
+          <span className="text-sm font-medium text-gray-700">
+            Visible to customers
+          </span>
+        </label>
+        <p className="text-xs text-gray-500 mt-1 ml-6">
+          When unchecked, this product will be hidden from the customer store
+          view
+        </p>
       </div>
 
       <div>

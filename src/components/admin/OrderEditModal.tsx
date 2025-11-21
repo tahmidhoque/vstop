@@ -32,7 +32,7 @@ export default function OrderEditModal({
 
   useEffect(() => {
     async function loadProducts() {
-      const data = await getProducts();
+      const data = await getProducts(true); // includeHidden: true for admin
       setProducts(
         data.map((p) => ({
           id: p.id,

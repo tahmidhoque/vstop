@@ -11,6 +11,7 @@ interface Product {
   name: string;
   price: number | string;
   stock: number;
+  visible?: boolean;
   variants?: Array<{ id: string; flavour: string; stock: number }>;
 }
 
@@ -35,6 +36,7 @@ export default function ProductsPageClient({
     name: string;
     price: number;
     stock: number;
+    visible?: boolean;
     variants: Array<{ flavour: string; stock: number }>;
   }) => {
     await createProduct(data);
@@ -46,6 +48,7 @@ export default function ProductsPageClient({
     name: string;
     price: number;
     stock: number;
+    visible?: boolean;
     variants: Array<{ id?: string; flavour: string; stock: number }>;
   }) => {
     if (!editingProduct) return;
@@ -134,9 +137,16 @@ export default function ProductsPageClient({
                   <div key={product.id} className="p-4">
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex-1 min-w-0">
-                        <h3 className="text-base font-semibold text-gray-900 mb-1">
-                          {product.name}
-                        </h3>
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="text-base font-semibold text-gray-900">
+                            {product.name}
+                          </h3>
+                          {product.visible === false && (
+                            <span className="px-2 py-0.5 text-xs font-medium bg-gray-200 text-gray-700 rounded">
+                              Hidden
+                            </span>
+                          )}
+                        </div>
                         <p className="text-sm font-medium text-gray-900 mb-2">
                           £{Number(product.price).toFixed(2)}
                         </p>
@@ -217,10 +227,22 @@ export default function ProductsPageClient({
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {products.map((product) => (
-                      <tr key={product.id} className="hover:bg-gray-50">
+                      <tr
+                        key={product.id}
+                        className={`hover:bg-gray-50 ${
+                          product.visible === false ? "opacity-60" : ""
+                        }`}
+                      >
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">
-                            {product.name}
+                          <div className="flex items-center gap-2">
+                            <div className="text-sm font-medium text-gray-900">
+                              {product.name}
+                            </div>
+                            {product.visible === false && (
+                              <span className="px-2 py-0.5 text-xs font-medium bg-gray-200 text-gray-700 rounded">
+                                Hidden
+                              </span>
+                            )}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">

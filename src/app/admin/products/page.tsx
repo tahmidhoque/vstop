@@ -11,7 +11,7 @@ export default async function ProductsPage() {
     redirect("/admin/login");
   }
 
-  const products = await getProducts();
+  const products = await getProducts(true); // includeHidden: true
 
   return (
     <ProtectedRoute requiredType="ADMIN" redirectTo="/admin/login">
@@ -19,3 +19,4 @@ export default async function ProductsPage() {
     </ProtectedRoute>
   );
 }
+

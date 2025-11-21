@@ -11,7 +11,10 @@ export default async function OffersPage() {
     redirect("/admin/login");
   }
 
-  const [offers, products] = await Promise.all([getOffers(), getProducts()]);
+  const [offers, products] = await Promise.all([
+    getOffers(),
+    getProducts(true), // includeHidden: true for admin offers page
+  ]);
 
   return (
     <ProtectedRoute requiredType="ADMIN" redirectTo="/admin/login">

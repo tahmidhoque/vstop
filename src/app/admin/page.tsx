@@ -11,7 +11,10 @@ export default async function AdminDashboard() {
     redirect("/admin/login");
   }
 
-  const [orders, products] = await Promise.all([getOrders(), getProducts()]);
+  const [orders, products] = await Promise.all([
+    getOrders(),
+    getProducts(true), // includeHidden: true for admin dashboard
+  ]);
 
   const pendingOrders = orders.filter((o) => o.status === "PENDING").length;
   const unfulfilledOrders = orders.filter(

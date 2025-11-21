@@ -309,8 +309,9 @@ export async function deleteOrder(orderId: string) {
   revalidatePath("/admin/orders");
 }
 
-export async function getProducts() {
+export async function getProducts(includeHidden: boolean = false) {
   const products = await db.product.findMany({
+    where: includeHidden ? undefined : { visible: true },
     include: {
       variants: {
         orderBy: { flavour: "asc" },
@@ -523,6 +524,7 @@ export async function createProduct(data: {
   name: string;
   price: number;
   stock: number;
+  visible?: boolean;
   variants?: Array<{ flavour: string; stock: number }>;
 }) {
   const product = await db.product.create({
@@ -530,6 +532,7 @@ export async function createProduct(data: {
       name: data.name,
       price: data.price,
       stock: data.stock,
+      visible: data.visible ?? true,
       variants: data.variants
         ? {
             create: data.variants.map((v) => ({
@@ -555,6 +558,7 @@ export async function updateProduct(
     name?: string;
     price?: number;
     stock?: number;
+    visible?: boolean;
     variants?: Array<{ id?: string; flavour: string; stock: number }>;
   },
 ) {
@@ -575,6 +579,7 @@ export async function updateProduct(
       name: data.name,
       price: data.price,
       stock: data.stock,
+      visible: data.visible,
     },
     include: { variants: true },
   });

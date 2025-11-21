@@ -51,7 +51,8 @@ export default function OffersPageClient({
   // Load products if not provided
   useEffect(() => {
     if (products.length === 0) {
-      getProducts().then((productsData) => {
+      getProducts(true).then((productsData) => {
+        // includeHidden: true for admin
         setProducts(
           productsData.map((p) => ({
             id: p.id,
