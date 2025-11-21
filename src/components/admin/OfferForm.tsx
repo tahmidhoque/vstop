@@ -1,36 +1,36 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect } from "react";
 
 interface Product {
-  id: string
-  name: string
+  id: string;
+  name: string;
 }
 
 interface OfferFormProps {
   offer?: {
-    id: string
-    name: string
-    description?: string | null
-    quantity: number
-    price: number
-    active: boolean
-    startDate?: Date | null
-    endDate?: Date | null
-    productIds: string[]
-  }
-  products: Product[]
+    id: string;
+    name: string;
+    description?: string | null;
+    quantity: number;
+    price: number;
+    active: boolean;
+    startDate?: Date | null;
+    endDate?: Date | null;
+    productIds: string[];
+  };
+  products: Product[];
   onSubmit: (data: {
-    name: string
-    description?: string | null
-    quantity: number
-    price: number
-    active: boolean
-    startDate?: Date | null
-    endDate?: Date | null
-    productIds: string[]
-  }) => Promise<void>
-  onCancel: () => void
+    name: string;
+    description?: string | null;
+    quantity: number;
+    price: number;
+    active: boolean;
+    startDate?: Date | null;
+    endDate?: Date | null;
+    productIds: string[];
+  }) => Promise<void>;
+  onCancel: () => void;
 }
 
 export default function OfferForm({
@@ -39,76 +39,76 @@ export default function OfferForm({
   onSubmit,
   onCancel,
 }: OfferFormProps) {
-  const [name, setName] = useState(offer?.name || '')
-  const [description, setDescription] = useState(offer?.description || '')
-  const [quantity, setQuantity] = useState(offer?.quantity.toString() || '2')
-  const [price, setPrice] = useState(offer?.price.toString() || '')
-  const [active, setActive] = useState(offer?.active ?? true)
+  const [name, setName] = useState(offer?.name || "");
+  const [description, setDescription] = useState(offer?.description || "");
+  const [quantity, setQuantity] = useState(offer?.quantity.toString() || "2");
+  const [price, setPrice] = useState(offer?.price.toString() || "");
+  const [active, setActive] = useState(offer?.active ?? true);
   const [startDate, setStartDate] = useState(
     offer?.startDate
-      ? new Date(offer.startDate).toISOString().split('T')[0]
-      : ''
-  )
+      ? new Date(offer.startDate).toISOString().split("T")[0]
+      : "",
+  );
   const [endDate, setEndDate] = useState(
-    offer?.endDate ? new Date(offer.endDate).toISOString().split('T')[0] : ''
-  )
+    offer?.endDate ? new Date(offer.endDate).toISOString().split("T")[0] : "",
+  );
   const [selectedProductIds, setSelectedProductIds] = useState<Set<string>>(
-    new Set(offer?.productIds || [])
-  )
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+    new Set(offer?.productIds || []),
+  );
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const handleToggleProduct = (productId: string) => {
-    const newSet = new Set(selectedProductIds)
+    const newSet = new Set(selectedProductIds);
     if (newSet.has(productId)) {
-      newSet.delete(productId)
+      newSet.delete(productId);
     } else {
-      newSet.add(productId)
+      newSet.add(productId);
     }
-    setSelectedProductIds(newSet)
-  }
+    setSelectedProductIds(newSet);
+  };
 
   const handleSelectAll = () => {
     if (selectedProductIds.size === products.length) {
-      setSelectedProductIds(new Set())
+      setSelectedProductIds(new Set());
     } else {
-      setSelectedProductIds(new Set(products.map((p) => p.id)))
+      setSelectedProductIds(new Set(products.map((p) => p.id)));
     }
-  }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
+    e.preventDefault();
+    setError("");
 
-    const quantityNum = parseInt(quantity, 10)
-    const priceNum = parseFloat(price)
+    const quantityNum = parseInt(quantity, 10);
+    const priceNum = parseFloat(price);
 
     if (!name.trim()) {
-      setError('Name is required')
-      return
+      setError("Name is required");
+      return;
     }
 
     if (isNaN(quantityNum) || quantityNum < 2) {
-      setError('Quantity must be at least 2')
-      return
+      setError("Quantity must be at least 2");
+      return;
     }
 
     if (isNaN(priceNum) || priceNum <= 0) {
-      setError('Price must be a positive number')
-      return
+      setError("Price must be a positive number");
+      return;
     }
 
     if (selectedProductIds.size === 0) {
-      setError('Please select at least one product')
-      return
+      setError("Please select at least one product");
+      return;
     }
 
     if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
-      setError('End date must be after start date')
-      return
+      setError("End date must be after start date");
+      return;
     }
 
-    setLoading(true)
+    setLoading(true);
     try {
       await onSubmit({
         name: name.trim(),
@@ -119,13 +119,13 @@ export default function OfferForm({
         startDate: startDate ? new Date(startDate) : null,
         endDate: endDate ? new Date(endDate) : null,
         productIds: Array.from(selectedProductIds),
-      })
+      });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save offer')
+      setError(err instanceof Error ? err.message : "Failed to save offer");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -288,8 +288,8 @@ export default function OfferForm({
             className="text-sm text-blue-600 hover:text-blue-700 font-medium"
           >
             {selectedProductIds.size === products.length
-              ? 'Deselect All'
-              : 'Select All'}
+              ? "Deselect All"
+              : "Select All"}
           </button>
         </div>
         {products.length === 0 ? (
@@ -335,10 +335,9 @@ export default function OfferForm({
           disabled={loading}
           className="w-full sm:flex-1 py-2.5 px-4 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 active:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-h-[44px]"
         >
-          {loading ? 'Saving...' : offer ? 'Update' : 'Create'}
+          {loading ? "Saving..." : offer ? "Update" : "Create"}
         </button>
       </div>
     </form>
-  )
+  );
 }
-

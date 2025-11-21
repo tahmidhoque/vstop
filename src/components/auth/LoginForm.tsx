@@ -1,41 +1,44 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 interface LoginFormProps {
-  type: 'customer' | 'admin'
-  onSubmit: (password: string) => Promise<{ success: boolean; error?: string }>
+  type: "customer" | "admin";
+  onSubmit: (password: string) => Promise<{ success: boolean; error?: string }>;
 }
 
 export default function LoginForm({ type, onSubmit }: LoginFormProps) {
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
-  const router = useRouter()
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
-    setLoading(true)
+    e.preventDefault();
+    setError("");
+    setLoading(true);
 
     try {
-      const result = await onSubmit(password)
+      const result = await onSubmit(password);
       if (result.success) {
-        router.push(type === 'customer' ? '/store' : '/admin')
-        router.refresh()
+        router.push(type === "customer" ? "/store" : "/admin");
+        router.refresh();
       } else {
-        setError(result.error || 'Invalid password')
+        setError(result.error || "Invalid password");
       }
     } catch (err) {
-      setError('An error occurred. Please try again.')
+      setError("An error occurred. Please try again.");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
-    <form onSubmit={handleSubmit} className="w-full max-w-md space-y-4 sm:space-y-6">
+    <form
+      onSubmit={handleSubmit}
+      className="w-full max-w-md space-y-4 sm:space-y-6"
+    >
       <div>
         <label
           htmlFor="password"
@@ -66,8 +69,8 @@ export default function LoginForm({ type, onSubmit }: LoginFormProps) {
         disabled={loading}
         className="w-full py-3 px-4 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 active:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-h-[44px]"
       >
-        {loading ? 'Signing in...' : 'Sign In'}
+        {loading ? "Signing in..." : "Sign In"}
       </button>
     </form>
-  )
+  );
 }

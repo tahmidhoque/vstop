@@ -1,28 +1,28 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect } from "react";
 
 interface Variant {
-  id?: string
-  flavour: string
-  stock: number
+  id?: string;
+  flavour: string;
+  stock: number;
 }
 
 interface ProductFormProps {
   product?: {
-    id: string
-    name: string
-    price: number
-    stock: number
-    variants?: Variant[]
-  }
+    id: string;
+    name: string;
+    price: number;
+    stock: number;
+    variants?: Variant[];
+  };
   onSubmit: (data: {
-    name: string
-    price: number
-    stock: number
-    variants: Variant[]
-  }) => Promise<void>
-  onCancel: () => void
+    name: string;
+    price: number;
+    stock: number;
+    variants: Variant[];
+  }) => Promise<void>;
+  onCancel: () => void;
 }
 
 export default function ProductForm({
@@ -30,81 +30,79 @@ export default function ProductForm({
   onSubmit,
   onCancel,
 }: ProductFormProps) {
-  const [name, setName] = useState(product?.name || '')
-  const [price, setPrice] = useState(product?.price.toString() || '')
-  const [stock, setStock] = useState(product?.stock.toString() || '0')
-  const [variants, setVariants] = useState<Variant[]>(
-    product?.variants || []
-  )
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const [name, setName] = useState(product?.name || "");
+  const [price, setPrice] = useState(product?.price.toString() || "");
+  const [stock, setStock] = useState(product?.stock.toString() || "0");
+  const [variants, setVariants] = useState<Variant[]>(product?.variants || []);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const handleAddVariant = () => {
-    setVariants([...variants, { flavour: '', stock: 0 }])
-  }
+    setVariants([...variants, { flavour: "", stock: 0 }]);
+  };
 
   const handleRemoveVariant = (index: number) => {
-    setVariants(variants.filter((_, i) => i !== index))
-  }
+    setVariants(variants.filter((_, i) => i !== index));
+  };
 
   const handleVariantChange = (
     index: number,
-    field: 'flavour' | 'stock',
-    value: string | number
+    field: "flavour" | "stock",
+    value: string | number,
   ) => {
-    const updated = [...variants]
+    const updated = [...variants];
     updated[index] = {
       ...updated[index],
-      [field]: field === 'stock' ? parseInt(String(value), 10) || 0 : value,
-    }
-    setVariants(updated)
-  }
+      [field]: field === "stock" ? parseInt(String(value), 10) || 0 : value,
+    };
+    setVariants(updated);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
+    e.preventDefault();
+    setError("");
 
-    const priceNum = parseFloat(price)
-    const stockNum = parseInt(stock, 10)
+    const priceNum = parseFloat(price);
+    const stockNum = parseInt(stock, 10);
 
     if (!name.trim()) {
-      setError('Name is required')
-      return
+      setError("Name is required");
+      return;
     }
 
     if (isNaN(priceNum) || priceNum <= 0) {
-      setError('Price must be a positive number')
-      return
+      setError("Price must be a positive number");
+      return;
     }
 
     if (isNaN(stockNum) || stockNum < 0) {
-      setError('Stock must be a non-negative number')
-      return
+      setError("Stock must be a non-negative number");
+      return;
     }
 
     // Validate variants
-    const validVariants = variants.filter((v) => v.flavour.trim() !== '')
+    const validVariants = variants.filter((v) => v.flavour.trim() !== "");
     for (const variant of validVariants) {
       if (variant.stock < 0) {
-        setError('Variant stock must be non-negative')
-        return
+        setError("Variant stock must be non-negative");
+        return;
       }
     }
 
-    setLoading(true)
+    setLoading(true);
     try {
       await onSubmit({
         name: name.trim(),
         price: priceNum,
         stock: stockNum,
         variants: validVariants,
-      })
+      });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save product')
+      setError(err instanceof Error ? err.message : "Failed to save product");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -202,7 +200,7 @@ export default function ProductForm({
                     placeholder="Flavour name (e.g., Vanilla, Chocolate)"
                     value={variant.flavour}
                     onChange={(e) =>
-                      handleVariantChange(index, 'flavour', e.target.value)
+                      handleVariantChange(index, "flavour", e.target.value)
                     }
                     className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm mb-2 min-h-[44px]"
                     disabled={loading}
@@ -215,8 +213,8 @@ export default function ProductForm({
                     onChange={(e) =>
                       handleVariantChange(
                         index,
-                        'stock',
-                        parseInt(e.target.value, 10) || 0
+                        "stock",
+                        parseInt(e.target.value, 10) || 0,
                       )
                     }
                     className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm min-h-[44px]"
@@ -251,9 +249,9 @@ export default function ProductForm({
           disabled={loading}
           className="w-full sm:flex-1 py-2.5 px-4 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 active:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-h-[44px]"
         >
-          {loading ? 'Saving...' : product ? 'Update' : 'Create'}
+          {loading ? "Saving..." : product ? "Update" : "Create"}
         </button>
       </div>
     </form>
-  )
+  );
 }

@@ -1,12 +1,16 @@
-'use server'
+"use server";
 
-import { deleteSession, updateCustomerPassword as updateCustomerPasswordInternal } from './auth'
+import {
+  deleteSession,
+  updateCustomerPassword as updateCustomerPasswordInternal,
+} from "./auth";
 
 export async function logoutAction() {
-  await deleteSession()
+  await deleteSession();
 }
 
-export async function updateCustomerPassword(newPassword: string): Promise<void> {
-  return updateCustomerPasswordInternal(newPassword)
+export async function updateCustomerPassword(
+  newPassword: string,
+): Promise<void> {
+  return updateCustomerPasswordInternal(newPassword);
 }
-

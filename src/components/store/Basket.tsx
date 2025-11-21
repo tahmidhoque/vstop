@@ -1,15 +1,19 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import type { BasketItem } from '@/types'
-import { calculateOffers, type Offer } from '@/lib/offer-utils'
+import { useState, useEffect } from "react";
+import type { BasketItem } from "@/types";
+import { calculateOffers, type Offer } from "@/lib/offer-utils";
 
 interface BasketProps {
-  items: BasketItem[]
-  offers?: Offer[]
-  onUpdateQuantity: (productId: string, quantity: number, variantId?: string) => void
-  onRemove: (productId: string, variantId?: string) => void
-  onCheckout: () => void
+  items: BasketItem[];
+  offers?: Offer[];
+  onUpdateQuantity: (
+    productId: string,
+    quantity: number,
+    variantId?: string,
+  ) => void;
+  onRemove: (productId: string, variantId?: string) => void;
+  onCheckout: () => void;
 }
 
 export default function Basket({
@@ -19,12 +23,12 @@ export default function Basket({
   onRemove,
   onCheckout,
 }: BasketProps) {
-  const [isOpen, setIsOpen] = useState(false)
+  const [isOpen, setIsOpen] = useState(false);
 
-  const basketTotal = calculateOffers(items, offers)
-  const { subtotal, discounts, total, appliedOffers } = basketTotal
+  const basketTotal = calculateOffers(items, offers);
+  const { subtotal, discounts, total, appliedOffers } = basketTotal;
 
-  const itemCount = items.reduce((sum, item) => sum + item.quantity, 0)
+  const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
 
   if (items.length === 0) {
     return (
@@ -33,7 +37,7 @@ export default function Basket({
           <p>Your basket is empty</p>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -55,13 +59,13 @@ export default function Basket({
       {/* Basket panel */}
       <div
         className={`fixed inset-0 bg-black bg-opacity-50 z-30 md:hidden transition-opacity ${
-          isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+          isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
         }`}
         onClick={() => setIsOpen(false)}
       >
         <div
           className={`absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl max-h-[85vh] overflow-y-auto transform transition-transform duration-300 ease-out ${
-            isOpen ? 'translate-y-0' : 'translate-y-full'
+            isOpen ? "translate-y-0" : "translate-y-full"
           }`}
           onClick={(e) => e.stopPropagation()}
         >
@@ -84,8 +88,8 @@ export default function Basket({
             onUpdateQuantity={onUpdateQuantity}
             onRemove={onRemove}
             onCheckout={() => {
-              onCheckout()
-              setIsOpen(false)
+              onCheckout();
+              setIsOpen(false);
             }}
           />
         </div>
@@ -108,7 +112,7 @@ export default function Basket({
         />
       </div>
     </>
-  )
+  );
 }
 
 function BasketContent({
@@ -121,27 +125,31 @@ function BasketContent({
   onRemove,
   onCheckout,
 }: {
-  items: BasketItem[]
-  subtotal: number
-  discounts: number
-  total: number
+  items: BasketItem[];
+  subtotal: number;
+  discounts: number;
+  total: number;
   appliedOffers: Array<{
-    offerId: string
-    offerName: string
-    appliedQuantity: number
-    discount: number
-    items: BasketItem[]
-  }>
-  onUpdateQuantity: (productId: string, quantity: number, variantId?: string) => void
-  onRemove: (productId: string, variantId?: string) => void
-  onCheckout: () => void
+    offerId: string;
+    offerName: string;
+    appliedQuantity: number;
+    discount: number;
+    items: BasketItem[];
+  }>;
+  onUpdateQuantity: (
+    productId: string,
+    quantity: number,
+    variantId?: string,
+  ) => void;
+  onRemove: (productId: string, variantId?: string) => void;
+  onCheckout: () => void;
 }) {
   return (
     <div className="flex flex-col h-full">
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {items.map((item) => (
           <div
-            key={`${item.productId}-${item.variantId || 'base'}`}
+            key={`${item.productId}-${item.variantId || "base"}`}
             className="border-b border-gray-200 pb-4 last:border-b-0"
           >
             <div className="flex items-start justify-between mb-2">
@@ -164,7 +172,7 @@ function BasketContent({
                   onUpdateQuantity(
                     item.productId,
                     Math.max(0, item.quantity - 1),
-                    item.variantId
+                    item.variantId,
                   )
                 }
                 className="w-10 h-10 sm:w-8 sm:h-8 rounded border border-gray-300 flex items-center justify-center hover:bg-gray-50 active:bg-gray-100 min-h-[44px] min-w-[44px] text-lg sm:text-base"
@@ -180,7 +188,7 @@ function BasketContent({
                   onUpdateQuantity(
                     item.productId,
                     Math.min(item.stock, item.quantity + 1),
-                    item.variantId
+                    item.variantId,
                   )
                 }
                 disabled={item.quantity >= item.stock}
@@ -246,5 +254,5 @@ function BasketContent({
         </button>
       </div>
     </div>
-  )
+  );
 }

@@ -1,9 +1,9 @@
-'use server'
+"use server";
 
-import { db } from './db'
-import { revalidatePath } from 'next/cache'
-import { OrderStatus } from '@/generated/enums'
-import type { BasketItem } from '@/types'
+import { db } from "./db";
+import { revalidatePath } from "next/cache";
+import { OrderStatus } from "@/generated/enums";
+import type { BasketItem } from "@/types";
 
 export async function createOrder(username: string, items: BasketItem[]) {
   // Validate stock availability
@@ -12,19 +12,19 @@ export async function createOrder(username: string, items: BasketItem[]) {
       // Check variant stock
       const variant = await db.productVariant.findUnique({
         where: { id: item.variantId },
-      })
+      });
 
       if (!variant || variant.stock < item.quantity) {
-        throw new Error(`Insufficient stock for ${item.name}`)
+        throw new Error(`Insufficient stock for ${item.name}`);
       }
     } else {
       // Check base product stock
       const product = await db.product.findUnique({
         where: { id: item.productId },
-      })
+      });
 
       if (!product || product.stock < item.quantity) {
-        throw new Error(`Insufficient stock for ${item.name}`)
+        throw new Error(`Insufficient stock for ${item.name}`);
       }
     }
   }
@@ -32,18 +32,18 @@ export async function createOrder(username: string, items: BasketItem[]) {
   // Generate order number - use a transaction-safe approach
   // Get the highest order number and increment, or start at 1
   const lastOrder = await db.order.findFirst({
-    orderBy: { createdAt: 'desc' },
+    orderBy: { createdAt: "desc" },
     select: { orderNumber: true },
-  })
-  
-  let orderNumber: string
+  });
+
+  let orderNumber: string;
   if (lastOrder?.orderNumber) {
     // Extract the number from the last order number (e.g., "ORD-000001" -> 1)
-    const lastNum = parseInt(lastOrder.orderNumber.replace('ORD-', ''), 10)
-    orderNumber = `ORD-${String(lastNum + 1).padStart(6, '0')}`
+    const lastNum = parseInt(lastOrder.orderNumber.replace("ORD-", ""), 10);
+    orderNumber = `ORD-${String(lastNum + 1).padStart(6, "0")}`;
   } else {
     // First order
-    orderNumber = 'ORD-000001'
+    orderNumber = "ORD-000001";
   }
 
   // Create order and items, then update stock
@@ -51,7 +51,7 @@ export async function createOrder(username: string, items: BasketItem[]) {
     data: {
       orderNumber,
       username,
-      status: 'PENDING',
+      status: "PENDING",
       items: {
         create: items.map((item) => ({
           productId: item.productId,
@@ -62,7 +62,7 @@ export async function createOrder(username: string, items: BasketItem[]) {
         })),
       },
     },
-  })
+  });
 
   // Update stock levels
   for (const item of items) {
@@ -75,7 +75,7 @@ export async function createOrder(username: string, items: BasketItem[]) {
             decrement: item.quantity,
           },
         },
-      })
+      });
     } else {
       // Update base product stock
       await db.product.update({
@@ -85,26 +85,26 @@ export async function createOrder(username: string, items: BasketItem[]) {
             decrement: item.quantity,
           },
         },
-      })
+      });
     }
   }
 
-  revalidatePath('/admin/orders')
-  return order
+  revalidatePath("/admin/orders");
+  return order;
 }
 
 export async function updateOrderStatus(orderId: string, status: OrderStatus) {
   const order = await db.order.findUnique({
     where: { id: orderId },
     include: { items: true },
-  })
+  });
 
   if (!order) {
-    throw new Error('Order not found')
+    throw new Error("Order not found");
   }
 
   // If cancelling, restore stock
-  if (status === 'CANCELLED' && order.status !== 'CANCELLED') {
+  if (status === "CANCELLED" && order.status !== "CANCELLED") {
     for (const item of order.items) {
       if (item.variantId) {
         await db.productVariant.update({
@@ -114,7 +114,7 @@ export async function updateOrderStatus(orderId: string, status: OrderStatus) {
               increment: item.quantity,
             },
           },
-        })
+        });
       } else {
         await db.product.update({
           where: { id: item.productId },
@@ -123,13 +123,13 @@ export async function updateOrderStatus(orderId: string, status: OrderStatus) {
               increment: item.quantity,
             },
           },
-        })
+        });
       }
     }
   }
 
   // If un-cancelling, deduct stock again
-  if (order.status === 'CANCELLED' && status !== 'CANCELLED') {
+  if (order.status === "CANCELLED" && status !== "CANCELLED") {
     for (const item of order.items) {
       if (item.variantId) {
         await db.productVariant.update({
@@ -139,7 +139,7 @@ export async function updateOrderStatus(orderId: string, status: OrderStatus) {
               decrement: item.quantity,
             },
           },
-        })
+        });
       } else {
         await db.product.update({
           where: { id: item.productId },
@@ -148,7 +148,7 @@ export async function updateOrderStatus(orderId: string, status: OrderStatus) {
               decrement: item.quantity,
             },
           },
-        })
+        });
       }
     }
   }
@@ -156,23 +156,23 @@ export async function updateOrderStatus(orderId: string, status: OrderStatus) {
   await db.order.update({
     where: { id: orderId },
     data: { status },
-  })
+  });
 
-  revalidatePath('/admin/orders')
+  revalidatePath("/admin/orders");
 }
 
 export async function updateOrder(
   orderId: string,
   username: string,
-  items: BasketItem[]
+  items: BasketItem[],
 ) {
   const order = await db.order.findUnique({
     where: { id: orderId },
     include: { items: true },
-  })
+  });
 
   if (!order) {
-    throw new Error('Order not found')
+    throw new Error("Order not found");
   }
 
   // Restore stock from old items
@@ -185,7 +185,7 @@ export async function updateOrder(
             increment: oldItem.quantity,
           },
         },
-      })
+      });
     } else {
       await db.product.update({
         where: { id: oldItem.productId },
@@ -194,7 +194,7 @@ export async function updateOrder(
             increment: oldItem.quantity,
           },
         },
-      })
+      });
     }
   }
 
@@ -203,18 +203,18 @@ export async function updateOrder(
     if (item.variantId) {
       const variant = await db.productVariant.findUnique({
         where: { id: item.variantId },
-      })
+      });
 
       if (!variant || variant.stock < item.quantity) {
-        throw new Error(`Insufficient stock for ${item.name}`)
+        throw new Error(`Insufficient stock for ${item.name}`);
       }
     } else {
       const product = await db.product.findUnique({
         where: { id: item.productId },
-      })
+      });
 
       if (!product || product.stock < item.quantity) {
-        throw new Error(`Insufficient stock for ${item.name}`)
+        throw new Error(`Insufficient stock for ${item.name}`);
       }
     }
   }
@@ -222,7 +222,7 @@ export async function updateOrder(
   // Delete old items and create new ones
   await db.orderItem.deleteMany({
     where: { orderId },
-  })
+  });
 
   await db.order.update({
     where: { id: orderId },
@@ -238,7 +238,7 @@ export async function updateOrder(
         })),
       },
     },
-  })
+  });
 
   // Deduct new stock
   for (const item of items) {
@@ -250,7 +250,7 @@ export async function updateOrder(
             decrement: item.quantity,
           },
         },
-      })
+      });
     } else {
       await db.product.update({
         where: { id: item.productId },
@@ -259,25 +259,25 @@ export async function updateOrder(
             decrement: item.quantity,
           },
         },
-      })
+      });
     }
   }
 
-  revalidatePath('/admin/orders')
+  revalidatePath("/admin/orders");
 }
 
 export async function deleteOrder(orderId: string) {
   const order = await db.order.findUnique({
     where: { id: orderId },
     include: { items: true },
-  })
+  });
 
   if (!order) {
-    throw new Error('Order not found')
+    throw new Error("Order not found");
   }
 
   // Restore stock if order is not cancelled (cancelled orders already had stock restored)
-  if (order.status !== 'CANCELLED') {
+  if (order.status !== "CANCELLED") {
     for (const item of order.items) {
       if (item.variantId) {
         await db.productVariant.update({
@@ -287,7 +287,7 @@ export async function deleteOrder(orderId: string) {
               increment: item.quantity,
             },
           },
-        })
+        });
       } else {
         await db.product.update({
           where: { id: item.productId },
@@ -296,7 +296,7 @@ export async function deleteOrder(orderId: string) {
               increment: item.quantity,
             },
           },
-        })
+        });
       }
     }
   }
@@ -304,16 +304,16 @@ export async function deleteOrder(orderId: string) {
   // Delete the order (items will be deleted automatically due to cascade)
   await db.order.delete({
     where: { id: orderId },
-  })
+  });
 
-  revalidatePath('/admin/orders')
+  revalidatePath("/admin/orders");
 }
 
 export async function getProducts() {
   const products = await db.product.findMany({
     include: {
       variants: {
-        orderBy: { flavour: 'asc' },
+        orderBy: { flavour: "asc" },
       },
       offers: {
         include: {
@@ -321,9 +321,9 @@ export async function getProducts() {
         },
       },
     },
-    orderBy: { createdAt: 'desc' },
-  })
-  
+    orderBy: { createdAt: "desc" },
+  });
+
   // Convert Decimal to number for client component serialization
   return products.map((product) => ({
     ...product,
@@ -335,7 +335,7 @@ export async function getProducts() {
       ...po.offer,
       price: Number(po.offer.price),
     })),
-  }))
+  }));
 }
 
 export async function getOffers() {
@@ -347,9 +347,9 @@ export async function getOffers() {
         },
       },
     },
-    orderBy: { createdAt: 'desc' },
-  })
-  
+    orderBy: { createdAt: "desc" },
+  });
+
   // Convert Decimal to number and map to simpler structure
   return offers.map((offer) => ({
     id: offer.id,
@@ -361,7 +361,7 @@ export async function getOffers() {
     startDate: offer.startDate,
     endDate: offer.endDate,
     productIds: offer.products.map((po) => po.productId),
-  }))
+  }));
 }
 
 export async function getOffer(id: string) {
@@ -374,10 +374,10 @@ export async function getOffer(id: string) {
         },
       },
     },
-  })
-  
-  if (!offer) return null
-  
+  });
+
+  if (!offer) return null;
+
   // Convert Decimal to number and map to simpler structure
   return {
     id: offer.id,
@@ -389,18 +389,18 @@ export async function getOffer(id: string) {
     startDate: offer.startDate,
     endDate: offer.endDate,
     productIds: offer.products.map((po) => po.productId),
-  }
+  };
 }
 
 export async function createOffer(data: {
-  name: string
-  description?: string
-  quantity: number
-  price: number
-  active?: boolean
-  startDate?: Date | null
-  endDate?: Date | null
-  productIds: string[]
+  name: string;
+  description?: string;
+  quantity: number;
+  price: number;
+  active?: boolean;
+  startDate?: Date | null;
+  endDate?: Date | null;
+  productIds: string[];
 }) {
   const offer = await db.offer.create({
     data: {
@@ -420,33 +420,33 @@ export async function createOffer(data: {
     include: {
       products: true,
     },
-  })
+  });
 
-  revalidatePath('/admin/offers')
-  revalidatePath('/store')
-  return offer
+  revalidatePath("/admin/offers");
+  revalidatePath("/store");
+  return offer;
 }
 
 export async function updateOffer(
   id: string,
   data: {
-    name?: string
-    description?: string | null
-    quantity?: number
-    price?: number
-    active?: boolean
-    startDate?: Date | null
-    endDate?: Date | null
-    productIds?: string[]
-  }
+    name?: string;
+    description?: string | null;
+    quantity?: number;
+    price?: number;
+    active?: boolean;
+    startDate?: Date | null;
+    endDate?: Date | null;
+    productIds?: string[];
+  },
 ) {
   const existing = await db.offer.findUnique({
     where: { id },
     include: { products: true },
-  })
+  });
 
   if (!existing) {
-    throw new Error('Offer not found')
+    throw new Error("Offer not found");
   }
 
   // Update offer
@@ -454,7 +454,8 @@ export async function updateOffer(
     where: { id },
     data: {
       name: data.name,
-      description: data.description !== undefined ? data.description : undefined,
+      description:
+        data.description !== undefined ? data.description : undefined,
       quantity: data.quantity,
       price: data.price,
       active: data.active,
@@ -462,14 +463,14 @@ export async function updateOffer(
       endDate: data.endDate !== undefined ? data.endDate : undefined,
     },
     include: { products: true },
-  })
+  });
 
   // Handle product associations
   if (data.productIds !== undefined) {
     // Delete existing associations
     await db.productOffer.deleteMany({
       where: { offerId: id },
-    })
+    });
 
     // Create new associations
     if (data.productIds.length > 0) {
@@ -478,22 +479,22 @@ export async function updateOffer(
           offerId: id,
           productId,
         })),
-      })
+      });
     }
   }
 
-  revalidatePath('/admin/offers')
-  revalidatePath('/store')
-  return offer
+  revalidatePath("/admin/offers");
+  revalidatePath("/store");
+  return offer;
 }
 
 export async function deleteOffer(id: string) {
   await db.offer.delete({
     where: { id },
-  })
+  });
 
-  revalidatePath('/admin/offers')
-  revalidatePath('/store')
+  revalidatePath("/admin/offers");
+  revalidatePath("/store");
 }
 
 export async function getProduct(id: string) {
@@ -501,13 +502,13 @@ export async function getProduct(id: string) {
     where: { id },
     include: {
       variants: {
-        orderBy: { flavour: 'asc' },
+        orderBy: { flavour: "asc" },
       },
     },
-  })
-  
-  if (!product) return null
-  
+  });
+
+  if (!product) return null;
+
   // Convert Decimal to number for client component serialization
   return {
     ...product,
@@ -515,14 +516,14 @@ export async function getProduct(id: string) {
     variants: product.variants.map((variant) => ({
       ...variant,
     })),
-  }
+  };
 }
 
 export async function createProduct(data: {
-  name: string
-  price: number
-  stock: number
-  variants?: Array<{ flavour: string; stock: number }>
+  name: string;
+  price: number;
+  stock: number;
+  variants?: Array<{ flavour: string; stock: number }>;
 }) {
   const product = await db.product.create({
     data: {
@@ -541,30 +542,30 @@ export async function createProduct(data: {
     include: {
       variants: true,
     },
-  })
+  });
 
-  revalidatePath('/admin/products')
-  revalidatePath('/store')
-  return product
+  revalidatePath("/admin/products");
+  revalidatePath("/store");
+  return product;
 }
 
 export async function updateProduct(
   id: string,
   data: {
-    name?: string
-    price?: number
-    stock?: number
-    variants?: Array<{ id?: string; flavour: string; stock: number }>
-  }
+    name?: string;
+    price?: number;
+    stock?: number;
+    variants?: Array<{ id?: string; flavour: string; stock: number }>;
+  },
 ) {
   // Get existing product with variants
   const existing = await db.product.findUnique({
     where: { id },
     include: { variants: true },
-  })
+  });
 
   if (!existing) {
-    throw new Error('Product not found')
+    throw new Error("Product not found");
   }
 
   // Update product
@@ -576,25 +577,21 @@ export async function updateProduct(
       stock: data.stock,
     },
     include: { variants: true },
-  })
+  });
 
   // Handle variants
   if (data.variants !== undefined) {
     // Delete variants that are no longer in the list
-    const existingVariantIds = new Set(
-      existing.variants.map((v) => v.id)
-    )
+    const existingVariantIds = new Set(existing.variants.map((v) => v.id));
     const newVariantIds = new Set(
-      data.variants.filter((v) => v.id).map((v) => v.id!)
-    )
-    const toDelete = existing.variants.filter(
-      (v) => !newVariantIds.has(v.id)
-    )
+      data.variants.filter((v) => v.id).map((v) => v.id!),
+    );
+    const toDelete = existing.variants.filter((v) => !newVariantIds.has(v.id));
 
     for (const variant of toDelete) {
       await db.productVariant.delete({
         where: { id: variant.id },
-      })
+      });
     }
 
     // Update or create variants
@@ -607,7 +604,7 @@ export async function updateProduct(
             flavour: variantData.flavour,
             stock: variantData.stock,
           },
-        })
+        });
       } else {
         // Create new variant
         await db.productVariant.create({
@@ -616,23 +613,23 @@ export async function updateProduct(
             flavour: variantData.flavour,
             stock: variantData.stock,
           },
-        })
+        });
       }
     }
   }
 
-  revalidatePath('/admin/products')
-  revalidatePath('/store')
-  return product
+  revalidatePath("/admin/products");
+  revalidatePath("/store");
+  return product;
 }
 
 export async function deleteProduct(id: string) {
   await db.product.delete({
     where: { id },
-  })
+  });
 
-  revalidatePath('/admin/products')
-  revalidatePath('/store')
+  revalidatePath("/admin/products");
+  revalidatePath("/store");
 }
 
 export async function getOrders() {
@@ -645,9 +642,9 @@ export async function getOrders() {
         },
       },
     },
-    orderBy: { createdAt: 'desc' },
-  })
-  
+    orderBy: { createdAt: "desc" },
+  });
+
   // Convert Decimal to number for client component serialization
   return orders.map((order) => ({
     ...order,
@@ -664,7 +661,7 @@ export async function getOrders() {
           }
         : null,
     })),
-  }))
+  }));
 }
 
 export async function getOrder(id: string) {
@@ -678,10 +675,10 @@ export async function getOrder(id: string) {
         },
       },
     },
-  })
-  
-  if (!order) return null
-  
+  });
+
+  if (!order) return null;
+
   // Convert Decimal to number for client component serialization
   return {
     ...order,
@@ -698,16 +695,16 @@ export async function getOrder(id: string) {
           }
         : null,
     })),
-  }
+  };
 }
 
 export async function getReportsData(startDate: Date, endDate: Date) {
   // Set startDate to beginning of day and endDate to end of day
-  const start = new Date(startDate)
-  start.setHours(0, 0, 0, 0)
-  
-  const end = new Date(endDate)
-  end.setHours(23, 59, 59, 999)
+  const start = new Date(startDate);
+  start.setHours(0, 0, 0, 0);
+
+  const end = new Date(endDate);
+  end.setHours(23, 59, 59, 999);
 
   const orders = await db.order.findMany({
     where: {
@@ -724,24 +721,26 @@ export async function getReportsData(startDate: Date, endDate: Date) {
         },
       },
     },
-    orderBy: { createdAt: 'desc' },
-  })
+    orderBy: { createdAt: "desc" },
+  });
 
-  const totalOrders = orders.length
-  const cancelledOrders = orders.filter((o) => o.status === 'CANCELLED').length
-  const fulfilledOrders = orders.filter((o) => o.status === 'FULFILLED').length
-  const unfulfilledOrders = orders.filter((o) => o.status === 'UNFULFILLED').length
+  const totalOrders = orders.length;
+  const cancelledOrders = orders.filter((o) => o.status === "CANCELLED").length;
+  const fulfilledOrders = orders.filter((o) => o.status === "FULFILLED").length;
+  const unfulfilledOrders = orders.filter(
+    (o) => o.status === "UNFULFILLED",
+  ).length;
 
   // Calculate total sales from non-cancelled orders
   const totalSales = orders
-    .filter((order) => order.status !== 'CANCELLED')
+    .filter((order) => order.status !== "CANCELLED")
     .reduce((sum, order) => {
       const orderTotal = order.items.reduce(
         (itemSum, item) => itemSum + Number(item.priceAtTime) * item.quantity,
-        0
-      )
-      return sum + orderTotal
-    }, 0)
+        0,
+      );
+      return sum + orderTotal;
+    }, 0);
 
   // Convert Decimal to number for client component serialization
   const ordersWithItems = orders.map((order) => ({
@@ -759,7 +758,7 @@ export async function getReportsData(startDate: Date, endDate: Date) {
           }
         : null,
     })),
-  }))
+  }));
 
   return {
     totalOrders,
@@ -768,5 +767,5 @@ export async function getReportsData(startDate: Date, endDate: Date) {
     unfulfilledOrders,
     totalSales,
     orders: ordersWithItems,
-  }
+  };
 }

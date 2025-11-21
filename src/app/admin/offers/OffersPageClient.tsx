@@ -1,52 +1,52 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import OfferForm from '@/components/admin/OfferForm'
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import OfferForm from "@/components/admin/OfferForm";
 import {
   createOffer,
   updateOffer,
   deleteOffer,
   getProducts,
-} from '@/lib/actions'
+} from "@/lib/actions";
 
 interface Offer {
-  id: string
-  name: string
-  description?: string | null
-  quantity: number
-  price: number
-  active: boolean
-  startDate?: Date | null
-  endDate?: Date | null
-  productIds: string[]
+  id: string;
+  name: string;
+  description?: string | null;
+  quantity: number;
+  price: number;
+  active: boolean;
+  startDate?: Date | null;
+  endDate?: Date | null;
+  productIds: string[];
 }
 
 interface Product {
-  id: string
-  name: string
+  id: string;
+  name: string;
 }
 
 interface OffersPageClientProps {
-  initialOffers: Offer[]
-  initialProducts: Product[]
+  initialOffers: Offer[];
+  initialProducts: Product[];
 }
 
 export default function OffersPageClient({
   initialOffers,
   initialProducts,
 }: OffersPageClientProps) {
-  const [offers, setOffers] = useState(initialOffers)
-  const [products, setProducts] = useState(initialProducts)
-  const [editingOffer, setEditingOffer] = useState<Offer | null>(null)
-  const [showForm, setShowForm] = useState(false)
-  const router = useRouter()
+  const [offers, setOffers] = useState(initialOffers);
+  const [products, setProducts] = useState(initialProducts);
+  const [editingOffer, setEditingOffer] = useState<Offer | null>(null);
+  const [showForm, setShowForm] = useState(false);
+  const router = useRouter();
 
   // Sync offers when initialOffers changes (after router.refresh())
   useEffect(() => {
-    setOffers(initialOffers)
-  }, [initialOffers])
+    setOffers(initialOffers);
+  }, [initialOffers]);
 
   // Load products if not provided
   useEffect(() => {
@@ -56,21 +56,21 @@ export default function OffersPageClient({
           productsData.map((p) => ({
             id: p.id,
             name: p.name,
-          }))
-        )
-      })
+          })),
+        );
+      });
     }
-  }, [products.length])
+  }, [products.length]);
 
   const handleCreate = async (data: {
-    name: string
-    description?: string | null
-    quantity: number
-    price: number
-    active: boolean
-    startDate?: Date | null
-    endDate?: Date | null
-    productIds: string[]
+    name: string;
+    description?: string | null;
+    quantity: number;
+    price: number;
+    active: boolean;
+    startDate?: Date | null;
+    endDate?: Date | null;
+    productIds: string[];
   }) => {
     await createOffer({
       name: data.name,
@@ -81,53 +81,53 @@ export default function OffersPageClient({
       startDate: data.startDate,
       endDate: data.endDate,
       productIds: data.productIds,
-    })
-    router.refresh()
-    setShowForm(false)
-  }
+    });
+    router.refresh();
+    setShowForm(false);
+  };
 
   const handleUpdate = async (data: {
-    name: string
-    description?: string | null
-    quantity: number
-    price: number
-    active: boolean
-    startDate?: Date | null
-    endDate?: Date | null
-    productIds: string[]
+    name: string;
+    description?: string | null;
+    quantity: number;
+    price: number;
+    active: boolean;
+    startDate?: Date | null;
+    endDate?: Date | null;
+    productIds: string[];
   }) => {
-    if (!editingOffer) return
-    await updateOffer(editingOffer.id, data)
-    router.refresh()
-    setEditingOffer(null)
-    setShowForm(false)
-  }
+    if (!editingOffer) return;
+    await updateOffer(editingOffer.id, data);
+    router.refresh();
+    setEditingOffer(null);
+    setShowForm(false);
+  };
 
   const handleDelete = async (id: string) => {
-    if (confirm('Are you sure you want to delete this offer?')) {
-      await deleteOffer(id)
-      router.refresh()
+    if (confirm("Are you sure you want to delete this offer?")) {
+      await deleteOffer(id);
+      router.refresh();
     }
-  }
+  };
 
   const handleEdit = (offer: Offer) => {
-    setEditingOffer(offer)
-    setShowForm(true)
-  }
+    setEditingOffer(offer);
+    setShowForm(true);
+  };
 
   const handleCancel = () => {
-    setShowForm(false)
-    setEditingOffer(null)
-  }
+    setShowForm(false);
+    setEditingOffer(null);
+  };
 
   const formatDate = (date: Date | null | undefined) => {
-    if (!date) return 'Not set'
-    return new Date(date).toLocaleDateString('en-GB', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-    })
-  }
+    if (!date) return "Not set";
+    return new Date(date).toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -141,7 +141,9 @@ export default function OffersPageClient({
               >
                 ← Back
               </Link>
-              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Offers</h1>
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
+                Offers
+              </h1>
             </div>
             {!showForm && (
               <button
@@ -160,7 +162,7 @@ export default function OffersPageClient({
         {showForm ? (
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 mb-4 sm:mb-6">
             <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">
-              {editingOffer ? 'Edit Offer' : 'Add New Offer'}
+              {editingOffer ? "Edit Offer" : "Add New Offer"}
             </h2>
             <OfferForm
               offer={editingOffer || undefined}
@@ -175,7 +177,10 @@ export default function OffersPageClient({
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4 sm:mb-6">
             <p className="text-sm text-yellow-800">
               <strong>Note:</strong> You need to create products before you can
-              create offers. <Link href="/admin/products" className="underline">Go to Products</Link>
+              create offers.{" "}
+              <Link href="/admin/products" className="underline">
+                Go to Products
+              </Link>
             </p>
           </div>
         )}
@@ -201,29 +206,36 @@ export default function OffersPageClient({
                         </p>
                       )}
                       <div className="text-sm text-gray-900 mb-2">
-                        Any <span className="font-semibold">{offer.quantity}</span> for{' '}
-                        <span className="font-semibold">£{offer.price.toFixed(2)}</span>
+                        Any{" "}
+                        <span className="font-semibold">{offer.quantity}</span>{" "}
+                        for{" "}
+                        <span className="font-semibold">
+                          £{offer.price.toFixed(2)}
+                        </span>
                       </div>
                       <div className="flex items-center gap-2 mb-2">
                         <span
                           className={`px-3 py-1 rounded-full text-xs font-medium ${
                             offer.active
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-gray-100 text-gray-800'
+                              ? "bg-green-100 text-green-800"
+                              : "bg-gray-100 text-gray-800"
                           }`}
                         >
-                          {offer.active ? 'Active' : 'Inactive'}
+                          {offer.active ? "Active" : "Inactive"}
                         </span>
                         <span className="text-xs text-gray-600">
-                          {offer.productIds.length} product{offer.productIds.length !== 1 ? 's' : ''}
+                          {offer.productIds.length} product
+                          {offer.productIds.length !== 1 ? "s" : ""}
                         </span>
                       </div>
                       <div className="text-xs text-gray-600 space-y-1">
                         <div>
-                          <span className="font-medium">Start:</span> {formatDate(offer.startDate)}
+                          <span className="font-medium">Start:</span>{" "}
+                          {formatDate(offer.startDate)}
                         </div>
                         <div>
-                          <span className="font-medium">End:</span> {formatDate(offer.endDate)}
+                          <span className="font-medium">End:</span>{" "}
+                          {formatDate(offer.endDate)}
                         </div>
                       </div>
                     </div>
@@ -285,35 +297,41 @@ export default function OffersPageClient({
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm text-gray-900">
-                            Any <span className="font-semibold">{offer.quantity}</span> for{' '}
-                            <span className="font-semibold">£{offer.price.toFixed(2)}</span>
+                            Any{" "}
+                            <span className="font-semibold">
+                              {offer.quantity}
+                            </span>{" "}
+                            for{" "}
+                            <span className="font-semibold">
+                              £{offer.price.toFixed(2)}
+                            </span>
                           </div>
                         </td>
                         <td className="px-6 py-4">
                           <div className="text-sm text-gray-600">
                             {offer.productIds.length} product
-                            {offer.productIds.length !== 1 ? 's' : ''}
+                            {offer.productIds.length !== 1 ? "s" : ""}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span
                             className={`px-3 py-1 rounded-full text-xs font-medium ${
                               offer.active
-                                ? 'bg-green-100 text-green-800'
-                                : 'bg-gray-100 text-gray-800'
+                                ? "bg-green-100 text-green-800"
+                                : "bg-gray-100 text-gray-800"
                             }`}
                           >
-                            {offer.active ? 'Active' : 'Inactive'}
+                            {offer.active ? "Active" : "Inactive"}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-xs text-gray-600">
                             <div>
-                              <span className="font-medium">Start:</span>{' '}
+                              <span className="font-medium">Start:</span>{" "}
                               {formatDate(offer.startDate)}
                             </div>
                             <div>
-                              <span className="font-medium">End:</span>{' '}
+                              <span className="font-medium">End:</span>{" "}
                               {formatDate(offer.endDate)}
                             </div>
                           </div>
@@ -344,6 +362,5 @@ export default function OffersPageClient({
         </div>
       </div>
     </div>
-  )
+  );
 }
-

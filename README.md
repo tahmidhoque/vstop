@@ -5,6 +5,7 @@ A mobile-first ordering system webapp with separate end-user and admin interface
 ## Features
 
 ### End User Features
+
 - Password-protected store access
 - Browse products with real-time stock levels
 - Shopping basket with persistent state
@@ -12,6 +13,7 @@ A mobile-first ordering system webapp with separate end-user and admin interface
 - Stock validation (prevents ordering out-of-stock items)
 
 ### Admin Features
+
 - Separate admin login area
 - Dashboard with order statistics
 - Product management (add, edit, delete, adjust stock)
@@ -82,6 +84,7 @@ Access admin at [http://localhost:3000/admin/login](http://localhost:3000/admin/
 ## Default Passwords
 
 After running the seed script:
+
 - **Admin**: `admin123` (change this immediately in production!)
 - **Customer**: `customer123` (change via admin settings)
 
@@ -146,6 +149,7 @@ vstop/
 ## Mobile-First Design
 
 All interfaces are optimised for mobile devices with:
+
 - Touch-friendly buttons (minimum 44px height)
 - Responsive grid layouts
 - Sticky basket on mobile

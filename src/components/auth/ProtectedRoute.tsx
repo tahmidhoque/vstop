@@ -1,11 +1,11 @@
-import { redirect } from 'next/navigation'
-import { getSession } from '@/lib/auth'
-import { PasswordType } from '@/generated/enums'
+import { redirect } from "next/navigation";
+import { getSession } from "@/lib/auth";
+import { PasswordType } from "@/generated/enums";
 
 interface ProtectedRouteProps {
-  children: React.ReactNode
-  requiredType: PasswordType
-  redirectTo: string
+  children: React.ReactNode;
+  requiredType: PasswordType;
+  redirectTo: string;
 }
 
 export default async function ProtectedRoute({
@@ -13,11 +13,11 @@ export default async function ProtectedRoute({
   requiredType,
   redirectTo,
 }: ProtectedRouteProps) {
-  const session = await getSession()
+  const session = await getSession();
 
   if (session !== requiredType) {
-    redirect(redirectTo)
+    redirect(redirectTo);
   }
 
-  return <>{children}</>
+  return <>{children}</>;
 }

@@ -1,80 +1,76 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import ProductForm from '@/components/admin/ProductForm'
-import {
-  createProduct,
-  updateProduct,
-  deleteProduct,
-} from '@/lib/actions'
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import ProductForm from "@/components/admin/ProductForm";
+import { createProduct, updateProduct, deleteProduct } from "@/lib/actions";
 
 interface Product {
-  id: string
-  name: string
-  price: number | string
-  stock: number
-  variants?: Array<{ id: string; flavour: string; stock: number }>
+  id: string;
+  name: string;
+  price: number | string;
+  stock: number;
+  variants?: Array<{ id: string; flavour: string; stock: number }>;
 }
 
 interface ProductsPageClientProps {
-  initialProducts: Product[]
+  initialProducts: Product[];
 }
 
 export default function ProductsPageClient({
   initialProducts,
 }: ProductsPageClientProps) {
-  const [products, setProducts] = useState(initialProducts)
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null)
-  const [showForm, setShowForm] = useState(false)
-  const router = useRouter()
+  const [products, setProducts] = useState(initialProducts);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [showForm, setShowForm] = useState(false);
+  const router = useRouter();
 
   // Sync products when initialProducts changes (after router.refresh())
   useEffect(() => {
-    setProducts(initialProducts)
-  }, [initialProducts])
+    setProducts(initialProducts);
+  }, [initialProducts]);
 
   const handleCreate = async (data: {
-    name: string
-    price: number
-    stock: number
-    variants: Array<{ flavour: string; stock: number }>
+    name: string;
+    price: number;
+    stock: number;
+    variants: Array<{ flavour: string; stock: number }>;
   }) => {
-    await createProduct(data)
-    router.refresh()
-    setShowForm(false)
-  }
+    await createProduct(data);
+    router.refresh();
+    setShowForm(false);
+  };
 
   const handleUpdate = async (data: {
-    name: string
-    price: number
-    stock: number
-    variants: Array<{ id?: string; flavour: string; stock: number }>
+    name: string;
+    price: number;
+    stock: number;
+    variants: Array<{ id?: string; flavour: string; stock: number }>;
   }) => {
-    if (!editingProduct) return
-    await updateProduct(editingProduct.id, data)
-    router.refresh()
-    setEditingProduct(null)
-    setShowForm(false)
-  }
+    if (!editingProduct) return;
+    await updateProduct(editingProduct.id, data);
+    router.refresh();
+    setEditingProduct(null);
+    setShowForm(false);
+  };
 
   const handleDelete = async (id: string) => {
-    if (confirm('Are you sure you want to delete this product?')) {
-      await deleteProduct(id)
-      router.refresh()
+    if (confirm("Are you sure you want to delete this product?")) {
+      await deleteProduct(id);
+      router.refresh();
     }
-  }
+  };
 
   const handleEdit = (product: Product) => {
-    setEditingProduct(product)
-    setShowForm(true)
-  }
+    setEditingProduct(product);
+    setShowForm(true);
+  };
 
   const handleCancel = () => {
-    setShowForm(false)
-    setEditingProduct(null)
-  }
+    setShowForm(false);
+    setEditingProduct(null);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -88,7 +84,9 @@ export default function ProductsPageClient({
               >
                 ← Back
               </Link>
-              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Products</h1>
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
+                Products
+              </h1>
             </div>
             {!showForm && (
               <button
@@ -106,7 +104,7 @@ export default function ProductsPageClient({
         {showForm ? (
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 mb-4 sm:mb-6">
             <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">
-              {editingProduct ? 'Edit Product' : 'Add New Product'}
+              {editingProduct ? "Edit Product" : "Add New Product"}
             </h2>
             <ProductForm
               product={
@@ -153,11 +151,14 @@ export default function ProductsPageClient({
                                   key={variant.id}
                                   className={`text-xs ${
                                     variant.stock <= 5
-                                      ? 'text-orange-600'
-                                      : 'text-gray-600'
+                                      ? "text-orange-600"
+                                      : "text-gray-600"
                                   }`}
                                 >
-                                  {variant.flavour}: {variant.stock > 5 ? 'In Stock' : `${variant.stock} available`}
+                                  {variant.flavour}:{" "}
+                                  {variant.stock > 5
+                                    ? "In Stock"
+                                    : `${variant.stock} available`}
                                 </div>
                               ))}
                             </div>
@@ -165,10 +166,14 @@ export default function ProductsPageClient({
                         ) : (
                           <span
                             className={`text-sm font-medium ${
-                              product.stock <= 5 ? 'text-orange-600' : 'text-gray-600'
+                              product.stock <= 5
+                                ? "text-orange-600"
+                                : "text-gray-600"
                             }`}
                           >
-                            {product.stock > 5 ? 'In Stock' : `${product.stock} available`}
+                            {product.stock > 5
+                              ? "In Stock"
+                              : `${product.stock} available`}
                           </span>
                         )}
                       </div>
@@ -235,11 +240,14 @@ export default function ProductsPageClient({
                                     key={variant.id}
                                     className={`text-xs ${
                                       variant.stock <= 5
-                                        ? 'text-orange-600'
-                                        : 'text-gray-600'
+                                        ? "text-orange-600"
+                                        : "text-gray-600"
                                     }`}
                                   >
-                                    {variant.flavour}: {variant.stock > 5 ? 'In Stock' : `${variant.stock} available`}
+                                    {variant.flavour}:{" "}
+                                    {variant.stock > 5
+                                      ? "In Stock"
+                                      : `${variant.stock} available`}
                                   </div>
                                 ))}
                               </div>
@@ -247,10 +255,14 @@ export default function ProductsPageClient({
                           ) : (
                             <span
                               className={`text-sm font-medium ${
-                                product.stock <= 5 ? 'text-orange-600' : 'text-gray-900'
+                                product.stock <= 5
+                                  ? "text-orange-600"
+                                  : "text-gray-900"
                               }`}
                             >
-                              {product.stock > 5 ? 'In Stock' : `${product.stock} available`}
+                              {product.stock > 5
+                                ? "In Stock"
+                                : `${product.stock} available`}
                             </span>
                           )}
                         </td>
@@ -280,6 +292,5 @@ export default function ProductsPageClient({
         </div>
       </div>
     </div>
-  )
+  );
 }
-

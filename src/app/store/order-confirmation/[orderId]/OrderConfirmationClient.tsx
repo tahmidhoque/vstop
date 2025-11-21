@@ -1,74 +1,74 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { getOrder } from '@/lib/actions'
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { getOrder } from "@/lib/actions";
 
 interface OrderConfirmationClientProps {
-  orderId: string
+  orderId: string;
 }
 
 interface OrderItem {
-  id: string
-  productId: string
-  variantId: string | null
-  flavour: string | null
-  quantity: number
-  priceAtTime: number
+  id: string;
+  productId: string;
+  variantId: string | null;
+  flavour: string | null;
+  quantity: number;
+  priceAtTime: number;
   product: {
-    id: string
-    name: string
-    price: number
-  }
+    id: string;
+    name: string;
+    price: number;
+  };
   variant: {
-    id: string
-    flavour: string
-  } | null
+    id: string;
+    flavour: string;
+  } | null;
 }
 
 interface Order {
-  id: string
-  orderNumber: string
-  username: string
-  status: string
-  createdAt: Date
-  items: OrderItem[]
+  id: string;
+  orderNumber: string;
+  username: string;
+  status: string;
+  createdAt: Date;
+  items: OrderItem[];
 }
 
 export default function OrderConfirmationClient({
   orderId,
 }: OrderConfirmationClientProps) {
-  const [order, setOrder] = useState<Order | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
-  const router = useRouter()
+  const [order, setOrder] = useState<Order | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const router = useRouter();
 
   useEffect(() => {
     async function loadOrder() {
       try {
-        const orderData = await getOrder(orderId)
+        const orderData = await getOrder(orderId);
         if (!orderData) {
-          setError('Order not found')
-          return
+          setError("Order not found");
+          return;
         }
-        setOrder(orderData as Order)
+        setOrder(orderData as Order);
       } catch (err) {
-        console.error('Failed to load order:', err)
-        setError('Failed to load order details')
+        console.error("Failed to load order:", err);
+        setError("Failed to load order details");
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
     }
 
-    loadOrder()
-  }, [orderId])
+    loadOrder();
+  }, [orderId]);
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <p className="text-gray-600">Loading order details...</p>
       </div>
-    )
+    );
   }
 
   if (error || !order) {
@@ -76,36 +76,38 @@ export default function OrderConfirmationClient({
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="max-w-md mx-auto px-4 text-center">
           <div className="bg-red-50 border border-red-200 rounded-lg p-6 mb-4">
-            <p className="text-red-700 font-medium">{error || 'Order not found'}</p>
+            <p className="text-red-700 font-medium">
+              {error || "Order not found"}
+            </p>
           </div>
           <button
-            onClick={() => router.push('/store')}
+            onClick={() => router.push("/store")}
             className="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
           >
             Return to Store
           </button>
         </div>
       </div>
-    )
+    );
   }
 
   // Calculate totals (simplified - assuming no offers applied at confirmation)
   const subtotal = order.items.reduce(
     (sum, item) => sum + Number(item.priceAtTime) * item.quantity,
-    0
-  )
-  const total = subtotal
+    0,
+  );
+  const total = subtotal;
 
   const formatDate = (date: Date | string) => {
-    const d = new Date(date)
-    return d.toLocaleDateString('en-GB', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    })
-  }
+    const d = new Date(date);
+    return d.toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
@@ -126,25 +128,32 @@ export default function OrderConfirmationClient({
                 d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
               />
             </svg>
-            <h1 className="text-2xl font-bold text-green-800">Order Confirmed!</h1>
+            <h1 className="text-2xl font-bold text-green-800">
+              Order Confirmed!
+            </h1>
           </div>
           <p className="text-green-700">
-            Thank you for your order, {order.username}. Your order has been received and is being processed.
+            Thank you for your order, {order.username}. Your order has been
+            received and is being processed.
           </p>
         </div>
 
         {/* Order Details Card */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
           <h2 className="text-lg font-semibold mb-4">Order Details</h2>
-          
+
           <div className="space-y-3 mb-6">
             <div className="flex justify-between">
               <span className="text-gray-600">Order Number:</span>
-              <span className="font-mono font-semibold text-gray-900">{order.orderNumber}</span>
+              <span className="font-mono font-semibold text-gray-900">
+                {order.orderNumber}
+              </span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600">Order Date:</span>
-              <span className="text-gray-900">{formatDate(order.createdAt)}</span>
+              <span className="text-gray-900">
+                {formatDate(order.createdAt)}
+              </span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600">Status:</span>
@@ -190,8 +199,12 @@ export default function OrderConfirmationClient({
                 <span className="text-gray-900">£{subtotal.toFixed(2)}</span>
               </div>
               <div className="flex justify-between items-center pt-2 border-t border-gray-200">
-                <span className="text-base sm:text-lg font-semibold">Total:</span>
-                <span className="text-xl sm:text-2xl font-bold">£{total.toFixed(2)}</span>
+                <span className="text-base sm:text-lg font-semibold">
+                  Total:
+                </span>
+                <span className="text-xl sm:text-2xl font-bold">
+                  £{total.toFixed(2)}
+                </span>
               </div>
             </div>
           </div>
@@ -200,7 +213,7 @@ export default function OrderConfirmationClient({
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-3">
           <button
-            onClick={() => router.push('/store')}
+            onClick={() => router.push("/store")}
             className="w-full sm:flex-1 py-3 px-4 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 active:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors min-h-[44px]"
           >
             Continue Shopping
@@ -208,6 +221,5 @@ export default function OrderConfirmationClient({
         </div>
       </div>
     </div>
-  )
+  );
 }
-

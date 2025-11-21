@@ -1,7 +1,7 @@
-'use client'
+"use client";
 
-import Link from 'next/link'
-import PasswordChangeForm from '@/components/admin/PasswordChangeForm'
+import Link from "next/link";
+import PasswordChangeForm from "@/components/admin/PasswordChangeForm";
 
 export default function SettingsPageClient() {
   return (
@@ -14,7 +14,9 @@ export default function SettingsPageClient() {
           >
             ← Back to Dashboard
           </Link>
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Settings</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
+            Settings
+          </h1>
         </div>
       </div>
 
@@ -24,13 +26,12 @@ export default function SettingsPageClient() {
             Change End User Password
           </h2>
           <p className="text-xs sm:text-sm text-gray-600 mb-6">
-            Update the password that end users need to enter to access the store.
+            Update the password that end users need to enter to access the
+            store.
           </p>
           <PasswordChangeForm />
         </div>
       </div>
     </div>
-  )
+  );
 }
-
-

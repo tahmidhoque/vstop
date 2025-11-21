@@ -3,5 +3,3 @@
   "installCommand": "npm install",
   "framework": "nextjs"
 }
-
-

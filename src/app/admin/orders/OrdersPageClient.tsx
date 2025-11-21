@@ -1,11 +1,11 @@
-'use client'
+"use client";
 
-import Link from 'next/link'
-import OrderList from '@/components/admin/OrderList'
-import type { OrderWithItems } from '@/types'
+import Link from "next/link";
+import OrderList from "@/components/admin/OrderList";
+import type { OrderWithItems } from "@/types";
 
 interface OrdersPageClientProps {
-  orders: OrderWithItems[]
+  orders: OrderWithItems[];
 }
 
 export default function OrdersPageClient({ orders }: OrdersPageClientProps) {
@@ -19,7 +19,9 @@ export default function OrdersPageClient({ orders }: OrdersPageClientProps) {
           >
             ← Back to Dashboard
           </Link>
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Orders</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
+            Orders
+          </h1>
         </div>
       </div>
 
@@ -27,7 +29,5 @@ export default function OrdersPageClient({ orders }: OrdersPageClientProps) {
         <OrderList orders={orders} />
       </div>
     </div>
-  )
+  );
 }
-
-
