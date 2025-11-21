@@ -1004,6 +1004,7 @@ export type ProductVariantScalarFieldEnum = (typeof ProductVariantScalarFieldEnu
 
 export const OrderScalarFieldEnum = {
   id: 'id',
+  orderNumber: 'orderNumber',
   username: 'username',
   status: 'status',
   createdAt: 'createdAt',

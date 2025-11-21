@@ -8,7 +8,7 @@ import { calculateOffers, type Offer } from '@/lib/offer-utils'
 interface CheckoutFormProps {
   items: BasketItem[]
   offers?: Offer[]
-  onSubmit: (username: string, items: BasketItem[]) => Promise<void>
+  onSubmit: (username: string, items: BasketItem[]) => Promise<{ id: string } | void>
 }
 
 export default function CheckoutForm({ items, offers = [], onSubmit }: CheckoutFormProps) {
@@ -26,8 +26,12 @@ export default function CheckoutForm({ items, offers = [], onSubmit }: CheckoutF
     setLoading(true)
 
     try {
-      await onSubmit(username, items)
-      router.push('/store?success=true')
+      const order = await onSubmit(username, items)
+      if (order && order.id) {
+        router.push(`/store/order-confirmation/${order.id}`)
+      } else {
+        router.push('/store?success=true')
+      }
       router.refresh()
     } catch (err) {
       setError(

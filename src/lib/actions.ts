@@ -29,9 +29,27 @@ export async function createOrder(username: string, items: BasketItem[]) {
     }
   }
 
+  // Generate order number - use a transaction-safe approach
+  // Get the highest order number and increment, or start at 1
+  const lastOrder = await db.order.findFirst({
+    orderBy: { createdAt: 'desc' },
+    select: { orderNumber: true },
+  })
+  
+  let orderNumber: string
+  if (lastOrder?.orderNumber) {
+    // Extract the number from the last order number (e.g., "ORD-000001" -> 1)
+    const lastNum = parseInt(lastOrder.orderNumber.replace('ORD-', ''), 10)
+    orderNumber = `ORD-${String(lastNum + 1).padStart(6, '0')}`
+  } else {
+    // First order
+    orderNumber = 'ORD-000001'
+  }
+
   // Create order and items, then update stock
   const order = await db.order.create({
     data: {
+      orderNumber,
       username,
       status: 'PENDING',
       items: {

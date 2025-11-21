@@ -133,7 +133,7 @@ export default function OrderList({ orders }: OrderListProps) {
                     {order.username}
                   </h3>
                   <p className="text-xs sm:text-sm text-gray-600">
-                    {formatDate(order.createdAt)}
+                    Order: <span className="font-mono font-medium">{order.orderNumber}</span> • {formatDate(order.createdAt)}
                   </p>
                 </div>
                 <div className="flex items-center gap-2 sm:gap-3">

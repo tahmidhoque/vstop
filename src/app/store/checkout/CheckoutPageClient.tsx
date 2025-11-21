@@ -40,8 +40,9 @@ export default function CheckoutPageClient() {
   }, [router])
 
   const handleSubmit = async (username: string, items: BasketItem[]) => {
-    await createOrder(username, items)
+    const order = await createOrder(username, items)
     localStorage.removeItem('basket')
+    return order
   }
 
   if (basket.length === 0) {

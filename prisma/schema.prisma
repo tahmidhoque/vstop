@@ -57,12 +57,13 @@ model ProductVariant {
 }
 
 model Order {
-  id        String      @id @default(cuid())
-  username  String
-  status    OrderStatus @default(PENDING)
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
-  items     OrderItem[]
+  id         String      @id @default(cuid())
+  orderNumber String    @unique
+  username   String
+  status     OrderStatus @default(PENDING)
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  items      OrderItem[]
 }
 
 model OrderItem {

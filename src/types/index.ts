@@ -13,6 +13,7 @@ export interface BasketItem {
 
 export interface OrderWithItems {
   id: string
+  orderNumber: string
   username: string
   status: OrderStatus
   createdAt: Date
