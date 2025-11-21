@@ -1,23 +1,22 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
-import OrdersPageClient from "./OrdersPageClient";
-import { getOrders } from "@/lib/actions";
+import StockPageClient from "./StockPageClient";
+import { getProducts } from "@/lib/actions";
 
-export default async function OrdersPage() {
+export default async function StockPage() {
   const session = await getSession();
 
   if (session !== "ADMIN") {
     redirect("/admin/login");
   }
 
-  const orders = await getOrders();
+  const products = await getProducts(true); // includeHidden: true
 
   return (
     <ProtectedRoute requiredType="ADMIN" redirectTo="/admin/login">
-      <OrdersPageClient orders={orders} />
+      <StockPageClient products={products} />
     </ProtectedRoute>
   );
 }
-
 

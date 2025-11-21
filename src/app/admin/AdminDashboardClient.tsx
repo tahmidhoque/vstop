@@ -131,6 +131,17 @@ export default function AdminDashboardClient({
               Change end user password
             </p>
           </Link>
+          <Link
+            href="/admin/stock"
+            className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 hover:border-blue-500 hover:shadow-md active:bg-gray-50 transition-all block min-h-[44px]"
+          >
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-1 sm:mb-2">
+              Stock Check
+            </h3>
+            <p className="text-xs sm:text-sm text-gray-600">
+              View all product and variant stock levels
+            </p>
+          </Link>
         </div>
 
         {/* Recent Orders */}
