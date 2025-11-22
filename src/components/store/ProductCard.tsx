@@ -106,7 +106,8 @@ export default function ProductCard({
               const variant = variants.find((v) => v.id === e.target.value);
               setSelectedVariant(variant || null);
             }}
-            className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm min-h-[44px]"
+            className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm min-h-[44px] touch-manipulation"
+            style={{ touchAction: 'manipulation' }}
           >
             <option value="">Choose a flavour...</option>
             {variants.map((variant) => (
@@ -119,7 +120,7 @@ export default function ProductCard({
         </div>
       )}
 
-      <div className="mt-auto pt-2">
+      <div className="mt-auto pt-2 pb-1">
         <p className="text-xl sm:text-2xl font-bold text-gray-900 mb-2 sm:mb-3">
           £{Number(price).toFixed(2)}
         </p>
@@ -142,7 +143,8 @@ export default function ProductCard({
           <button
             onClick={handleAdd}
             disabled={isOutOfStock || (variants.length > 0 && !selectedVariant)}
-            className="w-full sm:w-auto px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-h-[44px] active:bg-blue-800"
+            className="w-full sm:w-auto px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-h-[44px] active:bg-blue-800 touch-manipulation"
+            style={{ touchAction: 'manipulation' }}
           >
             Add to Basket
           </button>

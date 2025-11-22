@@ -211,7 +211,7 @@ export default function StorePageClient() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6 pb-24 md:pb-6">
         <div className="flex flex-col md:flex-row gap-4 md:gap-6">
           <div className="flex-1">
             <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">
@@ -222,7 +222,7 @@ export default function StorePageClient() {
                 <p>No products available</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-4">
                 {products.map((product) => (
                   <ProductCard
                     key={product.id}
