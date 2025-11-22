@@ -426,6 +426,15 @@ export async function deleteOrder(orderId: string) {
   revalidatePath("/admin/orders");
 }
 
+export async function deleteAllOrders() {
+  // Delete all orders (items will be deleted automatically due to cascade)
+  // Note: We do NOT restore stock here as this is for deleting historical records,
+  // not cancelling active orders. Stock was already deducted when orders were created.
+  await db.order.deleteMany({});
+
+  revalidatePath("/admin/orders");
+}
+
 export async function getProducts(includeHidden: boolean = false) {
   const products = await db.product.findMany({
     where: includeHidden ? undefined : { visible: true },

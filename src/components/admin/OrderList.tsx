@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { OrderStatus } from "@/generated/enums";
 import OrderEditModal from "./OrderEditModal";
-import { updateOrderStatus, updateOrder, deleteOrder } from "@/lib/actions";
+import { updateOrderStatus, updateOrder, deleteOrder, deleteAllOrders } from "@/lib/actions";
 import { formatDate } from "@/lib/date-utils";
 import type { OrderWithItems } from "@/types";
 
@@ -15,6 +15,8 @@ export default function OrderList({ orders }: OrderListProps) {
   const [editingOrder, setEditingOrder] = useState<OrderWithItems | null>(null);
   const [filter, setFilter] = useState<OrderStatus | "ALL">("ALL");
   const [deletingOrderId, setDeletingOrderId] = useState<string | null>(null);
+  const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false);
+  const [deletingAll, setDeletingAll] = useState(false);
 
   const filteredOrders =
     filter === "ALL"
@@ -55,6 +57,21 @@ export default function OrderList({ orders }: OrderListProps) {
     }
   };
 
+  const handleDeleteAll = async () => {
+    setDeletingAll(true);
+    try {
+      await deleteAllOrders();
+      window.location.reload();
+    } catch (error) {
+      alert(
+        "Failed to delete all orders: " +
+          (error instanceof Error ? error.message : "Unknown error"),
+      );
+      setDeletingAll(false);
+      setShowDeleteAllConfirm(false);
+    }
+  };
+
   const totalValue = (order: OrderWithItems) => {
     // If total override is set, use it
     if (order.totalOverride) {
@@ -78,7 +95,8 @@ export default function OrderList({ orders }: OrderListProps) {
   return (
     <>
       <div className="mb-4">
-        <div className="flex gap-2 overflow-x-auto pb-2 -mx-3 sm:mx-0 px-3 sm:px-0 scrollbar-hide">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-4">
+          <div className="flex gap-2 overflow-x-auto pb-2 -mx-3 sm:mx-0 px-3 sm:px-0 scrollbar-hide flex-1">
           <button
             onClick={() => setFilter("ALL")}
             className={`px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap min-h-[44px] flex-shrink-0 active:scale-95 transition-transform ${
@@ -130,6 +148,15 @@ export default function OrderList({ orders }: OrderListProps) {
           >
             Cancelled ({orders.filter((o) => o.status === "CANCELLED").length})
           </button>
+          </div>
+          {orders.length > 0 && (
+            <button
+              onClick={() => setShowDeleteAllConfirm(true)}
+              className="w-full sm:w-auto px-4 py-2.5 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 active:bg-red-800 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 min-h-[44px] transition-colors whitespace-nowrap"
+            >
+              Delete All Orders
+            </button>
+          )}
         </div>
       </div>
 
@@ -333,6 +360,66 @@ export default function OrderList({ orders }: OrderListProps) {
           onClose={() => setEditingOrder(null)}
           onSave={handleEditSubmit}
         />
+      )}
+
+      {showDeleteAllConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+            <div className="p-4 sm:p-6">
+              <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">
+                Delete All Orders
+              </h2>
+              <p className="text-sm sm:text-base text-gray-700 mb-6">
+                Are you sure you want to delete all {orders.length} order{orders.length !== 1 ? "s" : ""}? This action cannot be undone. This will permanently delete all order history.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button
+                  onClick={() => {
+                    setShowDeleteAllConfirm(false);
+                    setDeletingAll(false);
+                  }}
+                  disabled={deletingAll}
+                  className="w-full sm:flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 active:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-h-[44px]"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeleteAll}
+                  disabled={deletingAll}
+                  className="w-full sm:flex-1 px-4 py-2.5 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 active:bg-red-800 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-h-[44px] flex items-center justify-center gap-2"
+                >
+                  {deletingAll ? (
+                    <>
+                      <svg
+                        className="animate-spin h-5 w-5 text-white"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                      </svg>
+                      Deleting...
+                    </>
+                  ) : (
+                    "Delete All Orders"
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </>
   );
