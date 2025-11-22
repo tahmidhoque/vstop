@@ -828,7 +828,11 @@ export async function getOrder(id: string) {
   };
 }
 
-export async function getReportsData(startDate: Date, endDate: Date) {
+export async function getReportsData(
+  startDate: Date,
+  endDate: Date,
+  includeStatuses?: string[],
+) {
   // Set startDate to beginning of day and endDate to end of day
   const start = new Date(startDate);
   start.setHours(0, 0, 0, 0);
@@ -842,6 +846,9 @@ export async function getReportsData(startDate: Date, endDate: Date) {
         gte: start,
         lte: end,
       },
+      ...(includeStatuses && includeStatuses.length > 0
+        ? { status: { in: includeStatuses } }
+        : {}),
     },
     include: {
       items: {
@@ -861,7 +868,7 @@ export async function getReportsData(startDate: Date, endDate: Date) {
     (o) => o.status === "UNFULFILLED",
   ).length;
 
-  // Calculate total sales from non-cancelled orders
+  // Calculate total sales from non-cancelled orders in filtered set
   const totalSales = orders
     .filter((order) => order.status !== "CANCELLED")
     .reduce((sum, order) => {

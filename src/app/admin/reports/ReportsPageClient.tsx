@@ -7,6 +7,7 @@ import { logoutAction } from "@/lib/auth-actions";
 import { getReportsData } from "@/lib/actions";
 import { formatDate } from "@/lib/date-utils";
 import type { OrderWithItems } from "@/types";
+import { OrderStatus } from "@/generated/enums";
 
 interface ReportsData {
   totalOrders: number;
@@ -17,16 +18,25 @@ interface ReportsData {
   orders: OrderWithItems[];
 }
 
+interface StatusFilters {
+  PENDING: boolean;
+  UNFULFILLED: boolean;
+  FULFILLED: boolean;
+  CANCELLED: boolean;
+}
+
 interface ReportsPageClientProps {
   initialData: ReportsData;
   initialStartDate: Date;
   initialEndDate: Date;
+  initialStatusFilters: StatusFilters;
 }
 
 export default function ReportsPageClient({
   initialData,
   initialStartDate,
   initialEndDate,
+  initialStatusFilters,
 }: ReportsPageClientProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -37,6 +47,8 @@ export default function ReportsPageClient({
   const [endDate, setEndDate] = useState<string>(
     initialEndDate.toISOString().split("T")[0],
   );
+  const [statusFilters, setStatusFilters] =
+    useState<StatusFilters>(initialStatusFilters);
 
   const handleLogout = async () => {
     await logoutAction();
@@ -54,7 +66,16 @@ export default function ReportsPageClient({
         return;
       }
 
-      const data = await getReportsData(start, end);
+      // Build array of statuses to include based on filter checkboxes
+      const includeStatuses: string[] = [];
+      if (statusFilters.PENDING) includeStatuses.push(OrderStatus.PENDING);
+      if (statusFilters.UNFULFILLED)
+        includeStatuses.push(OrderStatus.UNFULFILLED);
+      if (statusFilters.FULFILLED) includeStatuses.push(OrderStatus.FULFILLED);
+      if (statusFilters.CANCELLED)
+        includeStatuses.push(OrderStatus.CANCELLED);
+
+      const data = await getReportsData(start, end, includeStatuses);
       setReportsData(data);
     });
   };
@@ -139,6 +160,139 @@ export default function ReportsPageClient({
           </div>
         </div>
 
+        {/* Status Filters */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 mb-4 sm:mb-8">
+          <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">
+            Order Status Filters
+          </h2>
+          <p className="text-xs sm:text-sm text-gray-600 mb-4">
+            Select which order statuses to include in the report. Filters apply
+            to all statistics, sales calculations, and the transactions list.
+          </p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
+            <div className="flex items-center">
+              <input
+                id="filter-pending"
+                type="checkbox"
+                checked={statusFilters.PENDING}
+                onChange={(e) =>
+                  setStatusFilters({
+                    ...statusFilters,
+                    PENDING: e.target.checked,
+                  })
+                }
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                disabled={isPending}
+              />
+              <label
+                htmlFor="filter-pending"
+                className="ml-2 text-sm font-medium text-gray-700"
+              >
+                Pending
+              </label>
+            </div>
+            <div className="flex items-center">
+              <input
+                id="filter-unfulfilled"
+                type="checkbox"
+                checked={statusFilters.UNFULFILLED}
+                onChange={(e) =>
+                  setStatusFilters({
+                    ...statusFilters,
+                    UNFULFILLED: e.target.checked,
+                  })
+                }
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                disabled={isPending}
+              />
+              <label
+                htmlFor="filter-unfulfilled"
+                className="ml-2 text-sm font-medium text-gray-700"
+              >
+                Unfulfilled
+              </label>
+            </div>
+            <div className="flex items-center">
+              <input
+                id="filter-fulfilled"
+                type="checkbox"
+                checked={statusFilters.FULFILLED}
+                onChange={(e) =>
+                  setStatusFilters({
+                    ...statusFilters,
+                    FULFILLED: e.target.checked,
+                  })
+                }
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                disabled={isPending}
+              />
+              <label
+                htmlFor="filter-fulfilled"
+                className="ml-2 text-sm font-medium text-gray-700"
+              >
+                Fulfilled
+              </label>
+            </div>
+            <div className="flex items-center">
+              <input
+                id="filter-cancelled"
+                type="checkbox"
+                checked={statusFilters.CANCELLED}
+                onChange={(e) =>
+                  setStatusFilters({
+                    ...statusFilters,
+                    CANCELLED: e.target.checked,
+                  })
+                }
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                disabled={isPending}
+              />
+              <label
+                htmlFor="filter-cancelled"
+                className="ml-2 text-sm font-medium text-gray-700"
+              >
+                Cancelled
+              </label>
+            </div>
+          </div>
+          {/* Helper Tips */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <h3 className="text-sm font-semibold text-blue-900 mb-2">
+              💡 How to Use Status Filters
+            </h3>
+            <ul className="text-xs sm:text-sm text-blue-800 space-y-1.5">
+              <li className="flex items-start">
+                <span className="mr-2">•</span>
+                <span>
+                  <strong>Check the boxes</strong> for statuses you want to
+                  include in the report
+                </span>
+              </li>
+              <li className="flex items-start">
+                <span className="mr-2">•</span>
+                <span>
+                  <strong>Click "Update Report"</strong> after changing filters
+                  to refresh the data
+                </span>
+              </li>
+              <li className="flex items-start">
+                <span className="mr-2">•</span>
+                <span>
+                  <strong>Example:</strong> To see only completed orders, check
+                  "Fulfilled" and uncheck all others
+                </span>
+              </li>
+              <li className="flex items-start">
+                <span className="mr-2">•</span>
+                <span>
+                  <strong>Note:</strong> Cancelled orders are always excluded
+                  from sales calculations, even if checked
+                </span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
         {/* Statistics Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-8">
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
@@ -185,7 +339,7 @@ export default function ReportsPageClient({
               {formatCurrency(reportsData.totalSales)}
             </p>
             <p className="text-xs sm:text-sm text-gray-500 mt-2">
-              Excluding cancelled orders
+              Based on selected filters (excluding cancelled orders from sales)
             </p>
           </div>
         </div>
