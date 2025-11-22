@@ -67,7 +67,7 @@ export default function ReportsPageClient({
       }
 
       // Build array of statuses to include based on filter checkboxes
-      const includeStatuses: string[] = [];
+      const includeStatuses: OrderStatus[] = [];
       if (statusFilters.PENDING) includeStatuses.push(OrderStatus.PENDING);
       if (statusFilters.UNFULFILLED)
         includeStatuses.push(OrderStatus.UNFULFILLED);

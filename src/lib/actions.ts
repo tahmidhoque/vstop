@@ -831,7 +831,7 @@ export async function getOrder(id: string) {
 export async function getReportsData(
   startDate: Date,
   endDate: Date,
-  includeStatuses?: string[],
+  includeStatuses?: OrderStatus[],
 ) {
   // Set startDate to beginning of day and endDate to end of day
   const start = new Date(startDate);
