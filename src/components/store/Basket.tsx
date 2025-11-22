@@ -36,7 +36,11 @@ export default function Basket({
         {/* Mobile empty basket - just show the button, no fixed message */}
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="fixed bottom-4 right-4 md:hidden bg-blue-600 text-white px-5 py-3 rounded-full shadow-lg font-medium flex items-center gap-2 min-h-[56px] min-w-[56px] z-40 active:bg-blue-700 transition-colors touch-manipulation"
+          className={`fixed bottom-4 right-4 md:hidden bg-blue-600 text-white px-5 py-3 rounded-full shadow-lg font-medium flex items-center gap-2 min-h-[56px] min-w-[56px] z-40 active:bg-blue-700 transition-all duration-300 ease-in-out touch-manipulation ${
+            isOpen
+              ? "opacity-0 scale-90 pointer-events-none"
+              : "opacity-100 scale-100"
+          }`}
           style={{ touchAction: 'manipulation' }}
           aria-label="Open basket"
         >
@@ -101,7 +105,11 @@ export default function Basket({
       {/* Mobile basket toggle button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-4 right-4 md:hidden bg-blue-600 text-white px-5 py-3 rounded-full shadow-lg font-medium flex items-center gap-2 min-h-[56px] min-w-[56px] z-40 active:bg-blue-700 transition-colors touch-manipulation"
+        className={`fixed bottom-4 right-4 md:hidden bg-blue-600 text-white px-5 py-3 rounded-full shadow-lg font-medium flex items-center gap-2 min-h-[56px] min-w-[56px] z-40 active:bg-blue-700 transition-all duration-300 ease-in-out touch-manipulation ${
+          isOpen
+            ? "opacity-0 scale-90 pointer-events-none"
+            : "opacity-100 scale-100"
+        }`}
         style={{ touchAction: 'manipulation' }}
         aria-label="Open basket"
       >
