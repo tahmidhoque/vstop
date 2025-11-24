@@ -922,6 +922,110 @@ export async function getReportsData(
     })),
   }));
 
+  // Calculate product breakdown from non-cancelled orders
+  // First, collect variant-level data
+  const variantMap = new Map<
+    string,
+    {
+      productId: string;
+      productName: string;
+      variantId: string | null;
+      variantFlavour: string | null;
+      totalQuantity: number;
+      totalRevenue: number;
+      orderIds: Set<string>;
+    }
+  >();
+
+  // Process items from non-cancelled orders
+  orders
+    .filter((order) => order.status !== "CANCELLED")
+    .forEach((order) => {
+      order.items.forEach((item) => {
+        // Create a unique key for product + variant combination
+        const key = `${item.productId}-${item.variantId || "base"}`;
+
+        if (!variantMap.has(key)) {
+          variantMap.set(key, {
+            productId: item.productId,
+            productName: item.product.name,
+            variantId: item.variantId || null,
+            variantFlavour: item.variant?.flavour || item.flavour || null,
+            totalQuantity: 0,
+            totalRevenue: 0,
+            orderIds: new Set(),
+          });
+        }
+
+        const breakdown = variantMap.get(key)!;
+        breakdown.totalQuantity += item.quantity;
+        breakdown.totalRevenue += Number(item.priceAtTime) * item.quantity;
+        breakdown.orderIds.add(order.id);
+      });
+    });
+
+  // Group variants by product
+  const productMap = new Map<
+    string,
+    {
+      productId: string;
+      productName: string;
+      totalQuantity: number;
+      totalRevenue: number;
+      orderIds: Set<string>;
+      variants: Array<{
+        variantId: string | null;
+        variantFlavour: string | null;
+        totalQuantity: number;
+        totalRevenue: number;
+        orderCount: number;
+      }>;
+    }
+  >();
+
+  // Group variants under products
+  variantMap.forEach((variant) => {
+    if (!productMap.has(variant.productId)) {
+      productMap.set(variant.productId, {
+        productId: variant.productId,
+        productName: variant.productName,
+        totalQuantity: 0,
+        totalRevenue: 0,
+        orderIds: new Set(),
+        variants: [],
+      });
+    }
+
+    const product = productMap.get(variant.productId)!;
+    product.totalQuantity += variant.totalQuantity;
+    product.totalRevenue += variant.totalRevenue;
+    variant.orderIds.forEach((id) => product.orderIds.add(id));
+    product.variants.push({
+      variantId: variant.variantId,
+      variantFlavour: variant.variantFlavour,
+      totalQuantity: variant.totalQuantity,
+      totalRevenue: variant.totalRevenue,
+      orderCount: variant.orderIds.size,
+    });
+  });
+
+  // Convert to array and sort variants within each product
+  const productBreakdown = Array.from(productMap.values()).map((product) => {
+    // Sort variants by revenue descending
+    product.variants.sort((a, b) => b.totalRevenue - a.totalRevenue);
+    return {
+      productId: product.productId,
+      productName: product.productName,
+      totalQuantity: product.totalQuantity,
+      totalRevenue: product.totalRevenue,
+      orderCount: product.orderIds.size,
+      variants: product.variants,
+    };
+  });
+
+  // Sort products by total revenue descending
+  productBreakdown.sort((a, b) => b.totalRevenue - a.totalRevenue);
+
   return {
     totalOrders,
     cancelledOrders,
@@ -929,5 +1033,6 @@ export async function getReportsData(
     unfulfilledOrders,
     totalSales,
     orders: ordersWithItems,
+    productBreakdown,
   };
 }

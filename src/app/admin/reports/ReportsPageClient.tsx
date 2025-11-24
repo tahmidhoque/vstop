@@ -1,22 +1,13 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import React, { useState, useTransition, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { logoutAction } from "@/lib/auth-actions";
 import { getReportsData } from "@/lib/actions";
 import { formatDate } from "@/lib/date-utils";
-import type { OrderWithItems } from "@/types";
+import type { OrderWithItems, ReportsData, ProductBreakdown } from "@/types";
 import { OrderStatus } from "@/generated/enums";
-
-interface ReportsData {
-  totalOrders: number;
-  cancelledOrders: number;
-  fulfilledOrders: number;
-  unfulfilledOrders: number;
-  totalSales: number;
-  orders: OrderWithItems[];
-}
 
 interface StatusFilters {
   PENDING: boolean;
@@ -49,6 +40,10 @@ export default function ReportsPageClient({
   );
   const [statusFilters, setStatusFilters] =
     useState<StatusFilters>(initialStatusFilters);
+  const [sortBy, setSortBy] = useState<
+    "product" | "quantity" | "revenue" | "orders"
+  >("revenue");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
 
   const handleLogout = async () => {
     await logoutAction();
@@ -89,6 +84,38 @@ export default function ReportsPageClient({
       (sum, item) => sum + Number(item.priceAtTime) * item.quantity,
       0,
     );
+  };
+
+  const sortedProductBreakdown = useMemo(() => {
+    const breakdown = [...(reportsData.productBreakdown || [])];
+    breakdown.sort((a, b) => {
+      let comparison = 0;
+      switch (sortBy) {
+        case "product":
+          comparison = a.productName.localeCompare(b.productName);
+          break;
+        case "quantity":
+          comparison = a.totalQuantity - b.totalQuantity;
+          break;
+        case "revenue":
+          comparison = a.totalRevenue - b.totalRevenue;
+          break;
+        case "orders":
+          comparison = a.orderCount - b.orderCount;
+          break;
+      }
+      return sortDirection === "asc" ? comparison : -comparison;
+    });
+    return breakdown;
+  }, [reportsData.productBreakdown, sortBy, sortDirection]);
+
+  const handleSort = (column: "product" | "quantity" | "revenue" | "orders") => {
+    if (sortBy === column) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortBy(column);
+      setSortDirection("desc");
+    }
   };
 
   return (
@@ -341,6 +368,171 @@ export default function ReportsPageClient({
             <p className="text-xs sm:text-sm text-gray-500 mt-2">
               Based on selected filters (excluding cancelled orders from sales)
             </p>
+          </div>
+        </div>
+
+        {/* Product Breakdown */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-4 sm:mb-8">
+          <div className="p-4 sm:p-6 border-b border-gray-200">
+            <h2 className="text-base sm:text-lg font-semibold text-gray-900">
+              Product Breakdown
+            </h2>
+            <p className="text-xs sm:text-sm text-gray-600 mt-1">
+              Sales breakdown by product for the selected period
+            </p>
+          </div>
+          <div className="p-4 sm:p-6">
+            {!reportsData.productBreakdown ||
+            reportsData.productBreakdown.length === 0 ? (
+              <p className="text-gray-600 text-center py-8">
+                No product sales found in the selected date range
+              </p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-gray-200">
+                      <th className="text-left py-3 px-4 text-xs sm:text-sm font-semibold text-gray-700">
+                        <button
+                          onClick={() => handleSort("product")}
+                          className="flex items-center gap-1 hover:text-gray-900 transition-colors"
+                        >
+                          Product
+                          {sortBy === "product" && (
+                            <span className="text-blue-600">
+                              {sortDirection === "asc" ? "↑" : "↓"}
+                            </span>
+                          )}
+                        </button>
+                      </th>
+                      <th className="text-right py-3 px-4 text-xs sm:text-sm font-semibold text-gray-700">
+                        <button
+                          onClick={() => handleSort("quantity")}
+                          className="flex items-center justify-end gap-1 hover:text-gray-900 transition-colors ml-auto"
+                        >
+                          Quantity Sold
+                          {sortBy === "quantity" && (
+                            <span className="text-blue-600">
+                              {sortDirection === "asc" ? "↑" : "↓"}
+                            </span>
+                          )}
+                        </button>
+                      </th>
+                      <th className="text-right py-3 px-4 text-xs sm:text-sm font-semibold text-gray-700">
+                        <button
+                          onClick={() => handleSort("revenue")}
+                          className="flex items-center justify-end gap-1 hover:text-gray-900 transition-colors ml-auto"
+                        >
+                          Total Revenue
+                          {sortBy === "revenue" && (
+                            <span className="text-blue-600">
+                              {sortDirection === "asc" ? "↑" : "↓"}
+                            </span>
+                          )}
+                        </button>
+                      </th>
+                      <th className="text-right py-3 px-4 text-xs sm:text-sm font-semibold text-gray-700">
+                        <button
+                          onClick={() => handleSort("orders")}
+                          className="flex items-center justify-end gap-1 hover:text-gray-900 transition-colors ml-auto"
+                        >
+                          Orders
+                          {sortBy === "orders" && (
+                            <span className="text-blue-600">
+                              {sortDirection === "asc" ? "↑" : "↓"}
+                            </span>
+                          )}
+                        </button>
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sortedProductBreakdown.map((product, productIndex) => (
+                      <React.Fragment key={product.productId}>
+                        {/* Product Total Row */}
+                        <tr className="bg-gray-50 border-b border-gray-200 hover:bg-gray-100 transition-colors">
+                          <td className="py-3 px-4">
+                            <div className="text-xs sm:text-sm font-semibold text-gray-900">
+                              {product.productName}
+                            </div>
+                          </td>
+                          <td className="py-3 px-4 text-right text-xs sm:text-sm font-semibold text-gray-900">
+                            {product.totalQuantity}
+                          </td>
+                          <td className="py-3 px-4 text-right text-xs sm:text-sm font-semibold text-gray-900">
+                            {formatCurrency(product.totalRevenue)}
+                          </td>
+                          <td className="py-3 px-4 text-right text-xs sm:text-sm font-semibold text-gray-600">
+                            {product.orderCount}
+                          </td>
+                        </tr>
+                        {/* Variant Rows */}
+                        {product.variants.map((variant, variantIndex) => (
+                          <tr
+                            key={`${product.productId}-${variant.variantId || "base"}`}
+                            className={`border-b border-gray-100 hover:bg-gray-50 transition-colors ${
+                              productIndex === sortedProductBreakdown.length - 1 &&
+                              variantIndex === product.variants.length - 1
+                                ? "border-b-0"
+                                : ""
+                            }`}
+                          >
+                            <td className="py-2 px-4 pl-8 sm:pl-12">
+                              <div className="text-xs sm:text-sm text-gray-600">
+                                {variant.variantFlavour ? (
+                                  <span className="text-gray-500">
+                                    {variant.variantFlavour}
+                                  </span>
+                                ) : (
+                                  <span className="text-gray-400 italic">
+                                    Base product
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="py-2 px-4 text-right text-xs sm:text-sm text-gray-600">
+                              {variant.totalQuantity}
+                            </td>
+                            <td className="py-2 px-4 text-right text-xs sm:text-sm text-gray-600">
+                              {formatCurrency(variant.totalRevenue)}
+                            </td>
+                            <td className="py-2 px-4 text-right text-xs sm:text-sm text-gray-500">
+                              {variant.orderCount}
+                            </td>
+                          </tr>
+                        ))}
+                      </React.Fragment>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr className="bg-gray-50 border-t-2 border-gray-200">
+                      <td className="py-3 px-4 text-xs sm:text-sm font-semibold text-gray-900">
+                        Total
+                      </td>
+                      <td className="py-3 px-4 text-right text-xs sm:text-sm font-semibold text-gray-900">
+                        {sortedProductBreakdown.reduce(
+                          (sum, p) => sum + p.totalQuantity,
+                          0,
+                        )}
+                      </td>
+                      <td className="py-3 px-4 text-right text-xs sm:text-sm font-semibold text-gray-900">
+                        {formatCurrency(
+                          sortedProductBreakdown.reduce(
+                            (sum, p) => sum + p.totalRevenue,
+                            0,
+                          ),
+                        )}
+                      </td>
+                      <td className="py-3 px-4 text-right text-xs sm:text-sm font-semibold text-gray-600">
+                        {reportsData.orders
+                          .filter((order) => order.status !== "CANCELLED")
+                          .length}
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            )}
           </div>
         </div>
 

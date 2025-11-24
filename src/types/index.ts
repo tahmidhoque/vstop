@@ -36,3 +36,30 @@ export interface OrderWithItems {
     } | null;
   }>;
 }
+
+export interface ProductBreakdownVariant {
+  variantId: string | null;
+  variantFlavour: string | null;
+  totalQuantity: number;
+  totalRevenue: number;
+  orderCount: number;
+}
+
+export interface ProductBreakdown {
+  productId: string;
+  productName: string;
+  totalQuantity: number;
+  totalRevenue: number;
+  orderCount: number;
+  variants: ProductBreakdownVariant[];
+}
+
+export interface ReportsData {
+  totalOrders: number;
+  cancelledOrders: number;
+  fulfilledOrders: number;
+  unfulfilledOrders: number;
+  totalSales: number;
+  orders: OrderWithItems[];
+  productBreakdown: ProductBreakdown[];
+}
