@@ -90,9 +90,7 @@ export default function StockPageClient({ products }: StockPageClientProps) {
                                   <span className="font-medium">
                                     {variant.flavour}:
                                   </span>{" "}
-                                  {variant.stock > 5
-                                    ? "In Stock"
-                                    : `${variant.stock} available`}
+                                  {variant.stock} available
                                 </div>
                               ))}
                             </div>
@@ -105,9 +103,7 @@ export default function StockPageClient({ products }: StockPageClientProps) {
                                 : "text-gray-700 bg-gray-50"
                             }`}
                           >
-                            {product.stock > 5
-                              ? "In Stock"
-                              : `${product.stock} available`}
+                            {product.stock} available
                           </div>
                         )}
                       </div>
@@ -177,9 +173,7 @@ export default function StockPageClient({ products }: StockPageClientProps) {
                                     <span className="font-medium">
                                       {variant.flavour}:
                                     </span>{" "}
-                                    {variant.stock > 5
-                                      ? "In Stock"
-                                      : `${variant.stock} available`}
+                                    {variant.stock} available
                                   </div>
                                 ))}
                               </div>
@@ -192,9 +186,7 @@ export default function StockPageClient({ products }: StockPageClientProps) {
                                   : "text-gray-900 bg-gray-50"
                               }`}
                             >
-                              {product.stock > 5
-                                ? "In Stock"
-                                : `${product.stock} available`}
+                              {product.stock} available
                             </div>
                           )}
                         </td>
