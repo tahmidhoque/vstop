@@ -225,46 +225,51 @@ export async function updateOrder(
     throw new Error("Order not found");
   }
 
-  // Restore stock from old items
-  for (const oldItem of order.items) {
-    if (oldItem.variantId) {
-      await db.productVariant.update({
-        where: { id: oldItem.variantId },
-        data: {
-          stock: {
-            increment: oldItem.quantity,
+  // Only restore stock from old items if order is not cancelled
+  // (cancelled orders already had their stock restored)
+  if (order.status !== "CANCELLED") {
+    for (const oldItem of order.items) {
+      if (oldItem.variantId) {
+        await db.productVariant.update({
+          where: { id: oldItem.variantId },
+          data: {
+            stock: {
+              increment: oldItem.quantity,
+            },
           },
-        },
-      });
-    } else {
-      await db.product.update({
-        where: { id: oldItem.productId },
-        data: {
-          stock: {
-            increment: oldItem.quantity,
+        });
+      } else {
+        await db.product.update({
+          where: { id: oldItem.productId },
+          data: {
+            stock: {
+              increment: oldItem.quantity,
+            },
           },
-        },
-      });
+        });
+      }
     }
   }
 
-  // Validate new stock availability
-  for (const item of items) {
-    if (item.variantId) {
-      const variant = await db.productVariant.findUnique({
-        where: { id: item.variantId },
-      });
+  // Validate new stock availability (only if order is not cancelled)
+  if (order.status !== "CANCELLED") {
+    for (const item of items) {
+      if (item.variantId) {
+        const variant = await db.productVariant.findUnique({
+          where: { id: item.variantId },
+        });
 
-      if (!variant || variant.stock < item.quantity) {
-        throw new Error(`Insufficient stock for ${item.name}`);
-      }
-    } else {
-      const product = await db.product.findUnique({
-        where: { id: item.productId },
-      });
+        if (!variant || variant.stock < item.quantity) {
+          throw new Error(`Insufficient stock for ${item.name}`);
+        }
+      } else {
+        const product = await db.product.findUnique({
+          where: { id: item.productId },
+        });
 
-      if (!product || product.stock < item.quantity) {
-        throw new Error(`Insufficient stock for ${item.name}`);
+        if (!product || product.stock < item.quantity) {
+          throw new Error(`Insufficient stock for ${item.name}`);
+        }
       }
     }
   }
@@ -357,26 +362,29 @@ export async function updateOrder(
     },
   });
 
-  // Deduct new stock
-  for (const item of items) {
-    if (item.variantId) {
-      await db.productVariant.update({
-        where: { id: item.variantId },
-        data: {
-          stock: {
-            decrement: item.quantity,
+  // Deduct new stock (only if order is not cancelled)
+  // (cancelled orders should not have stock deducted)
+  if (order.status !== "CANCELLED") {
+    for (const item of items) {
+      if (item.variantId) {
+        await db.productVariant.update({
+          where: { id: item.variantId },
+          data: {
+            stock: {
+              decrement: item.quantity,
+            },
           },
-        },
-      });
-    } else {
-      await db.product.update({
-        where: { id: item.productId },
-        data: {
-          stock: {
-            decrement: item.quantity,
+        });
+      } else {
+        await db.product.update({
+          where: { id: item.productId },
+          data: {
+            stock: {
+              decrement: item.quantity,
+            },
           },
-        },
-      });
+        });
+      }
     }
   }
 
