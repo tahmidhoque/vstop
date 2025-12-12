@@ -2,12 +2,24 @@
 
 import Link from "next/link";
 
+interface StockBreakdown {
+  physical: number;
+  pending: number;
+  available: number;
+}
+
 interface Product {
   id: string;
   name: string;
   stock: number;
   visible?: boolean;
-  variants?: Array<{ id: string; flavour: string; stock: number }>;
+  stockBreakdown: StockBreakdown;
+  variants?: Array<{
+    id: string;
+    flavour: string;
+    stock: number;
+    stockBreakdown: StockBreakdown;
+  }>;
 }
 
 interface StockPageClientProps {
@@ -15,12 +27,42 @@ interface StockPageClientProps {
 }
 
 export default function StockPageClient({ products }: StockPageClientProps) {
-  // Calculate total stock for each product
-  const calculateTotalStock = (product: Product): number => {
+  // Calculate total physical stock for each product
+  const calculateTotalPhysical = (product: Product): number => {
     if (product.variants && product.variants.length > 0) {
-      return product.variants.reduce((total, variant) => total + variant.stock, 0);
+      return product.variants.reduce(
+        (total, variant) => total + variant.stockBreakdown.physical,
+        0
+      );
     }
-    return product.stock || 0;
+    return product.stockBreakdown.physical;
+  };
+
+  // Calculate total pending stock for each product
+  const calculateTotalPending = (product: Product): number => {
+    if (product.variants && product.variants.length > 0) {
+      return product.variants.reduce(
+        (total, variant) => total + variant.stockBreakdown.pending,
+        0
+      );
+    }
+    return product.stockBreakdown.pending;
+  };
+
+  // Calculate total available stock for each product
+  const calculateTotalAvailable = (product: Product): number => {
+    if (product.variants && product.variants.length > 0) {
+      return product.variants.reduce(
+        (total, variant) => total + variant.stockBreakdown.available,
+        0
+      );
+    }
+    return product.stockBreakdown.available;
+  };
+
+  // Format stock breakdown display
+  const formatStockBreakdown = (breakdown: StockBreakdown): string => {
+    return `Physical: ${breakdown.physical} | Pending: ${breakdown.pending} | Available: ${breakdown.available}`;
   };
 
   return (
@@ -66,44 +108,49 @@ export default function StockPageClient({ products }: StockPageClientProps) {
                         {product.variants && product.variants.length > 0 ? (
                           <div className="mt-3">
                             <div
-                              className={`text-base font-semibold mb-3 py-2 px-3 rounded ${
-                                calculateTotalStock(product) <= 5
+                              className={`text-sm font-semibold mb-3 py-2 px-3 rounded ${
+                                calculateTotalAvailable(product) <= 5
                                   ? "text-orange-600 bg-orange-50"
                                   : "text-gray-900 bg-blue-50"
                               }`}
                             >
-                              Total Stock: {calculateTotalStock(product)}
+                              {formatStockBreakdown({
+                                physical: calculateTotalPhysical(product),
+                                pending: calculateTotalPending(product),
+                                available: calculateTotalAvailable(product),
+                              })}
                             </div>
                             <div className="text-sm font-semibold text-gray-900 mb-3">
                               Variants:
                             </div>
                             <div className="space-y-2.5">
                               {product.variants.map((variant) => (
-                                <div
-                                  key={variant.id}
-                                  className={`text-sm py-1.5 px-2 rounded ${
-                                    variant.stock <= 5
-                                      ? "text-orange-600 font-medium bg-orange-50"
-                                      : "text-gray-700 bg-gray-50"
-                                  }`}
-                                >
-                                  <span className="font-medium">
+                                <div key={variant.id} className="text-xs">
+                                  <div className="font-medium text-gray-900 mb-1">
                                     {variant.flavour}:
-                                  </span>{" "}
-                                  {variant.stock} available
+                                  </div>
+                                  <div
+                                    className={`py-1.5 px-2 rounded ${
+                                      variant.stockBreakdown.available <= 5
+                                        ? "text-orange-600 font-medium bg-orange-50"
+                                        : "text-gray-700 bg-gray-50"
+                                    }`}
+                                  >
+                                    {formatStockBreakdown(variant.stockBreakdown)}
+                                  </div>
                                 </div>
                               ))}
                             </div>
                           </div>
                         ) : (
                           <div
-                            className={`text-base font-medium mt-3 py-2 px-3 rounded ${
-                              product.stock <= 5
+                            className={`text-sm font-medium mt-3 py-2 px-3 rounded ${
+                              product.stockBreakdown.available <= 5
                                 ? "text-orange-600 bg-orange-50"
                                 : "text-gray-700 bg-gray-50"
                             }`}
                           >
-                            {product.stock} available
+                            {formatStockBreakdown(product.stockBreakdown)}
                           </div>
                         )}
                       </div>
@@ -149,44 +196,49 @@ export default function StockPageClient({ products }: StockPageClientProps) {
                           {product.variants && product.variants.length > 0 ? (
                             <div>
                               <div
-                                className={`text-base font-semibold mb-3 py-2 px-3 rounded inline-block ${
-                                  calculateTotalStock(product) <= 5
+                                className={`text-sm font-semibold mb-3 py-2 px-3 rounded inline-block ${
+                                  calculateTotalAvailable(product) <= 5
                                     ? "text-orange-600 bg-orange-50"
                                     : "text-gray-900 bg-blue-50"
                                 }`}
                               >
-                                Total Stock: {calculateTotalStock(product)}
+                                {formatStockBreakdown({
+                                  physical: calculateTotalPhysical(product),
+                                  pending: calculateTotalPending(product),
+                                  available: calculateTotalAvailable(product),
+                                })}
                               </div>
                               <div className="text-sm font-semibold text-gray-900 mb-3 mt-4">
                                 Variants:
                               </div>
                               <div className="space-y-2">
                                 {product.variants.map((variant) => (
-                                  <div
-                                    key={variant.id}
-                                    className={`text-sm py-2 px-3 rounded ${
-                                      variant.stock <= 5
-                                        ? "text-orange-600 font-medium bg-orange-50"
-                                        : "text-gray-700 bg-gray-50"
-                                    }`}
-                                  >
-                                    <span className="font-medium">
+                                  <div key={variant.id} className="text-sm">
+                                    <div className="font-medium text-gray-900 mb-1">
                                       {variant.flavour}:
-                                    </span>{" "}
-                                    {variant.stock} available
+                                    </div>
+                                    <div
+                                      className={`py-2 px-3 rounded ${
+                                        variant.stockBreakdown.available <= 5
+                                          ? "text-orange-600 font-medium bg-orange-50"
+                                          : "text-gray-700 bg-gray-50"
+                                      }`}
+                                    >
+                                      {formatStockBreakdown(variant.stockBreakdown)}
+                                    </div>
                                   </div>
                                 ))}
                               </div>
                             </div>
                           ) : (
                             <div
-                              className={`text-base font-medium py-2 px-3 rounded inline-block ${
-                                product.stock <= 5
+                              className={`text-sm font-medium py-2 px-3 rounded inline-block ${
+                                product.stockBreakdown.available <= 5
                                   ? "text-orange-600 bg-orange-50"
                                   : "text-gray-900 bg-gray-50"
                               }`}
                             >
-                              {product.stock} available
+                              {formatStockBreakdown(product.stockBreakdown)}
                             </div>
                           )}
                         </td>

@@ -86,7 +86,7 @@ export async function createOrder(username: string, items: BasketItem[]) {
     orderNumber = "ORD-000001";
   }
 
-  // Create order and items, then update stock
+  // Create order - DO NOT deduct stock yet (stock only deducted on fulfilment)
   const order = await db.order.create({
     data: {
       orderNumber,
@@ -112,30 +112,8 @@ export async function createOrder(username: string, items: BasketItem[]) {
     },
   });
 
-  // Update stock levels
-  for (const item of items) {
-    if (item.variantId) {
-      // Update variant stock
-      await db.productVariant.update({
-        where: { id: item.variantId },
-        data: {
-          stock: {
-            decrement: item.quantity,
-          },
-        },
-      });
-    } else {
-      // Update base product stock
-      await db.product.update({
-        where: { id: item.productId },
-        data: {
-          stock: {
-            decrement: item.quantity,
-          },
-        },
-      });
-    }
-  }
+  // Stock is NOT deducted here - it remains at physical count
+  // Stock will be deducted when order status changes to FULFILLED
 
   revalidatePath("/admin/orders");
   return order;
@@ -151,8 +129,35 @@ export async function updateOrderStatus(orderId: string, status: OrderStatus) {
     throw new Error("Order not found");
   }
 
-  // If cancelling, restore stock
-  if (status === "CANCELLED" && order.status !== "CANCELLED") {
+  const oldStatus = order.status;
+
+  // Deduct stock when fulfilling an order (physical stock moves to customer)
+  if (status === "FULFILLED" && oldStatus !== "FULFILLED") {
+    for (const item of order.items) {
+      if (item.variantId) {
+        await db.productVariant.update({
+          where: { id: item.variantId },
+          data: {
+            stock: {
+              decrement: item.quantity,
+            },
+          },
+        });
+      } else {
+        await db.product.update({
+          where: { id: item.productId },
+          data: {
+            stock: {
+              decrement: item.quantity,
+            },
+          },
+        });
+      }
+    }
+  }
+
+  // Restore stock when unfulfilling an order (moving back from FULFILLED)
+  if (oldStatus === "FULFILLED" && status !== "FULFILLED") {
     for (const item of order.items) {
       if (item.variantId) {
         await db.productVariant.update({
@@ -176,30 +181,8 @@ export async function updateOrderStatus(orderId: string, status: OrderStatus) {
     }
   }
 
-  // If un-cancelling, deduct stock again
-  if (order.status === "CANCELLED" && status !== "CANCELLED") {
-    for (const item of order.items) {
-      if (item.variantId) {
-        await db.productVariant.update({
-          where: { id: item.variantId },
-          data: {
-            stock: {
-              decrement: item.quantity,
-            },
-          },
-        });
-      } else {
-        await db.product.update({
-          where: { id: item.productId },
-          data: {
-            stock: {
-              decrement: item.quantity,
-            },
-          },
-        });
-      }
-    }
-  }
+  // Note: PENDING, UNFULFILLED, and CANCELLED orders do NOT affect physical stock
+  // Stock remains at physical inventory level until order is FULFILLED
 
   await db.order.update({
     where: { id: orderId },
@@ -225,9 +208,9 @@ export async function updateOrder(
     throw new Error("Order not found");
   }
 
-  // Only restore stock from old items if order is not cancelled
-  // (cancelled orders already had their stock restored)
-  if (order.status !== "CANCELLED") {
+  // Only restore stock from old items if order is FULFILLED
+  // (PENDING/UNFULFILLED orders don't affect physical stock)
+  if (order.status === "FULFILLED") {
     for (const oldItem of order.items) {
       if (oldItem.variantId) {
         await db.productVariant.update({
@@ -251,8 +234,8 @@ export async function updateOrder(
     }
   }
 
-  // Validate new stock availability (only if order is not cancelled)
-  if (order.status !== "CANCELLED") {
+  // Validate new stock availability (only if order is FULFILLED)
+  if (order.status === "FULFILLED") {
     for (const item of items) {
       if (item.variantId) {
         const variant = await db.productVariant.findUnique({
@@ -362,9 +345,9 @@ export async function updateOrder(
     },
   });
 
-  // Deduct new stock (only if order is not cancelled)
-  // (cancelled orders should not have stock deducted)
-  if (order.status !== "CANCELLED") {
+  // Deduct new stock (only if order is FULFILLED)
+  // (PENDING/UNFULFILLED/CANCELLED orders don't affect physical stock)
+  if (order.status === "FULFILLED") {
     for (const item of items) {
       if (item.variantId) {
         await db.productVariant.update({
@@ -401,8 +384,9 @@ export async function deleteOrder(orderId: string) {
     throw new Error("Order not found");
   }
 
-  // Restore stock if order is not cancelled (cancelled orders already had stock restored)
-  if (order.status !== "CANCELLED") {
+  // Restore stock if order is FULFILLED (physical stock needs to be returned)
+  // PENDING/UNFULFILLED/CANCELLED orders don't affect physical stock
+  if (order.status === "FULFILLED") {
     for (const item of order.items) {
       if (item.variantId) {
         await db.productVariant.update({
@@ -1043,4 +1027,78 @@ export async function getReportsData(
     orders: ordersWithItems,
     productBreakdown,
   };
+}
+
+export async function getStockData(includeHidden: boolean = false) {
+  // Fetch all products with variants
+  const products = await db.product.findMany({
+    where: includeHidden ? undefined : { visible: true },
+    include: {
+      variants: {
+        orderBy: { flavour: "asc" },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  // Fetch order items from PENDING and UNFULFILLED orders (reserved stock)
+  const pendingItems = await db.orderItem.findMany({
+    where: {
+      order: {
+        status: {
+          in: ["PENDING", "UNFULFILLED"],
+        },
+      },
+    },
+    select: {
+      productId: true,
+      variantId: true,
+      quantity: true,
+    },
+  });
+
+  // Group pending quantities by product and variant
+  const pendingMap = new Map<string, number>();
+  pendingItems.forEach((item) => {
+    const key = `${item.productId}-${item.variantId || "base"}`;
+    pendingMap.set(key, (pendingMap.get(key) || 0) + item.quantity);
+  });
+
+  // Map products with stock breakdown
+  return products.map((product) => {
+    const baseKey = `${product.id}-base`;
+    const basePending = pendingMap.get(baseKey) || 0;
+    const basePhysical = product.stock;
+    const baseAvailable = Math.max(0, basePhysical - basePending);
+
+    return {
+      id: product.id,
+      name: product.name,
+      price: Number(product.price),
+      stock: product.stock,
+      visible: product.visible,
+      stockBreakdown: {
+        physical: basePhysical,
+        pending: basePending,
+        available: baseAvailable,
+      },
+      variants: product.variants.map((variant) => {
+        const variantKey = `${product.id}-${variant.id}`;
+        const variantPending = pendingMap.get(variantKey) || 0;
+        const variantPhysical = variant.stock;
+        const variantAvailable = Math.max(0, variantPhysical - variantPending);
+
+        return {
+          id: variant.id,
+          flavour: variant.flavour,
+          stock: variant.stock,
+          stockBreakdown: {
+            physical: variantPhysical,
+            pending: variantPending,
+            available: variantAvailable,
+          },
+        };
+      }),
+    };
+  });
 }
