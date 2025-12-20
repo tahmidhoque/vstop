@@ -25,3 +25,13 @@ export const OrderStatus = {
 } as const
 
 export type OrderStatus = (typeof OrderStatus)[keyof typeof OrderStatus]
+
+
+export const ReturnStatus = {
+  REPORTED: 'REPORTED',
+  INSPECTED: 'INSPECTED',
+  REPLACED: 'REPLACED',
+  DISPOSED: 'DISPOSED'
+} as const
+
+export type ReturnStatus = (typeof ReturnStatus)[keyof typeof ReturnStatus]

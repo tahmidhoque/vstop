@@ -1,5 +1,5 @@
-export type { PasswordType, OrderStatus } from "@/generated/enums";
-import type { OrderStatus } from "@/generated/enums";
+export type { PasswordType, OrderStatus, ReturnStatus } from "@/generated/enums";
+import type { OrderStatus, ReturnStatus } from "@/generated/enums";
 
 export interface BasketItem {
   productId: string;
@@ -62,4 +62,53 @@ export interface ReportsData {
   totalSales: number;
   orders: OrderWithItems[];
   productBreakdown: ProductBreakdown[];
+}
+
+export interface FaultyReturnWithRelations {
+  id: string;
+  returnNumber: string;
+  orderId: string | null;
+  orderNumber: string | null;
+  productId: string;
+  variantId: string | null;
+  quantity: number;
+  faultyReason: string;
+  notes: string | null;
+  status: ReturnStatus;
+  replacementOrderId: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  product: {
+    id: string;
+    name: string;
+    price: number;
+  };
+  variant?: {
+    id: string;
+    flavour: string;
+    stock: number;
+  } | null;
+  order?: {
+    id: string;
+    orderNumber: string;
+    username: string;
+    status: OrderStatus;
+    createdAt: Date;
+    updatedAt: Date;
+  } | null;
+  replacementOrder?: {
+    id: string;
+    orderNumber: string;
+    username: string;
+    status: OrderStatus;
+    createdAt: Date;
+    updatedAt: Date;
+  } | null;
+}
+
+export interface StockBreakdownWithFaulty {
+  physical: number;
+  faulty: number;
+  pending: number;
+  available: number;
 }

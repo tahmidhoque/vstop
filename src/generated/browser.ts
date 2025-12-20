@@ -52,3 +52,8 @@ export type Offer = Prisma.OfferModel
  * 
  */
 export type ProductOffer = Prisma.ProductOfferModel
+/**
+ * Model FaultyReturn
+ * 
+ */
+export type FaultyReturn = Prisma.FaultyReturnModel

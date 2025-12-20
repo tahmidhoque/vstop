@@ -11,6 +11,8 @@ interface AdminDashboardClientProps {
   unfulfilledOrders: number;
   lowStockProducts: number;
   recentOrders: OrderWithItems[];
+  reportedReturns: number;
+  inspectedReturns: number;
 }
 
 export default function AdminDashboardClient({
@@ -18,6 +20,8 @@ export default function AdminDashboardClient({
   unfulfilledOrders,
   lowStockProducts,
   recentOrders,
+  reportedReturns,
+  inspectedReturns,
 }: AdminDashboardClientProps) {
   const router = useRouter();
 
@@ -47,7 +51,7 @@ export default function AdminDashboardClient({
 
       <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
         {/* Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
             <h3 className="text-sm font-medium text-gray-600 mb-2">
               Pending Orders
@@ -72,10 +76,25 @@ export default function AdminDashboardClient({
               {lowStockProducts}
             </p>
           </div>
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+            <h3 className="text-sm font-medium text-gray-600 mb-2">
+              Faulty Returns
+            </h3>
+            <div className="flex items-baseline gap-2">
+              <p className="text-2xl sm:text-3xl font-bold text-blue-600">
+                {reportedReturns}
+              </p>
+              {inspectedReturns > 0 && (
+                <p className="text-sm text-purple-600 font-medium">
+                  +{inspectedReturns} inspected
+                </p>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Navigation */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4 mb-6 sm:mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
           <Link
             href="/admin/products"
             className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 hover:border-blue-500 hover:shadow-md active:bg-gray-50 transition-all block min-h-[44px]"
@@ -107,6 +126,17 @@ export default function AdminDashboardClient({
             </h3>
             <p className="text-xs sm:text-sm text-gray-600">
               View and manage orders
+            </p>
+          </Link>
+          <Link
+            href="/admin/returns"
+            className="bg-white rounded-lg shadow-sm border border-orange-200 p-4 sm:p-6 hover:border-orange-500 hover:shadow-md active:bg-gray-50 transition-all block min-h-[44px]"
+          >
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-1 sm:mb-2">
+              Faulty Returns
+            </h3>
+            <p className="text-xs sm:text-sm text-gray-600">
+              Track and manage faulty product returns
             </p>
           </Link>
           <Link

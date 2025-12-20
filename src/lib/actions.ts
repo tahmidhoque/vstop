@@ -2,7 +2,7 @@
 
 import { db } from "./db";
 import { revalidatePath } from "next/cache";
-import { OrderStatus } from "@/generated/enums";
+import { OrderStatus, ReturnStatus } from "@/generated/enums";
 import type { BasketItem } from "@/types";
 import {
   calculateDiscountedPrices,
@@ -1057,6 +1057,15 @@ export async function getStockData(includeHidden: boolean = false) {
     },
   });
 
+  // Fetch faulty returns (not disposed yet)
+  const faultyReturns = await db.faultyReturn.findMany({
+    select: {
+      productId: true,
+      variantId: true,
+      quantity: true,
+    },
+  });
+
   // Group pending quantities by product and variant
   const pendingMap = new Map<string, number>();
   pendingItems.forEach((item) => {
@@ -1064,12 +1073,20 @@ export async function getStockData(includeHidden: boolean = false) {
     pendingMap.set(key, (pendingMap.get(key) || 0) + item.quantity);
   });
 
+  // Group faulty quantities by product and variant
+  const faultyMap = new Map<string, number>();
+  faultyReturns.forEach((item) => {
+    const key = `${item.productId}-${item.variantId || "base"}`;
+    faultyMap.set(key, (faultyMap.get(key) || 0) + item.quantity);
+  });
+
   // Map products with stock breakdown
   return products.map((product) => {
     const baseKey = `${product.id}-base`;
     const basePending = pendingMap.get(baseKey) || 0;
+    const baseFaulty = faultyMap.get(baseKey) || 0;
     const basePhysical = product.stock;
-    const baseAvailable = Math.max(0, basePhysical - basePending);
+    const baseAvailable = Math.max(0, basePhysical - baseFaulty - basePending);
 
     return {
       id: product.id,
@@ -1079,14 +1096,19 @@ export async function getStockData(includeHidden: boolean = false) {
       visible: product.visible,
       stockBreakdown: {
         physical: basePhysical,
+        faulty: baseFaulty,
         pending: basePending,
         available: baseAvailable,
       },
       variants: product.variants.map((variant) => {
         const variantKey = `${product.id}-${variant.id}`;
         const variantPending = pendingMap.get(variantKey) || 0;
+        const variantFaulty = faultyMap.get(variantKey) || 0;
         const variantPhysical = variant.stock;
-        const variantAvailable = Math.max(0, variantPhysical - variantPending);
+        const variantAvailable = Math.max(
+          0,
+          variantPhysical - variantFaulty - variantPending
+        );
 
         return {
           id: variant.id,
@@ -1094,6 +1116,7 @@ export async function getStockData(includeHidden: boolean = false) {
           stock: variant.stock,
           stockBreakdown: {
             physical: variantPhysical,
+            faulty: variantFaulty,
             pending: variantPending,
             available: variantAvailable,
           },
@@ -1101,4 +1124,425 @@ export async function getStockData(includeHidden: boolean = false) {
       }),
     };
   });
+}
+
+// ============================================
+// FAULTY RETURNS ACTIONS
+// ============================================
+
+export async function createFaultyReturn(data: {
+  orderId?: string;
+  orderNumber?: string;
+  productId: string;
+  variantId?: string;
+  quantity: number;
+  faultyReason: string;
+  notes?: string;
+}) {
+  // Generate return number
+  const lastReturn = await db.faultyReturn.findFirst({
+    orderBy: { createdAt: "desc" },
+    select: { returnNumber: true },
+  });
+
+  let returnNumber: string;
+  if (lastReturn?.returnNumber) {
+    const lastNum = parseInt(lastReturn.returnNumber.replace("RET-", ""), 10);
+    returnNumber = `RET-${String(lastNum + 1).padStart(6, "0")}`;
+  } else {
+    returnNumber = "RET-000001";
+  }
+
+  // Validate that the product/variant exists
+  if (data.variantId) {
+    const variant = await db.productVariant.findUnique({
+      where: { id: data.variantId },
+    });
+    if (!variant) {
+      throw new Error("Variant not found");
+    }
+  } else {
+    const product = await db.product.findUnique({
+      where: { id: data.productId },
+    });
+    if (!product) {
+      throw new Error("Product not found");
+    }
+  }
+
+  // If linked to an order, validate the order exists and has the item
+  if (data.orderId) {
+    const order = await db.order.findUnique({
+      where: { id: data.orderId },
+      include: { items: true },
+    });
+
+    if (!order) {
+      throw new Error("Order not found");
+    }
+
+    // Check if the order contains this product/variant
+    const orderItem = order.items.find(
+      (item) =>
+        item.productId === data.productId &&
+        (data.variantId ? item.variantId === data.variantId : !item.variantId)
+    );
+
+    if (!orderItem) {
+      throw new Error("Product not found in order");
+    }
+
+    // Validate quantity doesn't exceed order quantity
+    if (data.quantity > orderItem.quantity) {
+      throw new Error(
+        `Return quantity (${data.quantity}) exceeds order quantity (${orderItem.quantity})`
+      );
+    }
+  }
+
+  // Create faulty return
+  // Note: Physical stock is NOT increased - faulty items are tracked separately
+  const faultyReturn = await db.faultyReturn.create({
+    data: {
+      returnNumber,
+      orderId: data.orderId || null,
+      orderNumber: data.orderNumber || null,
+      productId: data.productId,
+      variantId: data.variantId || null,
+      quantity: data.quantity,
+      faultyReason: data.faultyReason,
+      notes: data.notes || null,
+      status: "REPORTED",
+    },
+    include: {
+      product: true,
+      variant: true,
+      order: true,
+    },
+  });
+
+  revalidatePath("/admin/returns");
+  revalidatePath("/admin/stock");
+  return faultyReturn;
+}
+
+export async function updateFaultyReturnStatus(
+  returnId: string,
+  status: ReturnStatus,
+  notes?: string
+) {
+  const faultyReturn = await db.faultyReturn.findUnique({
+    where: { id: returnId },
+  });
+
+  if (!faultyReturn) {
+    throw new Error("Faulty return not found");
+  }
+
+  // Update the return status and optionally add notes
+  const updated = await db.faultyReturn.update({
+    where: { id: returnId },
+    data: {
+      status,
+      notes: notes !== undefined ? notes : faultyReturn.notes,
+    },
+    include: {
+      product: true,
+      variant: true,
+      order: true,
+      replacementOrder: true,
+    },
+  });
+
+  revalidatePath("/admin/returns");
+  return updated;
+}
+
+export async function createReplacementOrder(
+  returnId: string,
+  username: string
+) {
+  const faultyReturn = await db.faultyReturn.findUnique({
+    where: { id: returnId },
+    include: {
+      product: true,
+      variant: true,
+    },
+  });
+
+  if (!faultyReturn) {
+    throw new Error("Faulty return not found");
+  }
+
+  if (faultyReturn.replacementOrderId) {
+    throw new Error("Replacement order already exists for this return");
+  }
+
+  // Generate order number
+  const lastOrder = await db.order.findFirst({
+    orderBy: { createdAt: "desc" },
+    select: { orderNumber: true },
+  });
+
+  let orderNumber: string;
+  if (lastOrder?.orderNumber) {
+    const lastNum = parseInt(lastOrder.orderNumber.replace("ORD-", ""), 10);
+    orderNumber = `ORD-${String(lastNum + 1).padStart(6, "0")}`;
+  } else {
+    orderNumber = "ORD-000001";
+  }
+
+  // Create replacement order
+  const replacementOrder = await db.order.create({
+    data: {
+      orderNumber,
+      username,
+      status: "PENDING",
+      items: {
+        create: [
+          {
+            productId: faultyReturn.productId,
+            variantId: faultyReturn.variantId,
+            flavour: faultyReturn.variant?.flavour || null,
+            quantity: faultyReturn.quantity,
+            priceAtTime: faultyReturn.product.price,
+          },
+        ],
+      },
+    },
+    include: {
+      items: {
+        include: {
+          product: true,
+          variant: true,
+        },
+      },
+    },
+  });
+
+  // Link replacement order to faulty return and update status
+  await db.faultyReturn.update({
+    where: { id: returnId },
+    data: {
+      replacementOrderId: replacementOrder.id,
+      status: "REPLACED",
+    },
+  });
+
+  revalidatePath("/admin/returns");
+  revalidatePath("/admin/orders");
+  return replacementOrder;
+}
+
+export async function getFaultyReturns(filters?: {
+  status?: ReturnStatus;
+  startDate?: Date;
+  endDate?: Date;
+  productId?: string;
+}) {
+  const where: any = {};
+
+  if (filters?.status) {
+    where.status = filters.status;
+  }
+
+  if (filters?.startDate || filters?.endDate) {
+    where.createdAt = {};
+    if (filters.startDate) {
+      const start = new Date(filters.startDate);
+      start.setHours(0, 0, 0, 0);
+      where.createdAt.gte = start;
+    }
+    if (filters.endDate) {
+      const end = new Date(filters.endDate);
+      end.setHours(23, 59, 59, 999);
+      where.createdAt.lte = end;
+    }
+  }
+
+  if (filters?.productId) {
+    where.productId = filters.productId;
+  }
+
+  const returns = await db.faultyReturn.findMany({
+    where,
+    include: {
+      product: true,
+      variant: true,
+      order: true,
+      replacementOrder: true,
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  // Convert Decimal to number for serialization
+  return returns.map((ret) => ({
+    ...ret,
+    product: {
+      ...ret.product,
+      price: Number(ret.product.price),
+    },
+  }));
+}
+
+export async function getFaultyReturn(id: string) {
+  const faultyReturn = await db.faultyReturn.findUnique({
+    where: { id },
+    include: {
+      product: true,
+      variant: true,
+      order: {
+        include: {
+          items: {
+            include: {
+              product: true,
+              variant: true,
+            },
+          },
+        },
+      },
+      replacementOrder: {
+        include: {
+          items: {
+            include: {
+              product: true,
+              variant: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!faultyReturn) return null;
+
+  // Convert Decimal to number for serialization
+  return {
+    ...faultyReturn,
+    product: {
+      ...faultyReturn.product,
+      price: Number(faultyReturn.product.price),
+    },
+    order: faultyReturn.order
+      ? {
+          ...faultyReturn.order,
+          manualDiscount: faultyReturn.order.manualDiscount
+            ? Number(faultyReturn.order.manualDiscount)
+            : null,
+          totalOverride: faultyReturn.order.totalOverride
+            ? Number(faultyReturn.order.totalOverride)
+            : null,
+          items: faultyReturn.order.items.map((item) => ({
+            ...item,
+            priceAtTime: Number(item.priceAtTime),
+            product: {
+              ...item.product,
+              price: Number(item.product.price),
+            },
+          })),
+        }
+      : null,
+    replacementOrder: faultyReturn.replacementOrder
+      ? {
+          ...faultyReturn.replacementOrder,
+          manualDiscount: faultyReturn.replacementOrder.manualDiscount
+            ? Number(faultyReturn.replacementOrder.manualDiscount)
+            : null,
+          totalOverride: faultyReturn.replacementOrder.totalOverride
+            ? Number(faultyReturn.replacementOrder.totalOverride)
+            : null,
+          items: faultyReturn.replacementOrder.items.map((item) => ({
+            ...item,
+            priceAtTime: Number(item.priceAtTime),
+            product: {
+              ...item.product,
+              price: Number(item.product.price),
+            },
+          })),
+        }
+      : null,
+  };
+}
+
+export async function deleteFaultyReturn(id: string) {
+  const faultyReturn = await db.faultyReturn.findUnique({
+    where: { id },
+  });
+
+  if (!faultyReturn) {
+    throw new Error("Faulty return not found");
+  }
+
+  // Delete the faulty return
+  await db.faultyReturn.delete({
+    where: { id },
+  });
+
+  revalidatePath("/admin/returns");
+  revalidatePath("/admin/stock");
+}
+
+export async function updateFaultyReturn(
+  id: string,
+  data: {
+    quantity?: number;
+    faultyReason?: string;
+    notes?: string;
+  }
+) {
+  const faultyReturn = await db.faultyReturn.findUnique({
+    where: { id },
+  });
+
+  if (!faultyReturn) {
+    throw new Error("Faulty return not found");
+  }
+
+  const updated = await db.faultyReturn.update({
+    where: { id },
+    data: {
+      quantity: data.quantity !== undefined ? data.quantity : undefined,
+      faultyReason:
+        data.faultyReason !== undefined ? data.faultyReason : undefined,
+      notes: data.notes !== undefined ? data.notes : undefined,
+    },
+    include: {
+      product: true,
+      variant: true,
+      order: true,
+      replacementOrder: true,
+    },
+  });
+
+  revalidatePath("/admin/returns");
+  return updated;
+}
+
+export async function createBatchFaultyReturns(
+  items: Array<{
+    orderId?: string;
+    orderNumber?: string;
+    productId: string;
+    variantId?: string;
+    quantity: number;
+  }>,
+  faultyReason: string,
+  notes?: string
+) {
+  const returns = [];
+
+  for (const item of items) {
+    const faultyReturn = await createFaultyReturn({
+      orderId: item.orderId,
+      orderNumber: item.orderNumber,
+      productId: item.productId,
+      variantId: item.variantId,
+      quantity: item.quantity,
+      faultyReason,
+      notes,
+    });
+    returns.push(faultyReturn);
+  }
+
+  return returns;
 }

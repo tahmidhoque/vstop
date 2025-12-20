@@ -3,6 +3,9 @@
 import { useState } from "react";
 import { OrderStatus } from "@/generated/enums";
 import OrderEditModal from "./OrderEditModal";
+import FaultyReturnForm from "./FaultyReturnForm";
+import OrderItemSelector from "./OrderItemSelector";
+import BatchFaultyReturnForm from "./BatchFaultyReturnForm";
 import { updateOrderStatus, updateOrder, deleteOrder, deleteAllOrders } from "@/lib/actions";
 import { formatDate } from "@/lib/date-utils";
 import type { OrderWithItems } from "@/types";
@@ -11,12 +14,35 @@ interface OrderListProps {
   orders: OrderWithItems[];
 }
 
+interface ReturnFormData {
+  orderId: string;
+  orderNumber: string;
+  productId: string;
+  variantId?: string;
+  maxQuantity: number;
+}
+
+interface BatchReturnData {
+  orderId: string;
+  orderNumber: string;
+  items: Array<{
+    productId: string;
+    productName: string;
+    variantId?: string;
+    variantFlavour?: string;
+    selectedQuantity: number;
+  }>;
+}
+
 export default function OrderList({ orders }: OrderListProps) {
   const [editingOrder, setEditingOrder] = useState<OrderWithItems | null>(null);
   const [filter, setFilter] = useState<OrderStatus | "ALL">("ALL");
   const [deletingOrderId, setDeletingOrderId] = useState<string | null>(null);
   const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false);
   const [deletingAll, setDeletingAll] = useState(false);
+  const [returnFormData, setReturnFormData] = useState<ReturnFormData | null>(null);
+  const [selectingItemsForOrder, setSelectingItemsForOrder] = useState<OrderWithItems | null>(null);
+  const [batchReturnData, setBatchReturnData] = useState<BatchReturnData | null>(null);
 
   const filteredOrders =
     filter === "ALL"
@@ -317,6 +343,12 @@ export default function OrderList({ orders }: OrderListProps) {
                 {order.status === "FULFILLED" && (
                   <>
                     <button
+                      onClick={() => setSelectingItemsForOrder(order)}
+                      className="w-full sm:w-auto px-4 py-2.5 bg-orange-600 text-white text-sm font-medium rounded-lg hover:bg-orange-700 active:bg-orange-800 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 min-h-[44px] transition-colors"
+                    >
+                      Process Return
+                    </button>
+                    <button
                       onClick={() => handleStatusChange(order.id, "CANCELLED")}
                       className="w-full sm:w-auto px-4 py-2.5 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 active:bg-red-800 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 min-h-[44px] transition-colors"
                     >
@@ -359,6 +391,46 @@ export default function OrderList({ orders }: OrderListProps) {
           order={editingOrder}
           onClose={() => setEditingOrder(null)}
           onSave={handleEditSubmit}
+        />
+      )}
+
+      {selectingItemsForOrder && (
+        <OrderItemSelector
+          order={selectingItemsForOrder}
+          onClose={() => setSelectingItemsForOrder(null)}
+          onSelect={(items) => {
+            // Open batch return form with all selected items
+            setBatchReturnData({
+              orderId: selectingItemsForOrder.id,
+              orderNumber: selectingItemsForOrder.orderNumber,
+              items: items,
+            });
+            setSelectingItemsForOrder(null);
+          }}
+        />
+      )}
+
+      {batchReturnData && (
+        <BatchFaultyReturnForm
+          orderId={batchReturnData.orderId}
+          orderNumber={batchReturnData.orderNumber}
+          items={batchReturnData.items}
+          onClose={() => setBatchReturnData(null)}
+          onSave={() => {
+            setBatchReturnData(null);
+            window.location.reload();
+          }}
+        />
+      )}
+
+      {returnFormData && (
+        <FaultyReturnForm
+          prefilledData={returnFormData}
+          onClose={() => setReturnFormData(null)}
+          onSave={() => {
+            setReturnFormData(null);
+            window.location.reload();
+          }}
         />
       )}
 

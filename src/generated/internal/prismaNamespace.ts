@@ -390,7 +390,8 @@ export const ModelName = {
   Order: 'Order',
   OrderItem: 'OrderItem',
   Offer: 'Offer',
-  ProductOffer: 'ProductOffer'
+  ProductOffer: 'ProductOffer',
+  FaultyReturn: 'FaultyReturn'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -406,7 +407,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "password" | "product" | "productVariant" | "order" | "orderItem" | "offer" | "productOffer"
+    modelProps: "password" | "product" | "productVariant" | "order" | "orderItem" | "offer" | "productOffer" | "faultyReturn"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -928,6 +929,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    FaultyReturn: {
+      payload: Prisma.$FaultyReturnPayload<ExtArgs>
+      fields: Prisma.FaultyReturnFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.FaultyReturnFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FaultyReturnPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.FaultyReturnFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FaultyReturnPayload>
+        }
+        findFirst: {
+          args: Prisma.FaultyReturnFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FaultyReturnPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.FaultyReturnFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FaultyReturnPayload>
+        }
+        findMany: {
+          args: Prisma.FaultyReturnFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FaultyReturnPayload>[]
+        }
+        create: {
+          args: Prisma.FaultyReturnCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FaultyReturnPayload>
+        }
+        createMany: {
+          args: Prisma.FaultyReturnCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.FaultyReturnCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FaultyReturnPayload>[]
+        }
+        delete: {
+          args: Prisma.FaultyReturnDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FaultyReturnPayload>
+        }
+        update: {
+          args: Prisma.FaultyReturnUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FaultyReturnPayload>
+        }
+        deleteMany: {
+          args: Prisma.FaultyReturnDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.FaultyReturnUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.FaultyReturnUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FaultyReturnPayload>[]
+        }
+        upsert: {
+          args: Prisma.FaultyReturnUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FaultyReturnPayload>
+        }
+        aggregate: {
+          args: Prisma.FaultyReturnAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateFaultyReturn>
+        }
+        groupBy: {
+          args: Prisma.FaultyReturnGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.FaultyReturnGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.FaultyReturnCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.FaultyReturnCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -1057,6 +1132,25 @@ export const ProductOfferScalarFieldEnum = {
 export type ProductOfferScalarFieldEnum = (typeof ProductOfferScalarFieldEnum)[keyof typeof ProductOfferScalarFieldEnum]
 
 
+export const FaultyReturnScalarFieldEnum = {
+  id: 'id',
+  returnNumber: 'returnNumber',
+  orderId: 'orderId',
+  orderNumber: 'orderNumber',
+  productId: 'productId',
+  variantId: 'variantId',
+  quantity: 'quantity',
+  faultyReason: 'faultyReason',
+  notes: 'notes',
+  status: 'status',
+  replacementOrderId: 'replacementOrderId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type FaultyReturnScalarFieldEnum = (typeof FaultyReturnScalarFieldEnum)[keyof typeof FaultyReturnScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -1179,6 +1273,20 @@ export type ListEnumOrderStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$
 
 
 /**
+ * Reference to a field of type 'ReturnStatus'
+ */
+export type EnumReturnStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ReturnStatus'>
+    
+
+
+/**
+ * Reference to a field of type 'ReturnStatus[]'
+ */
+export type ListEnumReturnStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ReturnStatus[]'>
+    
+
+
+/**
  * Reference to a field of type 'Float'
  */
 export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>
@@ -1277,6 +1385,7 @@ export type GlobalOmitConfig = {
   orderItem?: Prisma.OrderItemOmit
   offer?: Prisma.OfferOmit
   productOffer?: Prisma.ProductOfferOmit
+  faultyReturn?: Prisma.FaultyReturnOmit
 }
 
 /* Types for Logging */

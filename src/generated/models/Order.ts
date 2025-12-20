@@ -245,6 +245,8 @@ export type OrderWhereInput = {
   createdAt?: Prisma.DateTimeFilter<"Order"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Order"> | Date | string
   items?: Prisma.OrderItemListRelationFilter
+  faultyReturns?: Prisma.FaultyReturnListRelationFilter
+  replacementForReturns?: Prisma.FaultyReturnListRelationFilter
 }
 
 export type OrderOrderByWithRelationInput = {
@@ -257,6 +259,8 @@ export type OrderOrderByWithRelationInput = {
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   items?: Prisma.OrderItemOrderByRelationAggregateInput
+  faultyReturns?: Prisma.FaultyReturnOrderByRelationAggregateInput
+  replacementForReturns?: Prisma.FaultyReturnOrderByRelationAggregateInput
 }
 
 export type OrderWhereUniqueInput = Prisma.AtLeast<{
@@ -272,6 +276,8 @@ export type OrderWhereUniqueInput = Prisma.AtLeast<{
   createdAt?: Prisma.DateTimeFilter<"Order"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Order"> | Date | string
   items?: Prisma.OrderItemListRelationFilter
+  faultyReturns?: Prisma.FaultyReturnListRelationFilter
+  replacementForReturns?: Prisma.FaultyReturnListRelationFilter
 }, "id" | "orderNumber">
 
 export type OrderOrderByWithAggregationInput = {
@@ -314,6 +320,8 @@ export type OrderCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   items?: Prisma.OrderItemCreateNestedManyWithoutOrderInput
+  faultyReturns?: Prisma.FaultyReturnCreateNestedManyWithoutOrderInput
+  replacementForReturns?: Prisma.FaultyReturnCreateNestedManyWithoutReplacementOrderInput
 }
 
 export type OrderUncheckedCreateInput = {
@@ -326,6 +334,8 @@ export type OrderUncheckedCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   items?: Prisma.OrderItemUncheckedCreateNestedManyWithoutOrderInput
+  faultyReturns?: Prisma.FaultyReturnUncheckedCreateNestedManyWithoutOrderInput
+  replacementForReturns?: Prisma.FaultyReturnUncheckedCreateNestedManyWithoutReplacementOrderInput
 }
 
 export type OrderUpdateInput = {
@@ -338,6 +348,8 @@ export type OrderUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   items?: Prisma.OrderItemUpdateManyWithoutOrderNestedInput
+  faultyReturns?: Prisma.FaultyReturnUpdateManyWithoutOrderNestedInput
+  replacementForReturns?: Prisma.FaultyReturnUpdateManyWithoutReplacementOrderNestedInput
 }
 
 export type OrderUncheckedUpdateInput = {
@@ -350,6 +362,8 @@ export type OrderUncheckedUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   items?: Prisma.OrderItemUncheckedUpdateManyWithoutOrderNestedInput
+  faultyReturns?: Prisma.FaultyReturnUncheckedUpdateManyWithoutOrderNestedInput
+  replacementForReturns?: Prisma.FaultyReturnUncheckedUpdateManyWithoutReplacementOrderNestedInput
 }
 
 export type OrderCreateManyInput = {
@@ -433,6 +447,11 @@ export type OrderScalarRelationFilter = {
   isNot?: Prisma.OrderWhereInput
 }
 
+export type OrderNullableScalarRelationFilter = {
+  is?: Prisma.OrderWhereInput | null
+  isNot?: Prisma.OrderWhereInput | null
+}
+
 export type EnumOrderStatusFieldUpdateOperationsInput = {
   set?: $Enums.OrderStatus
 }
@@ -459,6 +478,38 @@ export type OrderUpdateOneRequiredWithoutItemsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.OrderUpdateToOneWithWhereWithoutItemsInput, Prisma.OrderUpdateWithoutItemsInput>, Prisma.OrderUncheckedUpdateWithoutItemsInput>
 }
 
+export type OrderCreateNestedOneWithoutFaultyReturnsInput = {
+  create?: Prisma.XOR<Prisma.OrderCreateWithoutFaultyReturnsInput, Prisma.OrderUncheckedCreateWithoutFaultyReturnsInput>
+  connectOrCreate?: Prisma.OrderCreateOrConnectWithoutFaultyReturnsInput
+  connect?: Prisma.OrderWhereUniqueInput
+}
+
+export type OrderCreateNestedOneWithoutReplacementForReturnsInput = {
+  create?: Prisma.XOR<Prisma.OrderCreateWithoutReplacementForReturnsInput, Prisma.OrderUncheckedCreateWithoutReplacementForReturnsInput>
+  connectOrCreate?: Prisma.OrderCreateOrConnectWithoutReplacementForReturnsInput
+  connect?: Prisma.OrderWhereUniqueInput
+}
+
+export type OrderUpdateOneWithoutFaultyReturnsNestedInput = {
+  create?: Prisma.XOR<Prisma.OrderCreateWithoutFaultyReturnsInput, Prisma.OrderUncheckedCreateWithoutFaultyReturnsInput>
+  connectOrCreate?: Prisma.OrderCreateOrConnectWithoutFaultyReturnsInput
+  upsert?: Prisma.OrderUpsertWithoutFaultyReturnsInput
+  disconnect?: Prisma.OrderWhereInput | boolean
+  delete?: Prisma.OrderWhereInput | boolean
+  connect?: Prisma.OrderWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.OrderUpdateToOneWithWhereWithoutFaultyReturnsInput, Prisma.OrderUpdateWithoutFaultyReturnsInput>, Prisma.OrderUncheckedUpdateWithoutFaultyReturnsInput>
+}
+
+export type OrderUpdateOneWithoutReplacementForReturnsNestedInput = {
+  create?: Prisma.XOR<Prisma.OrderCreateWithoutReplacementForReturnsInput, Prisma.OrderUncheckedCreateWithoutReplacementForReturnsInput>
+  connectOrCreate?: Prisma.OrderCreateOrConnectWithoutReplacementForReturnsInput
+  upsert?: Prisma.OrderUpsertWithoutReplacementForReturnsInput
+  disconnect?: Prisma.OrderWhereInput | boolean
+  delete?: Prisma.OrderWhereInput | boolean
+  connect?: Prisma.OrderWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.OrderUpdateToOneWithWhereWithoutReplacementForReturnsInput, Prisma.OrderUpdateWithoutReplacementForReturnsInput>, Prisma.OrderUncheckedUpdateWithoutReplacementForReturnsInput>
+}
+
 export type OrderCreateWithoutItemsInput = {
   id?: string
   orderNumber: string
@@ -468,6 +519,8 @@ export type OrderCreateWithoutItemsInput = {
   totalOverride?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  faultyReturns?: Prisma.FaultyReturnCreateNestedManyWithoutOrderInput
+  replacementForReturns?: Prisma.FaultyReturnCreateNestedManyWithoutReplacementOrderInput
 }
 
 export type OrderUncheckedCreateWithoutItemsInput = {
@@ -479,6 +532,8 @@ export type OrderUncheckedCreateWithoutItemsInput = {
   totalOverride?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  faultyReturns?: Prisma.FaultyReturnUncheckedCreateNestedManyWithoutOrderInput
+  replacementForReturns?: Prisma.FaultyReturnUncheckedCreateNestedManyWithoutReplacementOrderInput
 }
 
 export type OrderCreateOrConnectWithoutItemsInput = {
@@ -506,6 +561,8 @@ export type OrderUpdateWithoutItemsInput = {
   totalOverride?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  faultyReturns?: Prisma.FaultyReturnUpdateManyWithoutOrderNestedInput
+  replacementForReturns?: Prisma.FaultyReturnUpdateManyWithoutReplacementOrderNestedInput
 }
 
 export type OrderUncheckedUpdateWithoutItemsInput = {
@@ -517,6 +574,144 @@ export type OrderUncheckedUpdateWithoutItemsInput = {
   totalOverride?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  faultyReturns?: Prisma.FaultyReturnUncheckedUpdateManyWithoutOrderNestedInput
+  replacementForReturns?: Prisma.FaultyReturnUncheckedUpdateManyWithoutReplacementOrderNestedInput
+}
+
+export type OrderCreateWithoutFaultyReturnsInput = {
+  id?: string
+  orderNumber: string
+  username: string
+  status?: $Enums.OrderStatus
+  manualDiscount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  totalOverride?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  items?: Prisma.OrderItemCreateNestedManyWithoutOrderInput
+  replacementForReturns?: Prisma.FaultyReturnCreateNestedManyWithoutReplacementOrderInput
+}
+
+export type OrderUncheckedCreateWithoutFaultyReturnsInput = {
+  id?: string
+  orderNumber: string
+  username: string
+  status?: $Enums.OrderStatus
+  manualDiscount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  totalOverride?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  items?: Prisma.OrderItemUncheckedCreateNestedManyWithoutOrderInput
+  replacementForReturns?: Prisma.FaultyReturnUncheckedCreateNestedManyWithoutReplacementOrderInput
+}
+
+export type OrderCreateOrConnectWithoutFaultyReturnsInput = {
+  where: Prisma.OrderWhereUniqueInput
+  create: Prisma.XOR<Prisma.OrderCreateWithoutFaultyReturnsInput, Prisma.OrderUncheckedCreateWithoutFaultyReturnsInput>
+}
+
+export type OrderCreateWithoutReplacementForReturnsInput = {
+  id?: string
+  orderNumber: string
+  username: string
+  status?: $Enums.OrderStatus
+  manualDiscount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  totalOverride?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  items?: Prisma.OrderItemCreateNestedManyWithoutOrderInput
+  faultyReturns?: Prisma.FaultyReturnCreateNestedManyWithoutOrderInput
+}
+
+export type OrderUncheckedCreateWithoutReplacementForReturnsInput = {
+  id?: string
+  orderNumber: string
+  username: string
+  status?: $Enums.OrderStatus
+  manualDiscount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  totalOverride?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  items?: Prisma.OrderItemUncheckedCreateNestedManyWithoutOrderInput
+  faultyReturns?: Prisma.FaultyReturnUncheckedCreateNestedManyWithoutOrderInput
+}
+
+export type OrderCreateOrConnectWithoutReplacementForReturnsInput = {
+  where: Prisma.OrderWhereUniqueInput
+  create: Prisma.XOR<Prisma.OrderCreateWithoutReplacementForReturnsInput, Prisma.OrderUncheckedCreateWithoutReplacementForReturnsInput>
+}
+
+export type OrderUpsertWithoutFaultyReturnsInput = {
+  update: Prisma.XOR<Prisma.OrderUpdateWithoutFaultyReturnsInput, Prisma.OrderUncheckedUpdateWithoutFaultyReturnsInput>
+  create: Prisma.XOR<Prisma.OrderCreateWithoutFaultyReturnsInput, Prisma.OrderUncheckedCreateWithoutFaultyReturnsInput>
+  where?: Prisma.OrderWhereInput
+}
+
+export type OrderUpdateToOneWithWhereWithoutFaultyReturnsInput = {
+  where?: Prisma.OrderWhereInput
+  data: Prisma.XOR<Prisma.OrderUpdateWithoutFaultyReturnsInput, Prisma.OrderUncheckedUpdateWithoutFaultyReturnsInput>
+}
+
+export type OrderUpdateWithoutFaultyReturnsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  orderNumber?: Prisma.StringFieldUpdateOperationsInput | string
+  username?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+  manualDiscount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  totalOverride?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  items?: Prisma.OrderItemUpdateManyWithoutOrderNestedInput
+  replacementForReturns?: Prisma.FaultyReturnUpdateManyWithoutReplacementOrderNestedInput
+}
+
+export type OrderUncheckedUpdateWithoutFaultyReturnsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  orderNumber?: Prisma.StringFieldUpdateOperationsInput | string
+  username?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+  manualDiscount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  totalOverride?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  items?: Prisma.OrderItemUncheckedUpdateManyWithoutOrderNestedInput
+  replacementForReturns?: Prisma.FaultyReturnUncheckedUpdateManyWithoutReplacementOrderNestedInput
+}
+
+export type OrderUpsertWithoutReplacementForReturnsInput = {
+  update: Prisma.XOR<Prisma.OrderUpdateWithoutReplacementForReturnsInput, Prisma.OrderUncheckedUpdateWithoutReplacementForReturnsInput>
+  create: Prisma.XOR<Prisma.OrderCreateWithoutReplacementForReturnsInput, Prisma.OrderUncheckedCreateWithoutReplacementForReturnsInput>
+  where?: Prisma.OrderWhereInput
+}
+
+export type OrderUpdateToOneWithWhereWithoutReplacementForReturnsInput = {
+  where?: Prisma.OrderWhereInput
+  data: Prisma.XOR<Prisma.OrderUpdateWithoutReplacementForReturnsInput, Prisma.OrderUncheckedUpdateWithoutReplacementForReturnsInput>
+}
+
+export type OrderUpdateWithoutReplacementForReturnsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  orderNumber?: Prisma.StringFieldUpdateOperationsInput | string
+  username?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+  manualDiscount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  totalOverride?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  items?: Prisma.OrderItemUpdateManyWithoutOrderNestedInput
+  faultyReturns?: Prisma.FaultyReturnUpdateManyWithoutOrderNestedInput
+}
+
+export type OrderUncheckedUpdateWithoutReplacementForReturnsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  orderNumber?: Prisma.StringFieldUpdateOperationsInput | string
+  username?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+  manualDiscount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  totalOverride?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  items?: Prisma.OrderItemUncheckedUpdateManyWithoutOrderNestedInput
+  faultyReturns?: Prisma.FaultyReturnUncheckedUpdateManyWithoutOrderNestedInput
 }
 
 
@@ -526,10 +721,14 @@ export type OrderUncheckedUpdateWithoutItemsInput = {
 
 export type OrderCountOutputType = {
   items: number
+  faultyReturns: number
+  replacementForReturns: number
 }
 
 export type OrderCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   items?: boolean | OrderCountOutputTypeCountItemsArgs
+  faultyReturns?: boolean | OrderCountOutputTypeCountFaultyReturnsArgs
+  replacementForReturns?: boolean | OrderCountOutputTypeCountReplacementForReturnsArgs
 }
 
 /**
@@ -549,6 +748,20 @@ export type OrderCountOutputTypeCountItemsArgs<ExtArgs extends runtime.Types.Ext
   where?: Prisma.OrderItemWhereInput
 }
 
+/**
+ * OrderCountOutputType without action
+ */
+export type OrderCountOutputTypeCountFaultyReturnsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.FaultyReturnWhereInput
+}
+
+/**
+ * OrderCountOutputType without action
+ */
+export type OrderCountOutputTypeCountReplacementForReturnsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.FaultyReturnWhereInput
+}
+
 
 export type OrderSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -560,6 +773,8 @@ export type OrderSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   createdAt?: boolean
   updatedAt?: boolean
   items?: boolean | Prisma.Order$itemsArgs<ExtArgs>
+  faultyReturns?: boolean | Prisma.Order$faultyReturnsArgs<ExtArgs>
+  replacementForReturns?: boolean | Prisma.Order$replacementForReturnsArgs<ExtArgs>
   _count?: boolean | Prisma.OrderCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["order"]>
 
@@ -599,6 +814,8 @@ export type OrderSelectScalar = {
 export type OrderOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "orderNumber" | "username" | "status" | "manualDiscount" | "totalOverride" | "createdAt" | "updatedAt", ExtArgs["result"]["order"]>
 export type OrderInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   items?: boolean | Prisma.Order$itemsArgs<ExtArgs>
+  faultyReturns?: boolean | Prisma.Order$faultyReturnsArgs<ExtArgs>
+  replacementForReturns?: boolean | Prisma.Order$replacementForReturnsArgs<ExtArgs>
   _count?: boolean | Prisma.OrderCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type OrderIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -608,6 +825,8 @@ export type $OrderPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   name: "Order"
   objects: {
     items: Prisma.$OrderItemPayload<ExtArgs>[]
+    faultyReturns: Prisma.$FaultyReturnPayload<ExtArgs>[]
+    replacementForReturns: Prisma.$FaultyReturnPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1013,6 +1232,8 @@ readonly fields: OrderFieldRefs;
 export interface Prisma__OrderClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   items<T extends Prisma.Order$itemsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Order$itemsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$OrderItemPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  faultyReturns<T extends Prisma.Order$faultyReturnsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Order$faultyReturnsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$FaultyReturnPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  replacementForReturns<T extends Prisma.Order$replacementForReturnsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Order$replacementForReturnsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$FaultyReturnPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1459,6 +1680,54 @@ export type Order$itemsArgs<ExtArgs extends runtime.Types.Extensions.InternalArg
   take?: number
   skip?: number
   distinct?: Prisma.OrderItemScalarFieldEnum | Prisma.OrderItemScalarFieldEnum[]
+}
+
+/**
+ * Order.faultyReturns
+ */
+export type Order$faultyReturnsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the FaultyReturn
+   */
+  select?: Prisma.FaultyReturnSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the FaultyReturn
+   */
+  omit?: Prisma.FaultyReturnOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.FaultyReturnInclude<ExtArgs> | null
+  where?: Prisma.FaultyReturnWhereInput
+  orderBy?: Prisma.FaultyReturnOrderByWithRelationInput | Prisma.FaultyReturnOrderByWithRelationInput[]
+  cursor?: Prisma.FaultyReturnWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.FaultyReturnScalarFieldEnum | Prisma.FaultyReturnScalarFieldEnum[]
+}
+
+/**
+ * Order.replacementForReturns
+ */
+export type Order$replacementForReturnsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the FaultyReturn
+   */
+  select?: Prisma.FaultyReturnSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the FaultyReturn
+   */
+  omit?: Prisma.FaultyReturnOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.FaultyReturnInclude<ExtArgs> | null
+  where?: Prisma.FaultyReturnWhereInput
+  orderBy?: Prisma.FaultyReturnOrderByWithRelationInput | Prisma.FaultyReturnOrderByWithRelationInput[]
+  cursor?: Prisma.FaultyReturnWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.FaultyReturnScalarFieldEnum | Prisma.FaultyReturnScalarFieldEnum[]
 }
 
 /**

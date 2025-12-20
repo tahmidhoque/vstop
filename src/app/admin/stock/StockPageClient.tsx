@@ -4,6 +4,7 @@ import Link from "next/link";
 
 interface StockBreakdown {
   physical: number;
+  faulty: number;
   pending: number;
   available: number;
 }
@@ -38,6 +39,17 @@ export default function StockPageClient({ products }: StockPageClientProps) {
     return product.stockBreakdown.physical;
   };
 
+  // Calculate total faulty stock for each product
+  const calculateTotalFaulty = (product: Product): number => {
+    if (product.variants && product.variants.length > 0) {
+      return product.variants.reduce(
+        (total, variant) => total + variant.stockBreakdown.faulty,
+        0
+      );
+    }
+    return product.stockBreakdown.faulty;
+  };
+
   // Calculate total pending stock for each product
   const calculateTotalPending = (product: Product): number => {
     if (product.variants && product.variants.length > 0) {
@@ -62,7 +74,7 @@ export default function StockPageClient({ products }: StockPageClientProps) {
 
   // Format stock breakdown display
   const formatStockBreakdown = (breakdown: StockBreakdown): string => {
-    return `Physical: ${breakdown.physical} | Pending: ${breakdown.pending} | Available: ${breakdown.available}`;
+    return `Physical: ${breakdown.physical} | Faulty: ${breakdown.faulty} | Pending: ${breakdown.pending} | Available: ${breakdown.available}`;
   };
 
   return (
@@ -116,6 +128,7 @@ export default function StockPageClient({ products }: StockPageClientProps) {
                             >
                               {formatStockBreakdown({
                                 physical: calculateTotalPhysical(product),
+                                faulty: calculateTotalFaulty(product),
                                 pending: calculateTotalPending(product),
                                 available: calculateTotalAvailable(product),
                               })}
@@ -143,14 +156,21 @@ export default function StockPageClient({ products }: StockPageClientProps) {
                             </div>
                           </div>
                         ) : (
-                          <div
-                            className={`text-sm font-medium mt-3 py-2 px-3 rounded ${
-                              product.stockBreakdown.available <= 5
-                                ? "text-orange-600 bg-orange-50"
-                                : "text-gray-700 bg-gray-50"
-                            }`}
-                          >
-                            {formatStockBreakdown(product.stockBreakdown)}
+                          <div>
+                            <div
+                              className={`text-sm font-medium mt-3 py-2 px-3 rounded ${
+                                product.stockBreakdown.available <= 5
+                                  ? "text-orange-600 bg-orange-50"
+                                  : "text-gray-700 bg-gray-50"
+                              }`}
+                            >
+                              {formatStockBreakdown(product.stockBreakdown)}
+                            </div>
+                            {product.stockBreakdown.faulty > 0 && (
+                              <p className="text-xs text-orange-600 mt-2 font-medium">
+                                ⚠️ {product.stockBreakdown.faulty} faulty unit{product.stockBreakdown.faulty !== 1 ? 's' : ''} not sellable
+                              </p>
+                            )}
                           </div>
                         )}
                       </div>
@@ -204,6 +224,7 @@ export default function StockPageClient({ products }: StockPageClientProps) {
                               >
                                 {formatStockBreakdown({
                                   physical: calculateTotalPhysical(product),
+                                  faulty: calculateTotalFaulty(product),
                                   pending: calculateTotalPending(product),
                                   available: calculateTotalAvailable(product),
                                 })}
@@ -231,14 +252,21 @@ export default function StockPageClient({ products }: StockPageClientProps) {
                               </div>
                             </div>
                           ) : (
-                            <div
-                              className={`text-sm font-medium py-2 px-3 rounded inline-block ${
-                                product.stockBreakdown.available <= 5
-                                  ? "text-orange-600 bg-orange-50"
-                                  : "text-gray-900 bg-gray-50"
-                              }`}
-                            >
-                              {formatStockBreakdown(product.stockBreakdown)}
+                            <div>
+                              <div
+                                className={`text-sm font-medium py-2 px-3 rounded inline-block ${
+                                  product.stockBreakdown.available <= 5
+                                    ? "text-orange-600 bg-orange-50"
+                                    : "text-gray-900 bg-gray-50"
+                                }`}
+                              >
+                                {formatStockBreakdown(product.stockBreakdown)}
+                              </div>
+                              {product.stockBreakdown.faulty > 0 && (
+                                <p className="text-xs text-orange-600 mt-2 font-medium">
+                                  ⚠️ {product.stockBreakdown.faulty} faulty unit{product.stockBreakdown.faulty !== 1 ? 's' : ''} not sellable
+                                </p>
+                              )}
                             </div>
                           )}
                         </td>
