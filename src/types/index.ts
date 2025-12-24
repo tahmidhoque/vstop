@@ -1,5 +1,5 @@
-export type { PasswordType, OrderStatus, ReturnStatus } from "@/generated/enums";
-import type { OrderStatus, ReturnStatus } from "@/generated/enums";
+export type { PasswordType, OrderStatus, ReturnStatus, OrderType } from "@/generated/enums";
+import type { OrderStatus, ReturnStatus, OrderType } from "@/generated/enums";
 
 export interface BasketItem {
   productId: string;
@@ -16,6 +16,7 @@ export interface OrderWithItems {
   orderNumber: string;
   username: string;
   status: OrderStatus;
+  orderType: OrderType;
   manualDiscount?: number | null;
   totalOverride?: number | null;
   createdAt: Date;
@@ -81,6 +82,7 @@ export interface FaultyReturn {
     orderNumber: string;
     username: string;
     status: OrderStatus;
+    orderType: OrderType;
     manualDiscount: number | null;
     totalOverride: number | null;
   } | null;
@@ -89,6 +91,7 @@ export interface FaultyReturn {
     orderNumber: string;
     username: string;
     status: OrderStatus;
+    orderType: OrderType;
     manualDiscount: number | null;
     totalOverride: number | null;
   } | null;

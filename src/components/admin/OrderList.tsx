@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { OrderStatus } from "@/generated/enums";
+import { OrderStatus, OrderType } from "@/generated/enums";
 import OrderEditModal from "./OrderEditModal";
 import { updateOrderStatus, updateOrder, deleteOrder, deleteAllOrders } from "@/lib/actions";
 import { formatDate } from "@/lib/date-utils";
@@ -90,6 +90,25 @@ export default function OrderList({ orders }: OrderListProps) {
       : 0;
 
     return Math.max(0, subtotal - manualDiscount);
+  };
+
+  const getOrderTypeBadge = (orderType: OrderType) => {
+    switch (orderType) {
+      case OrderType.PERSONAL_USE:
+        return (
+          <span className="px-2.5 sm:px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+            PERSONAL USE
+          </span>
+        );
+      case OrderType.REPLACEMENT:
+        return (
+          <span className="px-2.5 sm:px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+            REPLACEMENT
+          </span>
+        );
+      default:
+        return null;
+    }
   };
 
   return (
@@ -184,7 +203,8 @@ export default function OrderList({ orders }: OrderListProps) {
                     • {formatDate(order.createdAt)}
                   </p>
                 </div>
-                <div className="flex items-center gap-2 sm:gap-3">
+                <div className="flex items-center gap-2 sm:gap-3 flex-wrap justify-end">
+                  {getOrderTypeBadge(order.orderType)}
                   <span
                     className={`px-2.5 sm:px-3 py-1 rounded-full text-xs font-medium ${
                       order.status === "PENDING"
@@ -198,7 +218,7 @@ export default function OrderList({ orders }: OrderListProps) {
                   >
                     {order.status}
                   </span>
-                  <div className="flex flex-col items-end">
+                  <div className="flex flex-col items-end w-full sm:w-auto">
                     <span className="text-base sm:text-lg font-bold text-gray-900">
                       £{totalValue(order).toFixed(2)}
                     </span>

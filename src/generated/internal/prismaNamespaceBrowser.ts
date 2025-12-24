@@ -118,6 +118,7 @@ export const OrderScalarFieldEnum = {
   orderNumber: 'orderNumber',
   username: 'username',
   status: 'status',
+  orderType: 'orderType',
   manualDiscount: 'manualDiscount',
   totalOverride: 'totalOverride',
   createdAt: 'createdAt',

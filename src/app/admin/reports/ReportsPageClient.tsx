@@ -312,8 +312,8 @@ export default function ReportsPageClient({
               <li className="flex items-start">
                 <span className="mr-2">•</span>
                 <span>
-                  <strong>Note:</strong> Cancelled orders are always excluded
-                  from sales calculations, even if checked
+                  <strong>Note:</strong> Cancelled orders, personal use orders, and replacement orders are always excluded
+                  from sales calculations
                 </span>
               </li>
             </ul>
@@ -366,7 +366,7 @@ export default function ReportsPageClient({
               {formatCurrency(reportsData.totalSales)}
             </p>
             <p className="text-xs sm:text-sm text-gray-500 mt-2">
-              Based on selected filters (excluding cancelled orders and faulty returns from sales)
+              Based on selected filters (excluding cancelled orders, personal use orders, replacement orders, and faulty returns from sales)
             </p>
           </div>
         </div>

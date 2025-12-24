@@ -2,7 +2,7 @@
 
 import { db } from "./db";
 import { revalidatePath } from "next/cache";
-import { OrderStatus } from "@/generated/enums";
+import { OrderStatus, OrderType } from "@/generated/enums";
 import type { BasketItem } from "@/types";
 import {
   calculateDiscountedPrices,
@@ -138,6 +138,97 @@ export async function createOrder(username: string, items: BasketItem[]) {
   }
 
   revalidatePath("/admin/orders");
+  return order;
+}
+
+/**
+ * Create a personal use order for stock tracking without revenue impact
+ * @param items - Array of items to include in the personal use order
+ * @returns The created order
+ */
+export async function createPersonalUseOrder(items: BasketItem[]) {
+  // Validate stock availability
+  for (const item of items) {
+    if (item.variantId) {
+      // Check variant stock
+      const variant = await db.productVariant.findUnique({
+        where: { id: item.variantId },
+      });
+
+      if (!variant || variant.stock < item.quantity) {
+        throw new Error(`Insufficient stock for ${item.name}`);
+      }
+    } else {
+      // Check base product stock
+      const product = await db.product.findUnique({
+        where: { id: item.productId },
+      });
+
+      if (!product || product.stock < item.quantity) {
+        throw new Error(`Insufficient stock for ${item.name}`);
+      }
+    }
+  }
+
+  // Generate order number
+  const lastOrder = await db.order.findFirst({
+    orderBy: { createdAt: "desc" },
+    select: { orderNumber: true },
+  });
+
+  let orderNumber: string;
+  if (lastOrder?.orderNumber) {
+    const lastNum = parseInt(lastOrder.orderNumber.replace("ORD-", ""), 10);
+    orderNumber = `ORD-${String(lastNum + 1).padStart(6, "0")}`;
+  } else {
+    orderNumber = "ORD-000001";
+  }
+
+  // Create personal use order
+  const order = await db.order.create({
+    data: {
+      orderNumber,
+      username: "PERSONAL_USE",
+      status: "FULFILLED", // Personal use orders are immediately fulfilled
+      orderType: OrderType.PERSONAL_USE,
+      items: {
+        create: items.map((item) => ({
+          productId: item.productId,
+          variantId: item.variantId || null,
+          flavour: item.flavour || null,
+          quantity: item.quantity,
+          priceAtTime: 0, // No price for personal use
+          offerId: null,
+        })),
+      },
+    },
+  });
+
+  // Update stock levels
+  for (const item of items) {
+    if (item.variantId) {
+      await db.productVariant.update({
+        where: { id: item.variantId },
+        data: {
+          stock: {
+            decrement: item.quantity,
+          },
+        },
+      });
+    } else {
+      await db.product.update({
+        where: { id: item.productId },
+        data: {
+          stock: {
+            decrement: item.quantity,
+          },
+        },
+      });
+    }
+  }
+
+  revalidatePath("/admin/orders");
+  revalidatePath("/admin/stock");
   return order;
 }
 
@@ -876,26 +967,30 @@ export async function getReportsData(
     orderBy: { createdAt: "desc" },
   });
 
-  // Separate replacement orders from regular orders
+  // Separate orders by type
+  // Personal use orders are excluded from revenue calculations
   const replacementOrders = orders.filter(
-    (o) => o.replacementForReturns.length > 0,
+    (o) => o.orderType === OrderType.REPLACEMENT,
   );
-  const regularOrders = orders.filter((o) => o.replacementForReturns.length === 0);
+  const customerOrders = orders.filter(
+    (o) => o.orderType === OrderType.CUSTOMER,
+  );
 
-  const totalOrders = regularOrders.length;
-  const cancelledOrders = regularOrders.filter(
+  const totalOrders = customerOrders.length;
+  const cancelledOrders = customerOrders.filter(
     (o) => o.status === "CANCELLED",
   ).length;
-  const fulfilledOrders = regularOrders.filter(
+  const fulfilledOrders = customerOrders.filter(
     (o) => o.status === "FULFILLED",
   ).length;
-  const unfulfilledOrders = regularOrders.filter(
+  const unfulfilledOrders = customerOrders.filter(
     (o) => o.status === "UNFULFILLED",
   ).length;
 
-  // Calculate total sales from non-cancelled, non-replacement orders
+  // Calculate total sales from non-cancelled customer orders only
+  // Exclude personal use and replacement orders from revenue
   // Subtract value of faulty returns from each order
-  const totalSales = regularOrders
+  const totalSales = customerOrders
     .filter((order) => order.status !== "CANCELLED")
     .reduce((sum, order) => {
       let orderTotal = 0;
@@ -931,7 +1026,7 @@ export async function getReportsData(
   const faultyLosses = await getFaultyLosses(start, end);
 
   // Convert Decimal to number for client component serialization
-  const ordersWithItems = regularOrders.map((order) => ({
+  const ordersWithItems = customerOrders.map((order) => ({
     ...order,
     manualDiscount: order.manualDiscount
       ? Number(order.manualDiscount)
@@ -1112,6 +1207,7 @@ export async function createFaultyReturn(data: {
           orderNumber: faultyReturn.order.orderNumber,
           username: faultyReturn.order.username,
           status: faultyReturn.order.status,
+          orderType: faultyReturn.order.orderType,
           manualDiscount: faultyReturn.order.manualDiscount
             ? Number(faultyReturn.order.manualDiscount)
             : null,
@@ -1175,6 +1271,7 @@ export async function updateFaultyReturnStatus(
           orderNumber: faultyReturn.order.orderNumber,
           username: faultyReturn.order.username,
           status: faultyReturn.order.status,
+          orderType: faultyReturn.order.orderType,
           manualDiscount: faultyReturn.order.manualDiscount
             ? Number(faultyReturn.order.manualDiscount)
             : null,
@@ -1189,6 +1286,7 @@ export async function updateFaultyReturnStatus(
           orderNumber: faultyReturn.replacementOrder.orderNumber,
           username: faultyReturn.replacementOrder.username,
           status: faultyReturn.replacementOrder.status,
+          orderType: faultyReturn.replacementOrder.orderType,
           manualDiscount: faultyReturn.replacementOrder.manualDiscount
             ? Number(faultyReturn.replacementOrder.manualDiscount)
             : null,
@@ -1240,6 +1338,7 @@ export async function createReplacementOrder(
       orderNumber,
       username,
       status: "PENDING",
+      orderType: OrderType.REPLACEMENT,
       items: {
         create: {
           productId: faultyReturn.productId,
@@ -1294,30 +1393,32 @@ export async function getFaultyReturns(filters?: {
   startDate?: Date;
   endDate?: Date;
 }) {
-  const where: any = {};
+  // Build where clause dynamically
+  const whereConditions: Record<string, unknown> = {};
 
   if (filters?.type === "PRE_SALE") {
-    where.orderId = null;
+    whereConditions.orderId = null;
   } else if (filters?.type === "POST_SALE") {
-    where.orderId = { not: null };
+    whereConditions.orderId = { not: null };
   }
 
   if (filters?.status) {
-    where.status = filters.status;
+    whereConditions.status = filters.status;
   }
 
   if (filters?.startDate || filters?.endDate) {
-    where.createdAt = {};
+    const createdAtCondition: Record<string, Date> = {};
     if (filters.startDate) {
-      where.createdAt.gte = filters.startDate;
+      createdAtCondition.gte = filters.startDate;
     }
     if (filters.endDate) {
-      where.createdAt.lte = filters.endDate;
+      createdAtCondition.lte = filters.endDate;
     }
+    whereConditions.createdAt = createdAtCondition;
   }
 
   const faultyReturns = await db.faultyReturn.findMany({
-    where,
+    where: whereConditions,
     include: {
       product: true,
       variant: true,
@@ -1361,6 +1462,7 @@ export async function getFaultyReturns(filters?: {
           orderNumber: fr.order.orderNumber,
           username: fr.order.username,
           status: fr.order.status,
+          orderType: fr.order.orderType,
           manualDiscount: fr.order.manualDiscount
             ? Number(fr.order.manualDiscount)
             : null,
@@ -1375,6 +1477,7 @@ export async function getFaultyReturns(filters?: {
           orderNumber: fr.replacementOrder.orderNumber,
           username: fr.replacementOrder.username,
           status: fr.replacementOrder.status,
+          orderType: fr.replacementOrder.orderType,
           manualDiscount: fr.replacementOrder.manualDiscount
             ? Number(fr.replacementOrder.manualDiscount)
             : null,

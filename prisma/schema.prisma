@@ -29,6 +29,12 @@ enum ReturnStatus {
   DISPOSED
 }
 
+enum OrderType {
+  CUSTOMER
+  PERSONAL_USE
+  REPLACEMENT
+}
+
 model Password {
   id           String      @id @default(cuid())
   type         PasswordType @unique
@@ -73,6 +79,7 @@ model Order {
   orderNumber           String         @unique
   username              String
   status                OrderStatus    @default(PENDING)
+  orderType             OrderType      @default(CUSTOMER)
   manualDiscount        Decimal?       @db.Decimal(10, 2)
   totalOverride         Decimal?       @db.Decimal(10, 2)
   createdAt             DateTime       @default(now())
@@ -80,6 +87,8 @@ model Order {
   items                 OrderItem[]
   faultyReturns         FaultyReturn[] @relation("OrderFaultyReturns")
   replacementForReturns FaultyReturn[] @relation("ReplacementOrder")
+
+  @@index([orderType])
 }
 
 model OrderItem {

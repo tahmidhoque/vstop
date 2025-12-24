@@ -1,6 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
+import PersonalUseOrderModal from "@/components/admin/PersonalUseOrderModal";
 
 interface Product {
   id: string;
@@ -15,6 +17,7 @@ interface StockPageClientProps {
 }
 
 export default function StockPageClient({ products }: StockPageClientProps) {
+  const [showPersonalUseModal, setShowPersonalUseModal] = useState(false);
   // Calculate total stock for each product
   const calculateTotalStock = (product: Product): number => {
     if (product.variants && product.variants.length > 0) {
@@ -40,11 +43,30 @@ export default function StockPageClient({ products }: StockPageClientProps) {
       </div>
 
       <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
-        {/* Quick Action */}
-        <div className="mb-4 sm:mb-6">
+        {/* Quick Actions */}
+        <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row gap-3">
+          <button
+            onClick={() => setShowPersonalUseModal(true)}
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 active:bg-purple-800 min-h-[44px] font-medium transition-colors"
+          >
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
+              />
+            </svg>
+            Create Personal Use Order
+          </button>
           <Link
             href="/admin/faulty"
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-orange-600 text-white rounded-lg hover:bg-orange-700 active:bg-orange-800 min-h-[44px] font-medium transition-colours"
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-orange-600 text-white rounded-lg hover:bg-orange-700 active:bg-orange-800 min-h-[44px] font-medium transition-colors"
           >
             <svg
               className="w-5 h-5"
@@ -222,7 +244,17 @@ export default function StockPageClient({ products }: StockPageClientProps) {
           )}
         </div>
       </div>
+
+      {/* Personal Use Order Modal */}
+      {showPersonalUseModal && (
+        <PersonalUseOrderModal
+          onClose={() => setShowPersonalUseModal(false)}
+          onSuccess={() => {
+            setShowPersonalUseModal(false);
+            window.location.reload();
+          }}
+        />
+      )}
     </div>
   );
 }
-
