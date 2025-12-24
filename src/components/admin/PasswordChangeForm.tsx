@@ -62,7 +62,7 @@ export default function PasswordChangeForm() {
       )}
 
       <Grid container spacing={3}>
-        <Grid item xs={12}>
+        <Grid size={12}>
           <TextField
             fullWidth
             required
@@ -76,7 +76,7 @@ export default function PasswordChangeForm() {
           />
         </Grid>
 
-        <Grid item xs={12}>
+        <Grid size={12}>
           <TextField
             fullWidth
             required
@@ -89,7 +89,7 @@ export default function PasswordChangeForm() {
           />
         </Grid>
 
-        <Grid item xs={12}>
+        <Grid size={12}>
           <Button
             fullWidth
             type="submit"

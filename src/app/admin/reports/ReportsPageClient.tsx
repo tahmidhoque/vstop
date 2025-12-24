@@ -1,10 +1,9 @@
 "use client";
 
 import React, { useState, useTransition, useMemo } from "react";
-import { useRouter } from "next/navigation";
 import { getReportsData } from "@/lib/actions";
 import { formatDate } from "@/lib/date-utils";
-import type { OrderWithItems, ReportsData, ProductBreakdown } from "@/types";
+import type { OrderWithItems, ReportsData } from "@/types";
 import { OrderStatus } from "@/generated/enums";
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
@@ -29,8 +28,6 @@ import CircularProgress from '@mui/material/CircularProgress';
 import AdminLayout from '@/components/layout/AdminLayout';
 import StatCard from '@/components/common/StatCard';
 import { useSnackbar } from '@/components/common/SnackbarProvider';
-import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
-import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 
 interface StatusFilters {
   PENDING: boolean;
@@ -52,7 +49,6 @@ export default function ReportsPageClient({
   initialEndDate,
   initialStatusFilters,
 }: ReportsPageClientProps) {
-  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [reportsData, setReportsData] = useState<ReportsData>(initialData);
   const [startDate, setStartDate] = useState<string>(
@@ -163,7 +159,7 @@ export default function ReportsPageClient({
             Date Range
           </Typography>
           <Grid container spacing={3} sx={{ mb: 3 }}>
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 fullWidth
                 type="date"
@@ -174,7 +170,7 @@ export default function ReportsPageClient({
                 InputLabelProps={{ shrink: true }}
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 fullWidth
                 type="date"
@@ -206,7 +202,7 @@ export default function ReportsPageClient({
             Select which order statuses to include in the report. Filters apply to all statistics, sales calculations, and the transactions list.
           </Typography>
           <Grid container spacing={2} sx={{ mb: 3 }}>
-            <Grid item xs={6} sm={3}>
+            <Grid size={{ xs: 6, sm: 3 }}>
               <FormControlLabel
                 control={
                   <Checkbox
@@ -223,7 +219,7 @@ export default function ReportsPageClient({
                 label="Pending"
               />
             </Grid>
-            <Grid item xs={6} sm={3}>
+            <Grid size={{ xs: 6, sm: 3 }}>
               <FormControlLabel
                 control={
                   <Checkbox
@@ -240,7 +236,7 @@ export default function ReportsPageClient({
                 label="Unfulfilled"
               />
             </Grid>
-            <Grid item xs={6} sm={3}>
+            <Grid size={{ xs: 6, sm: 3 }}>
               <FormControlLabel
                 control={
                   <Checkbox
@@ -257,7 +253,7 @@ export default function ReportsPageClient({
                 label="Fulfilled"
               />
             </Grid>
-            <Grid item xs={6} sm={3}>
+            <Grid size={{ xs: 6, sm: 3 }}>
               <FormControlLabel
                 control={
                   <Checkbox
@@ -281,8 +277,8 @@ export default function ReportsPageClient({
             </Typography>
             <Box component="ul" sx={{ m: 0, pl: 2 }}>
               <li>Check the boxes for statuses you want to include in the report</li>
-              <li>Click "Update Report" after changing filters to refresh the data</li>
-              <li>Example: To see only completed orders, check "Fulfilled" and uncheck all others</li>
+              <li>Click &quot;Update Report&quot; after changing filters to refresh the data</li>
+              <li>Example: To see only completed orders, check &quot;Fulfilled&quot; and uncheck all others</li>
               <li>Note: Cancelled orders, personal use orders, and replacement orders are always excluded from sales calculations</li>
             </Box>
           </Alert>
@@ -290,28 +286,28 @@ export default function ReportsPageClient({
 
         {/* Statistics Cards */}
         <Grid container spacing={3} sx={{ mb: 4 }}>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <StatCard
               title="Total Orders"
               value={reportsData.totalOrders}
               color="primary"
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <StatCard
               title="Cancelled Orders"
               value={reportsData.cancelledOrders}
               color="error"
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <StatCard
               title="Fulfilled Orders"
               value={reportsData.fulfilledOrders}
               color="success"
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <StatCard
               title="Unfulfilled Orders"
               value={reportsData.unfulfilledOrders}
@@ -345,7 +341,7 @@ export default function ReportsPageClient({
         {/* Faulty Losses & Replacement Orders */}
         {reportsData.faultyLosses && (
           <Grid container spacing={3} sx={{ mb: 4 }}>
-            <Grid item xs={12} lg={6}>
+            <Grid size={{ xs: 12, lg: 6 }}>
               <Paper
                 elevation={2}
                 sx={{
@@ -365,7 +361,7 @@ export default function ReportsPageClient({
                   </Typography>
                 </Box>
                 <Grid container spacing={2}>
-                  <Grid item xs={6}>
+                  <Grid size={6}>
                     <Typography variant="caption" color="text.secondary">Pre-Sale Faulty</Typography>
                     <Typography variant="h6" fontWeight={600} color="warning.main">
                       {formatCurrency(reportsData.faultyLosses.preSaleLoss)}
@@ -374,7 +370,7 @@ export default function ReportsPageClient({
                       {reportsData.faultyLosses.preSaleCount} item(s)
                     </Typography>
                   </Grid>
-                  <Grid item xs={6}>
+                  <Grid size={6}>
                     <Typography variant="caption" color="text.secondary">Post-Sale Returns</Typography>
                     <Typography variant="h6" fontWeight={600} color="secondary.main">
                       {formatCurrency(reportsData.faultyLosses.postSaleLoss)}
@@ -390,7 +386,7 @@ export default function ReportsPageClient({
                 </Typography>
               </Paper>
             </Grid>
-            <Grid item xs={12} lg={6}>
+            <Grid size={{ xs: 12, lg: 6 }}>
               <Paper
                 elevation={2}
                 sx={{

@@ -228,7 +228,7 @@ export default function PersonalUseOrderModal({
               Add Item
             </Typography>
             <Grid container spacing={2} sx={{ mb: 2 }}>
-              <Grid item xs={12} sm={hasVariants ? 6 : 4}>
+              <Grid size={{ xs: 12, sm: hasVariants ? 6 : 4 }}>
                 <FormControl fullWidth>
                   <InputLabel>Product</InputLabel>
                   <Select
@@ -253,7 +253,7 @@ export default function PersonalUseOrderModal({
               </Grid>
 
               {hasVariants && (
-                <Grid item xs={12} sm={6}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <FormControl fullWidth>
                     <InputLabel>Flavour</InputLabel>
                     <Select
@@ -275,7 +275,7 @@ export default function PersonalUseOrderModal({
                 </Grid>
               )}
 
-              <Grid item xs={12} sm={hasVariants ? 12 : 4}>
+              <Grid size={{ xs: 12, sm: hasVariants ? 12 : 4 }}>
                 <TextField
                   fullWidth
                   type="number"

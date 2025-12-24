@@ -22,6 +22,26 @@ interface FaultyReturnFormProps {
   onCancel: () => void;
 }
 
+type ProductVariantOption = {
+  id: string;
+  flavour: string;
+  stock: number;
+};
+
+type ProductOption = {
+  id: string;
+  name: string;
+  price: number;
+  variants?: ProductVariantOption[];
+};
+
+type OrderOption = {
+  id: string;
+  orderNumber: string;
+  username: string;
+  createdAt: string | Date;
+};
+
 export default function FaultyReturnForm({
   onSuccess,
   onCancel,
@@ -37,9 +57,11 @@ export default function FaultyReturnForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
 
-  const [products, setProducts] = useState<any[]>([]);
-  const [orders, setOrders] = useState<any[]>([]);
-  const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const [products, setProducts] = useState<ProductOption[]>([]);
+  const [orders, setOrders] = useState<OrderOption[]>([]);
+  const [selectedProduct, setSelectedProduct] = useState<ProductOption | null>(
+    null,
+  );
 
   useEffect(() => {
     const fetchData = async () => {
@@ -47,8 +69,8 @@ export default function FaultyReturnForm({
         getProducts(true),
         getOrders(),
       ]);
-      setProducts(productsData);
-      setOrders(ordersData);
+      setProducts(productsData as ProductOption[]);
+      setOrders(ordersData as OrderOption[]);
     };
     fetchData();
   }, []);
@@ -56,7 +78,7 @@ export default function FaultyReturnForm({
   useEffect(() => {
     if (productId) {
       const product = products.find((p) => p.id === productId);
-      setSelectedProduct(product);
+      setSelectedProduct(product ?? null);
       setVariantId("");
     } else {
       setSelectedProduct(null);
@@ -92,8 +114,10 @@ export default function FaultyReturnForm({
       });
 
       onSuccess();
-    } catch (err: any) {
-      setError(err.message || "Failed to create faulty return");
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error ? err.message : "Failed to create faulty return",
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -112,7 +136,7 @@ export default function FaultyReturnForm({
       )}
 
       <Grid container spacing={3}>
-        <Grid item xs={12}>
+        <Grid size={12}>
           <Typography variant="subtitle2" fontWeight={600} gutterBottom>
             Type
           </Typography>
@@ -129,7 +153,7 @@ export default function FaultyReturnForm({
         </Grid>
 
         {type === "POST_SALE" && (
-          <Grid item xs={12}>
+          <Grid size={12}>
             <FormControl fullWidth>
               <InputLabel>Order</InputLabel>
               <Select
@@ -157,7 +181,7 @@ export default function FaultyReturnForm({
           </Grid>
         )}
 
-        <Grid item xs={12}>
+        <Grid size={12}>
           <FormControl fullWidth>
             <InputLabel>Product</InputLabel>
             <Select
@@ -171,7 +195,7 @@ export default function FaultyReturnForm({
               </MenuItem>
               {products.map((product) => (
                 <MenuItem key={product.id} value={product.id}>
-                  {product.name} - £{product.price.toFixed(2)}
+                  {product.name} - £{Number(product.price).toFixed(2)}
                 </MenuItem>
               ))}
             </Select>
@@ -179,7 +203,7 @@ export default function FaultyReturnForm({
         </Grid>
 
         {selectedProduct && selectedProduct.variants && selectedProduct.variants.length > 0 && (
-          <Grid item xs={12}>
+          <Grid size={12}>
             <FormControl fullWidth>
               <InputLabel>Variant</InputLabel>
               <Select
@@ -190,7 +214,7 @@ export default function FaultyReturnForm({
                 <MenuItem value="">
                   <em>Base Product</em>
                 </MenuItem>
-                {selectedProduct.variants.map((variant: any) => (
+                {selectedProduct.variants.map((variant: ProductVariantOption) => (
                   <MenuItem key={variant.id} value={variant.id}>
                     {variant.flavour} (Stock: {variant.stock})
                   </MenuItem>
@@ -200,7 +224,7 @@ export default function FaultyReturnForm({
           </Grid>
         )}
 
-        <Grid item xs={12} sm={6}>
+        <Grid size={{ xs: 12, sm: 6 }}>
           <TextField
             fullWidth
             type="number"
@@ -212,7 +236,7 @@ export default function FaultyReturnForm({
           />
         </Grid>
 
-        <Grid item xs={12}>
+        <Grid size={12}>
           <FormTextField
             fullWidth
             label="Faulty Reason"
@@ -223,7 +247,7 @@ export default function FaultyReturnForm({
           />
         </Grid>
 
-        <Grid item xs={12}>
+        <Grid size={12}>
           <TextField
             fullWidth
             multiline
@@ -236,14 +260,14 @@ export default function FaultyReturnForm({
         </Grid>
 
         {type === "PRE_SALE" && (
-          <Grid item xs={12}>
+          <Grid size={12}>
             <Alert severity="warning">
               <strong>Warning:</strong> This will automatically deduct {quantity} unit(s) from stock.
             </Alert>
           </Grid>
         )}
 
-        <Grid item xs={12}>
+        <Grid size={12}>
           <Box sx={{ display: 'flex', gap: 2 }}>
             <Button
               type="submit"

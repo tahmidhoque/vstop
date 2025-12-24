@@ -37,7 +37,7 @@ export default function AdminDashboardClient({
       <Container maxWidth="xl" sx={{ py: 4 }}>
         {/* Stats */}
         <Grid container spacing={3} sx={{ mb: 4 }}>
-          <Grid item xs={12} sm={6} md={4}>
+          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
             <StatCard
               title="Pending Orders"
               value={pendingOrders}
@@ -45,7 +45,7 @@ export default function AdminDashboardClient({
               icon={<PendingActionsIcon />}
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={4}>
+          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
             <StatCard
               title="Unfulfilled Orders"
               value={unfulfilledOrders}
@@ -53,7 +53,7 @@ export default function AdminDashboardClient({
               icon={<WarningAmberIcon />}
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={4}>
+          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
             <StatCard
               title="Low Stock Products"
               value={lowStockProducts}

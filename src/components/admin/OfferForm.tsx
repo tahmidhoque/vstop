@@ -147,7 +147,7 @@ export default function OfferForm({
       )}
 
       <Grid container spacing={3}>
-        <Grid item xs={12}>
+        <Grid size={12}>
           <FormTextField
             fullWidth
             label="Offer Name"
@@ -160,7 +160,7 @@ export default function OfferForm({
           />
         </Grid>
 
-        <Grid item xs={12}>
+        <Grid size={12}>
           <TextField
             fullWidth
             multiline
@@ -173,7 +173,7 @@ export default function OfferForm({
           />
         </Grid>
 
-        <Grid item xs={12} sm={6}>
+        <Grid size={{ xs: 12, sm: 6 }}>
           <TextField
             fullWidth
             type="number"
@@ -188,7 +188,7 @@ export default function OfferForm({
           />
         </Grid>
 
-        <Grid item xs={12} sm={6}>
+        <Grid size={{ xs: 12, sm: 6 }}>
           <TextField
             fullWidth
             type="number"
@@ -203,7 +203,7 @@ export default function OfferForm({
           />
         </Grid>
 
-        <Grid item xs={12} sm={6}>
+        <Grid size={{ xs: 12, sm: 6 }}>
           <TextField
             fullWidth
             type="date"
@@ -215,7 +215,7 @@ export default function OfferForm({
           />
         </Grid>
 
-        <Grid item xs={12} sm={6}>
+        <Grid size={{ xs: 12, sm: 6 }}>
           <TextField
             fullWidth
             type="date"
@@ -227,7 +227,7 @@ export default function OfferForm({
           />
         </Grid>
 
-        <Grid item xs={12}>
+        <Grid size={12}>
           <FormControlLabel
             control={
               <Checkbox
@@ -243,7 +243,7 @@ export default function OfferForm({
           </Typography>
         </Grid>
 
-        <Grid item xs={12}>
+        <Grid size={12}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
             <Typography variant="subtitle2" fontWeight={600}>
               Eligible Products <Box component="span" color="error.main">*</Box>
@@ -297,7 +297,7 @@ export default function OfferForm({
           </Typography>
         </Grid>
 
-        <Grid item xs={12}>
+        <Grid size={12}>
           <Box sx={{ display: 'flex', gap: 2, pt: 2 }}>
             <Button
               type="button"
