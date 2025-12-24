@@ -2,6 +2,12 @@
 
 import { useState } from "react";
 import { updateCustomerPassword } from "@/lib/auth-actions";
+import Box from '@mui/material/Box';
+import TextField from '@mui/material/TextField';
+import Button from '@mui/material/Button';
+import Alert from '@mui/material/Alert';
+import CircularProgress from '@mui/material/CircularProgress';
+import Grid from '@mui/material/Grid';
 
 export default function PasswordChangeForm() {
   const [newPassword, setNewPassword] = useState("");
@@ -42,65 +48,67 @@ export default function PasswordChangeForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <Box component="form" onSubmit={handleSubmit}>
       {error && (
-        <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+        <Alert severity="error" sx={{ mb: 3 }}>
           {error}
-        </div>
+        </Alert>
       )}
 
       {success && (
-        <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm">
+        <Alert severity="success" sx={{ mb: 3 }}>
           Password updated successfully!
-        </div>
+        </Alert>
       )}
 
-      <div>
-        <label
-          htmlFor="newPassword"
-          className="block text-sm font-medium text-gray-700 mb-2"
-        >
-          New Password
-        </label>
-        <input
-          id="newPassword"
-          type="password"
-          value={newPassword}
-          onChange={(e) => setNewPassword(e.target.value)}
-          required
-          minLength={6}
-          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[44px]"
-          disabled={loading}
-        />
-        <p className="mt-1 text-sm text-gray-600">Minimum 6 characters</p>
-      </div>
+      <Grid container spacing={3}>
+        <Grid item xs={12}>
+          <TextField
+            fullWidth
+            required
+            type="password"
+            label="New Password"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            disabled={loading}
+            helperText="Minimum 6 characters"
+            inputProps={{ minLength: 6 }}
+          />
+        </Grid>
 
-      <div>
-        <label
-          htmlFor="confirmPassword"
-          className="block text-sm font-medium text-gray-700 mb-2"
-        >
-          Confirm Password
-        </label>
-        <input
-          id="confirmPassword"
-          type="password"
-          value={confirmPassword}
-          onChange={(e) => setConfirmPassword(e.target.value)}
-          required
-          minLength={6}
-          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[44px]"
-          disabled={loading}
-        />
-      </div>
+        <Grid item xs={12}>
+          <TextField
+            fullWidth
+            required
+            type="password"
+            label="Confirm Password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            disabled={loading}
+            inputProps={{ minLength: 6 }}
+          />
+        </Grid>
 
-      <button
-        type="submit"
-        disabled={loading}
-        className="w-full py-2.5 px-4 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 active:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-h-[44px]"
-      >
-        {loading ? "Updating..." : "Update Password"}
-      </button>
-    </form>
+        <Grid item xs={12}>
+          <Button
+            fullWidth
+            type="submit"
+            variant="contained"
+            disabled={loading}
+            size="large"
+            sx={{ minHeight: 48 }}
+          >
+            {loading ? (
+              <>
+                <CircularProgress size={20} sx={{ mr: 1 }} color="inherit" />
+                Updating...
+              </>
+            ) : (
+              'Update Password'
+            )}
+          </Button>
+        </Grid>
+      </Grid>
+    </Box>
   );
 }

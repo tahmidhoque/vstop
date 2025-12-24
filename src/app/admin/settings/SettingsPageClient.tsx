@@ -1,37 +1,29 @@
 "use client";
 
-import Link from "next/link";
 import PasswordChangeForm from "@/components/admin/PasswordChangeForm";
+import Container from '@mui/material/Container';
+import Typography from '@mui/material/Typography';
+import Paper from '@mui/material/Paper';
+import Box from '@mui/material/Box';
+import AdminLayout from '@/components/layout/AdminLayout';
 
 export default function SettingsPageClient() {
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 py-3 sm:py-4">
-          <Link
-            href="/admin"
-            className="text-blue-600 hover:text-blue-700 text-sm font-medium mb-3 sm:mb-4 inline-block min-h-[44px] flex items-center"
-          >
-            ← Back to Dashboard
-          </Link>
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
-            Settings
-          </h1>
-        </div>
-      </div>
-
-      <div className="max-w-2xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
-          <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">
+    <AdminLayout>
+      <Container maxWidth="md" sx={{ py: 4 }}>
+        <Typography variant="h4" component="h1" fontWeight={700} gutterBottom>
+          Settings
+        </Typography>
+        <Paper elevation={2} sx={{ p: { xs: 2, sm: 3 } }}>
+          <Typography variant="h6" fontWeight={600} gutterBottom>
             Change End User Password
-          </h2>
-          <p className="text-xs sm:text-sm text-gray-600 mb-6">
-            Update the password that end users need to enter to access the
-            store.
-          </p>
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            Update the password that end users need to enter to access the store.
+          </Typography>
           <PasswordChangeForm />
-        </div>
-      </div>
-    </div>
+        </Paper>
+      </Container>
+    </AdminLayout>
   );
 }

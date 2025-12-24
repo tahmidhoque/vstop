@@ -1,10 +1,35 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import ProductForm from "@/components/admin/ProductForm";
 import { createProduct, updateProduct, deleteProduct } from "@/lib/actions";
+import Box from '@mui/material/Box';
+import Container from '@mui/material/Container';
+import Typography from '@mui/material/Typography';
+import Button from '@mui/material/Button';
+import Paper from '@mui/material/Paper';
+import Table from '@mui/material/Table';
+import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
+import TableContainer from '@mui/material/TableContainer';
+import TableHead from '@mui/material/TableHead';
+import TableRow from '@mui/material/TableRow';
+import IconButton from '@mui/material/IconButton';
+import Chip from '@mui/material/Chip';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import CardActions from '@mui/material/CardActions';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
+import AddIcon from '@mui/icons-material/Add';
+import AdminLayout from '@/components/layout/AdminLayout';
+import { useSnackbar } from '@/components/common/SnackbarProvider';
+import useMediaQuery from '@mui/material/useMediaQuery';
+import { useTheme } from '@mui/material/styles';
 
 interface Product {
   id: string;
@@ -26,8 +51,11 @@ export default function ProductsPageClient({
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [showForm, setShowForm] = useState(false);
   const router = useRouter();
+  const { showSnackbar } = useSnackbar();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
-  // Sync products when initialProducts changes (after router.refresh())
+  // Sync products when initialProducts changes
   useEffect(() => {
     setProducts(initialProducts);
   }, [initialProducts]);
@@ -39,9 +67,14 @@ export default function ProductsPageClient({
     visible?: boolean;
     variants: Array<{ flavour: string; stock: number }>;
   }) => {
-    await createProduct(data);
-    router.refresh();
-    setShowForm(false);
+    try {
+      await createProduct(data);
+      showSnackbar('Product created successfully', 'success');
+      router.refresh();
+      setShowForm(false);
+    } catch (error) {
+      showSnackbar('Failed to create product', 'error');
+    }
   };
 
   const handleUpdate = async (data: {
@@ -52,16 +85,26 @@ export default function ProductsPageClient({
     variants: Array<{ id?: string; flavour: string; stock: number }>;
   }) => {
     if (!editingProduct) return;
-    await updateProduct(editingProduct.id, data);
-    router.refresh();
-    setEditingProduct(null);
-    setShowForm(false);
+    try {
+      await updateProduct(editingProduct.id, data);
+      showSnackbar('Product updated successfully', 'success');
+      router.refresh();
+      setEditingProduct(null);
+      setShowForm(false);
+    } catch (error) {
+      showSnackbar('Failed to update product', 'error');
+    }
   };
 
   const handleDelete = async (id: string) => {
     if (confirm("Are you sure you want to delete this product?")) {
-      await deleteProduct(id);
-      router.refresh();
+      try {
+        await deleteProduct(id);
+        showSnackbar('Product deleted successfully', 'success');
+        router.refresh();
+      } catch (error) {
+        showSnackbar('Failed to delete product', 'error');
+      }
     }
   };
 
@@ -76,39 +119,190 @@ export default function ProductsPageClient({
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 py-3 sm:py-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div className="flex items-center gap-2 sm:gap-4">
-              <Link
-                href="/admin"
-                className="text-blue-600 hover:text-blue-700 text-sm font-medium min-h-[44px] flex items-center"
-              >
-                ← Back
-              </Link>
-              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
-                Products
-              </h1>
-            </div>
-            {!showForm && (
-              <button
-                onClick={() => setShowForm(true)}
-                className="w-full sm:w-auto px-4 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 active:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 min-h-[44px] transition-colors"
-              >
-                Add Product
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
+    <AdminLayout>
+      <Container maxWidth="xl" sx={{ py: 4 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+          <Typography variant="h4" component="h1" fontWeight={700}>
+            Products
+          </Typography>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => setShowForm(true)}
+            size="large"
+          >
+            Add Product
+          </Button>
+        </Box>
 
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
-        {showForm ? (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 mb-4 sm:mb-6">
-            <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">
-              {editingProduct ? "Edit Product" : "Add New Product"}
-            </h2>
+        {products.length === 0 ? (
+          <Paper elevation={2} sx={{ p: 8, textAlign: 'center' }}>
+            <Typography variant="body1" color="text.secondary">
+              No products yet. Add your first product to get started.
+            </Typography>
+          </Paper>
+        ) : isMobile ? (
+          // Mobile Card View
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {products.map((product) => (
+              <Card key={product.id} elevation={2}>
+                <CardContent>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                    <Typography variant="h6" component="h3" sx={{ flexGrow: 1 }}>
+                      {product.name}
+                    </Typography>
+                    {product.visible === false && (
+                      <Chip label="Hidden" size="small" color="default" />
+                    )}
+                  </Box>
+                  <Typography variant="h6" color="primary.main" fontWeight={700} gutterBottom>
+                    £{Number(product.price).toFixed(2)}
+                  </Typography>
+                  {product.variants && product.variants.length > 0 ? (
+                    <Box>
+                      <Typography variant="subtitle2" fontWeight={600} gutterBottom>
+                        Variants:
+                      </Typography>
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                        {product.variants.map((variant) => (
+                          <Typography
+                            key={variant.id}
+                            variant="body2"
+                            color={variant.stock <= 5 ? 'warning.main' : 'text.secondary'}
+                          >
+                            {variant.flavour}: {variant.stock > 5 ? 'In Stock' : `${variant.stock} available`}
+                          </Typography>
+                        ))}
+                      </Box>
+                    </Box>
+                  ) : (
+                    <Typography
+                      variant="body2"
+                      color={product.stock <= 5 ? 'warning.main' : 'text.secondary'}
+                    >
+                      {product.stock > 5 ? 'In Stock' : `${product.stock} available`}
+                    </Typography>
+                  )}
+                </CardContent>
+                <CardActions sx={{ justifyContent: 'flex-end', gap: 1 }}>
+                  <Button
+                    size="small"
+                    startIcon={<EditIcon />}
+                    onClick={() => handleEdit(product)}
+                  >
+                    Edit
+                  </Button>
+                  <Button
+                    size="small"
+                    color="error"
+                    startIcon={<DeleteIcon />}
+                    onClick={() => handleDelete(product.id)}
+                  >
+                    Delete
+                  </Button>
+                </CardActions>
+              </Card>
+            ))}
+          </Box>
+        ) : (
+          // Desktop Table View
+          <TableContainer component={Paper} elevation={2}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Name</TableCell>
+                  <TableCell>Price</TableCell>
+                  <TableCell>Stock</TableCell>
+                  <TableCell align="right">Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {products.map((product) => (
+                  <TableRow
+                    key={product.id}
+                    sx={{
+                      '&:hover': { bgcolor: 'action.hover' },
+                      opacity: product.visible === false ? 0.6 : 1,
+                    }}
+                  >
+                    <TableCell>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Typography variant="body1" fontWeight={600}>
+                          {product.name}
+                        </Typography>
+                        {product.visible === false && (
+                          <Chip label="Hidden" size="small" color="default" />
+                        )}
+                      </Box>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body1">
+                        £{Number(product.price).toFixed(2)}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      {product.variants && product.variants.length > 0 ? (
+                        <Box>
+                          <Typography variant="body2" fontWeight={600} gutterBottom>
+                            Variants:
+                          </Typography>
+                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                            {product.variants.map((variant) => (
+                              <Typography
+                                key={variant.id}
+                                variant="body2"
+                                color={variant.stock <= 5 ? 'warning.main' : 'text.secondary'}
+                              >
+                                {variant.flavour}: {variant.stock > 5 ? 'In Stock' : `${variant.stock} available`}
+                              </Typography>
+                            ))}
+                          </Box>
+                        </Box>
+                      ) : (
+                        <Chip
+                          label={product.stock > 5 ? 'In Stock' : `${product.stock} available`}
+                          size="small"
+                          color={product.stock <= 5 ? 'warning' : 'default'}
+                        />
+                      )}
+                    </TableCell>
+                    <TableCell align="right">
+                      <IconButton
+                        size="small"
+                        color="primary"
+                        onClick={() => handleEdit(product)}
+                      >
+                        <EditIcon />
+                      </IconButton>
+                      <IconButton
+                        size="small"
+                        color="error"
+                        onClick={() => handleDelete(product.id)}
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
+
+        {/* Product Form Dialog */}
+        <Dialog
+          open={showForm}
+          onClose={handleCancel}
+          maxWidth="md"
+          fullWidth
+          fullScreen={isMobile}
+        >
+          <DialogTitle>
+            <Typography variant="h6" fontWeight={600}>
+              {editingProduct ? 'Edit Product' : 'Add New Product'}
+            </Typography>
+          </DialogTitle>
+          <DialogContent dividers>
             <ProductForm
               product={
                 editingProduct
@@ -121,198 +315,9 @@ export default function ProductsPageClient({
               onSubmit={editingProduct ? handleUpdate : handleCreate}
               onCancel={handleCancel}
             />
-          </div>
-        ) : null}
-
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-          {products.length === 0 ? (
-            <div className="p-8 sm:p-12 text-center text-gray-600">
-              <p>No products yet. Add your first product to get started.</p>
-            </div>
-          ) : (
-            <>
-              {/* Mobile Card View */}
-              <div className="md:hidden divide-y divide-gray-200">
-                {products.map((product) => (
-                  <div key={product.id} className="p-4">
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h3 className="text-base font-semibold text-gray-900">
-                            {product.name}
-                          </h3>
-                          {product.visible === false && (
-                            <span className="px-2 py-0.5 text-xs font-medium bg-gray-200 text-gray-700 rounded">
-                              Hidden
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-sm font-medium text-gray-900 mb-2">
-                          £{Number(product.price).toFixed(2)}
-                        </p>
-                        {product.variants && product.variants.length > 0 ? (
-                          <div className="text-sm">
-                            <div className="font-medium text-gray-700 mb-1">
-                              Variants:
-                            </div>
-                            <div className="space-y-1">
-                              {product.variants.map((variant) => (
-                                <div
-                                  key={variant.id}
-                                  className={`text-xs ${
-                                    variant.stock <= 5
-                                      ? "text-orange-600"
-                                      : "text-gray-600"
-                                  }`}
-                                >
-                                  {variant.flavour}:{" "}
-                                  {variant.stock > 5
-                                    ? "In Stock"
-                                    : `${variant.stock} available`}
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        ) : (
-                          <span
-                            className={`text-sm font-medium ${
-                              product.stock <= 5
-                                ? "text-orange-600"
-                                : "text-gray-600"
-                            }`}
-                          >
-                            {product.stock > 5
-                              ? "In Stock"
-                              : `${product.stock} available`}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex gap-2 pt-3 border-t border-gray-100">
-                      <button
-                        onClick={() => handleEdit(product)}
-                        className="flex-1 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 active:bg-blue-800 min-h-[44px] transition-colors"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete(product.id)}
-                        className="flex-1 px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 active:bg-red-800 min-h-[44px] transition-colors"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Desktop Table View */}
-              <div className="hidden md:block overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50 border-b border-gray-200">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                        Name
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                        Price
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                        Stock
-                      </th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-700 uppercase tracking-wider">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {products.map((product) => (
-                      <tr
-                        key={product.id}
-                        className={`hover:bg-gray-50 ${
-                          product.visible === false ? "opacity-60" : ""
-                        }`}
-                      >
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center gap-2">
-                            <div className="text-sm font-medium text-gray-900">
-                              {product.name}
-                            </div>
-                            {product.visible === false && (
-                              <span className="px-2 py-0.5 text-xs font-medium bg-gray-200 text-gray-700 rounded">
-                                Hidden
-                              </span>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">
-                            £{Number(product.price).toFixed(2)}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          {product.variants && product.variants.length > 0 ? (
-                            <div className="text-sm">
-                              <div className="font-medium text-gray-900 mb-1">
-                                Variants:
-                              </div>
-                              <div className="space-y-1">
-                                {product.variants.map((variant) => (
-                                  <div
-                                    key={variant.id}
-                                    className={`text-xs ${
-                                      variant.stock <= 5
-                                        ? "text-orange-600"
-                                        : "text-gray-600"
-                                    }`}
-                                  >
-                                    {variant.flavour}:{" "}
-                                    {variant.stock > 5
-                                      ? "In Stock"
-                                      : `${variant.stock} available`}
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          ) : (
-                            <span
-                              className={`text-sm font-medium ${
-                                product.stock <= 5
-                                  ? "text-orange-600"
-                                  : "text-gray-900"
-                              }`}
-                            >
-                              {product.stock > 5
-                                ? "In Stock"
-                                : `${product.stock} available`}
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <div className="flex items-center justify-end gap-2">
-                            <button
-                              onClick={() => handleEdit(product)}
-                              className="text-blue-600 hover:text-blue-900 min-h-[44px] px-3"
-                            >
-                              Edit
-                            </button>
-                            <button
-                              onClick={() => handleDelete(product.id)}
-                              className="text-red-600 hover:text-red-900 min-h-[44px] px-3"
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-    </div>
+          </DialogContent>
+        </Dialog>
+      </Container>
+    </AdminLayout>
   );
 }

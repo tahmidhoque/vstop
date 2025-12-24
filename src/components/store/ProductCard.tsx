@@ -2,6 +2,23 @@
 
 import { useState, useEffect } from "react";
 import type { BasketItem } from "@/types";
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import CardActions from '@mui/material/CardActions';
+import Typography from '@mui/material/Typography';
+import Button from '@mui/material/Button';
+import Box from '@mui/material/Box';
+import Chip from '@mui/material/Chip';
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
+import FormControl from '@mui/material/FormControl';
+import InputLabel from '@mui/material/InputLabel';
+import IconButton from '@mui/material/IconButton';
+import ButtonGroup from '@mui/material/ButtonGroup';
+import AddIcon from '@mui/icons-material/Add';
+import RemoveIcon from '@mui/icons-material/Remove';
+import AddShoppingCartIcon from '@mui/icons-material/AddShoppingCart';
+import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 
 interface Variant {
   id: string;
@@ -110,148 +127,122 @@ export default function ProductCard({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-4 flex flex-col h-full">
-      <div className="flex items-start justify-between mb-2 sm:mb-3 gap-2">
-        <h3 className="text-base sm:text-lg font-semibold text-gray-900 flex-1 min-w-0 truncate">
-          {name}
-        </h3>
-        {activeOffers.length > 0 && (
-          <div className="flex flex-col gap-1 flex-shrink-0">
-            {activeOffers.map((offer) => (
-              <span
-                key={offer.id}
-                className="px-2 py-1 text-xs font-semibold bg-green-100 text-green-800 rounded whitespace-nowrap"
+    <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', width: '100%', maxWidth: '100%' }}>
+      <CardContent sx={{ flexGrow: 1, p: { xs: 2, sm: 3 }, '&:last-child': { pb: { xs: 2, sm: 3 } } }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2, gap: 1, flexWrap: 'wrap' }}>
+          <Typography variant="h6" component="h3" sx={{ fontWeight: 600, flexGrow: 1, minWidth: 0, wordBreak: 'break-word' }}>
+            {name}
+          </Typography>
+          {activeOffers.length > 0 && (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, flexShrink: 0 }}>
+              {activeOffers.map((offer) => (
+                <Chip
+                  key={offer.id}
+                  icon={<LocalOfferIcon />}
+                  label={offer.name}
+                  color="success"
+                  size="small"
+                  sx={{ fontWeight: 600, fontSize: { xs: '0.65rem', sm: '0.75rem' } }}
+                />
+              ))}
+            </Box>
+          )}
+        </Box>
+
+        {variants.length > 0 && (
+          <Box sx={{ mb: 3 }}>
+            <FormControl fullWidth size="small">
+              <InputLabel>Select Flavour</InputLabel>
+              <Select
+                value={selectedVariant?.id || ""}
+                label="Select Flavour"
+                onChange={(e) => {
+                  const variant = variants.find((v) => v.id === e.target.value);
+                  setSelectedVariant(variant || null);
+                }}
               >
-                {offer.name}
-              </span>
-            ))}
-          </div>
+                <MenuItem value="">
+                  <em>Choose a flavour...</em>
+                </MenuItem>
+                {variants.map((variant) => (
+                  <MenuItem key={variant.id} value={variant.id}>
+                    {variant.flavour} ({variant.stock > 5 ? "In Stock" : `${variant.stock} available`})
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Box>
         )}
-      </div>
 
-      {variants.length > 0 && (
-        <div className="mb-3 sm:mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Select Flavour:
-          </label>
-          <select
-            value={selectedVariant?.id || ""}
-            onChange={(e) => {
-              const variant = variants.find((v) => v.id === e.target.value);
-              setSelectedVariant(variant || null);
-            }}
-            className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm min-h-[44px] touch-manipulation"
-            style={{ touchAction: 'manipulation' }}
-          >
-            <option value="">Choose a flavour...</option>
-            {variants.map((variant) => (
-              <option key={variant.id} value={variant.id}>
-                {variant.flavour} (
-                {variant.stock > 5 ? "In Stock" : `${variant.stock} available`})
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
-
-      <div className="mt-auto pt-2 pb-1">
-        <div className="flex items-baseline justify-between mb-3 gap-2">
-          <p className="text-xl sm:text-2xl font-bold text-gray-900">
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', mb: 2 }}>
+          <Typography variant="h5" component="p" sx={{ fontWeight: 700, color: 'primary.main' }}>
             £{Number(price).toFixed(2)}
-          </p>
-          <span
-            className={`text-xs font-medium ${
+          </Typography>
+          <Chip
+            label={
               isOutOfStock
-                ? "text-red-600"
-                : displayStock <= 5
-                  ? "text-orange-600"
-                  : "text-gray-500"
-            }`}
-          >
-            {isOutOfStock
-              ? "Out of Stock"
-              : displayStock > 5
+                ? "Out of Stock"
+                : displayStock > 5
                 ? "In Stock"
-                : `${displayStock} left`}
-          </span>
-        </div>
+                : `${displayStock} left`
+            }
+            size="small"
+            color={isOutOfStock ? "error" : displayStock <= 5 ? "warning" : "default"}
+            sx={{ fontWeight: 600 }}
+          />
+        </Box>
 
-        {/* Quantity Selector - Compact Design */}
         {!isOutOfStock && (
-          <div className="mb-3">
-            <div className="inline-flex items-center border border-gray-300 rounded-lg overflow-hidden bg-white">
-              <button
+          <Box sx={{ mb: 2, display: 'flex', justifyContent: 'center' }}>
+            <ButtonGroup variant="outlined" size="small">
+              <IconButton
                 onClick={decrementQuantity}
                 disabled={quantity <= 1}
-                className="px-3 py-2.5 text-gray-700 hover:bg-gray-50 active:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white transition-colors touch-manipulation min-h-[44px] flex items-center justify-center"
-                style={{ touchAction: 'manipulation' }}
                 aria-label="Decrease quantity"
+                sx={{ minWidth: 44, minHeight: 44 }}
               >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M20 12H4"
-                  />
-                </svg>
-              </button>
-              <input
-                type="number"
-                min="1"
-                max={maxQuantity}
-                value={quantity}
-                onChange={handleQuantityInput}
-                onBlur={(e) => {
-                  if (e.target.value === "" || parseInt(e.target.value, 10) < 1) {
-                    setQuantity(1);
-                  }
+                <RemoveIcon />
+              </IconButton>
+              <Button
+                disableRipple
+                sx={{
+                  minWidth: 60,
+                  minHeight: 44,
+                  fontWeight: 600,
+                  cursor: 'default',
+                  borderRight: '1px solid',
+                  borderColor: 'divider',
+                  '&:hover': { bgcolor: 'transparent' }
                 }}
-                className="w-14 text-center border-x border-gray-300 py-2.5 text-sm font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset min-h-[44px] touch-manipulation bg-white"
-                style={{ touchAction: 'manipulation' }}
-                aria-label="Quantity"
-              />
-              <button
+              >
+                {quantity}
+              </Button>
+              <IconButton
                 onClick={incrementQuantity}
                 disabled={quantity >= maxQuantity}
-                className="px-3 py-2.5 text-gray-700 hover:bg-gray-50 active:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white transition-colors touch-manipulation min-h-[44px] flex items-center justify-center"
-                style={{ touchAction: 'manipulation' }}
                 aria-label="Increase quantity"
+                sx={{ minWidth: 44, minHeight: 44 }}
               >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 4v16m8-8H4"
-                  />
-                </svg>
-              </button>
-            </div>
-          </div>
+                <AddIcon />
+              </IconButton>
+            </ButtonGroup>
+          </Box>
         )}
+      </CardContent>
 
-        <button
+      <CardActions sx={{ p: { xs: 2, sm: 2 }, pt: 0, px: { xs: 2, sm: 2 } }}>
+        <Button
+          fullWidth
+          variant="contained"
+          size="large"
           onClick={handleAdd}
           disabled={isOutOfStock || (variants.length > 0 && !selectedVariant)}
-          className="w-full px-4 py-3 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-h-[44px] active:bg-blue-800 touch-manipulation shadow-sm"
-          style={{ touchAction: 'manipulation' }}
+          startIcon={<AddShoppingCartIcon />}
+          sx={{ minHeight: { xs: 44, sm: 48 }, fontSize: { xs: '0.875rem', sm: '1rem' } }}
         >
           {quantity > 1 ? `Add ${quantity} to Basket` : "Add to Basket"}
-        </button>
-      </div>
-    </div>
+        </Button>
+      </CardActions>
+    </Card>
   );
 }

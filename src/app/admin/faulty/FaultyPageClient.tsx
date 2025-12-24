@@ -1,14 +1,21 @@
 "use client";
 
 import React, { useState, useTransition } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { logoutAction } from "@/lib/auth-actions";
 import { getFaultyReturns } from "@/lib/actions";
 import type { FaultyReturn, FaultyReturnType } from "@/types";
 import FaultyReturnList from "@/components/admin/FaultyReturnList";
 import FaultyReturnForm from "@/components/admin/FaultyReturnForm";
 import FaultyReturnModal from "@/components/admin/FaultyReturnModal";
+import Box from '@mui/material/Box';
+import Container from '@mui/material/Container';
+import Typography from '@mui/material/Typography';
+import Button from '@mui/material/Button';
+import Paper from '@mui/material/Paper';
+import Tabs from '@mui/material/Tabs';
+import Tab from '@mui/material/Tab';
+import AdminLayout from '@/components/layout/AdminLayout';
+import ReportProblemIcon from '@mui/icons-material/ReportProblem';
 
 interface FaultyPageClientProps {
   initialFaultyReturns: FaultyReturn[];
@@ -27,12 +34,6 @@ export default function FaultyPageClient({
   const [selectedReturn, setSelectedReturn] = useState<FaultyReturn | null>(
     null,
   );
-
-  const handleLogout = async () => {
-    await logoutAction();
-    router.push("/admin/login");
-    router.refresh();
-  };
 
   const handleFilterChange = (type: FaultyReturnType | "ALL") => {
     setActiveTab(type);
@@ -62,106 +63,59 @@ export default function FaultyPageClient({
     });
   };
 
-  const filteredReturns = faultyReturns;
-
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 py-3 sm:py-4">
-          <Link
-            href="/admin"
-            className="text-blue-600 hover:text-blue-700 text-sm font-medium mb-3 sm:mb-4 inline-block min-h-[44px] flex items-center"
-          >
-            ← Back to Dashboard
-          </Link>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
-              Faulty Returns & Stock
-            </h1>
-            <button
-              onClick={handleLogout}
-              className="w-full sm:w-auto px-4 py-2.5 text-sm text-gray-700 hover:text-gray-900 border border-gray-300 rounded-lg hover:bg-gray-50 active:bg-gray-100 min-h-[44px] transition-colours"
-            >
-              Logout
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
-        {/* Tabs */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-4 sm:mb-6">
-          <div className="border-b border-gray-200">
-            <nav className="flex -mb-px overflow-x-auto">
-              <button
-                onClick={() => handleFilterChange("ALL")}
-                className={`px-4 sm:px-6 py-3 sm:py-4 text-sm font-medium border-b-2 transition-colours min-h-[44px] whitespace-nowrap ${
-                  activeTab === "ALL"
-                    ? "border-blue-500 text-blue-600"
-                    : "border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300"
-                }`}
-              >
-                All Returns
-              </button>
-              <button
-                onClick={() => handleFilterChange("POST_SALE")}
-                className={`px-4 sm:px-6 py-3 sm:py-4 text-sm font-medium border-b-2 transition-colours min-h-[44px] whitespace-nowrap ${
-                  activeTab === "POST_SALE"
-                    ? "border-blue-500 text-blue-600"
-                    : "border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300"
-                }`}
-              >
-                Post-Sale Returns
-              </button>
-              <button
-                onClick={() => handleFilterChange("PRE_SALE")}
-                className={`px-4 sm:px-6 py-3 sm:py-4 text-sm font-medium border-b-2 transition-colours min-h-[44px] whitespace-nowrap ${
-                  activeTab === "PRE_SALE"
-                    ? "border-blue-500 text-blue-600"
-                    : "border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300"
-                }`}
-              >
-                Pre-Sale Faulty Stock
-              </button>
-            </nav>
-          </div>
-        </div>
-
-        {/* Create Button */}
-        <div className="mb-4 sm:mb-6">
-          <button
+    <AdminLayout>
+      <Container maxWidth="xl" sx={{ py: 4 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
+          <Typography variant="h4" component="h1" fontWeight={700}>
+            Faulty Returns & Stock
+          </Typography>
+          <Button
+            variant={showCreateForm ? "outlined" : "contained"}
+            startIcon={<ReportProblemIcon />}
             onClick={() => setShowCreateForm(!showCreateForm)}
-            className="w-full sm:w-auto px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 active:bg-blue-800 min-h-[44px] font-medium transition-colours"
+            size="large"
           >
             {showCreateForm ? "Cancel" : "Report Faulty Item"}
-          </button>
-        </div>
+          </Button>
+        </Box>
 
-        {/* Create Form */}
+        <Paper elevation={2} sx={{ mb: 3 }}>
+          <Tabs
+            value={activeTab}
+            onChange={(_, newValue) => handleFilterChange(newValue)}
+            variant="scrollable"
+            scrollButtons="auto"
+          >
+            <Tab label="All Returns" value="ALL" />
+            <Tab label="Post-Sale Returns" value="POST_SALE" />
+            <Tab label="Pre-Sale Faulty Stock" value="PRE_SALE" />
+          </Tabs>
+        </Paper>
+
         {showCreateForm && (
-          <div className="mb-4 sm:mb-6">
+          <Paper elevation={2} sx={{ p: 3, mb: 3 }}>
             <FaultyReturnForm
               onSuccess={handleCreateSuccess}
               onCancel={() => setShowCreateForm(false)}
             />
-          </div>
+          </Paper>
         )}
 
-        {/* List */}
         <FaultyReturnList
-          faultyReturns={filteredReturns}
+          faultyReturns={faultyReturns}
           onViewDetails={handleViewDetails}
           isPending={isPending}
         />
-      </div>
 
-      {/* Details Modal */}
-      {selectedReturn && (
-        <FaultyReturnModal
-          faultyReturn={selectedReturn}
-          onClose={handleModalClose}
-        />
-      )}
-    </div>
+        {selectedReturn && (
+          <FaultyReturnModal
+            faultyReturn={selectedReturn}
+            onClose={handleModalClose}
+          />
+        )}
+      </Container>
+    </AdminLayout>
   );
 }
+

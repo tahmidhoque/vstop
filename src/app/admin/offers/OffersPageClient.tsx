@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import OfferForm from "@/components/admin/OfferForm";
 import {
@@ -10,6 +9,34 @@ import {
   deleteOffer,
   getProducts,
 } from "@/lib/actions";
+import Box from '@mui/material/Box';
+import Container from '@mui/material/Container';
+import Typography from '@mui/material/Typography';
+import Button from '@mui/material/Button';
+import Paper from '@mui/material/Paper';
+import Table from '@mui/material/Table';
+import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
+import TableContainer from '@mui/material/TableContainer';
+import TableHead from '@mui/material/TableHead';
+import TableRow from '@mui/material/TableRow';
+import Chip from '@mui/material/Chip';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import CardActions from '@mui/material/CardActions';
+import IconButton from '@mui/material/IconButton';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import Alert from '@mui/material/Alert';
+import Link from '@mui/material/Link';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
+import AddIcon from '@mui/icons-material/Add';
+import AdminLayout from '@/components/layout/AdminLayout';
+import { useSnackbar } from '@/components/common/SnackbarProvider';
+import useMediaQuery from '@mui/material/useMediaQuery';
+import { useTheme } from '@mui/material/styles';
 
 interface Offer {
   id: string;
@@ -42,17 +69,17 @@ export default function OffersPageClient({
   const [editingOffer, setEditingOffer] = useState<Offer | null>(null);
   const [showForm, setShowForm] = useState(false);
   const router = useRouter();
+  const { showSnackbar } = useSnackbar();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
-  // Sync offers when initialOffers changes (after router.refresh())
   useEffect(() => {
     setOffers(initialOffers);
   }, [initialOffers]);
 
-  // Load products if not provided
   useEffect(() => {
     if (products.length === 0) {
       getProducts(true).then((productsData) => {
-        // includeHidden: true for admin
         setProducts(
           productsData.map((p) => ({
             id: p.id,
@@ -73,18 +100,23 @@ export default function OffersPageClient({
     endDate?: Date | null;
     productIds: string[];
   }) => {
-    await createOffer({
-      name: data.name,
-      description: data.description ?? undefined,
-      quantity: data.quantity,
-      price: data.price,
-      active: data.active,
-      startDate: data.startDate,
-      endDate: data.endDate,
-      productIds: data.productIds,
-    });
-    router.refresh();
-    setShowForm(false);
+    try {
+      await createOffer({
+        name: data.name,
+        description: data.description ?? undefined,
+        quantity: data.quantity,
+        price: data.price,
+        active: data.active,
+        startDate: data.startDate,
+        endDate: data.endDate,
+        productIds: data.productIds,
+      });
+      showSnackbar('Offer created successfully', 'success');
+      router.refresh();
+      setShowForm(false);
+    } catch (error) {
+      showSnackbar('Failed to create offer', 'error');
+    }
   };
 
   const handleUpdate = async (data: {
@@ -98,16 +130,26 @@ export default function OffersPageClient({
     productIds: string[];
   }) => {
     if (!editingOffer) return;
-    await updateOffer(editingOffer.id, data);
-    router.refresh();
-    setEditingOffer(null);
-    setShowForm(false);
+    try {
+      await updateOffer(editingOffer.id, data);
+      showSnackbar('Offer updated successfully', 'success');
+      router.refresh();
+      setEditingOffer(null);
+      setShowForm(false);
+    } catch (error) {
+      showSnackbar('Failed to update offer', 'error');
+    }
   };
 
   const handleDelete = async (id: string) => {
     if (confirm("Are you sure you want to delete this offer?")) {
-      await deleteOffer(id);
-      router.refresh();
+      try {
+        await deleteOffer(id);
+        showSnackbar('Offer deleted successfully', 'success');
+        router.refresh();
+      } catch (error) {
+        showSnackbar('Failed to delete offer', 'error');
+      }
     }
   };
 
@@ -131,237 +173,207 @@ export default function OffersPageClient({
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 py-3 sm:py-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div className="flex items-center gap-2 sm:gap-4">
-              <Link
-                href="/admin"
-                className="text-blue-600 hover:text-blue-700 text-sm font-medium min-h-[44px] flex items-center"
-              >
-                ← Back
-              </Link>
-              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
-                Offers
-              </h1>
-            </div>
-            {!showForm && (
-              <button
-                onClick={() => setShowForm(true)}
-                disabled={products.length === 0}
-                className="w-full sm:w-auto px-4 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 active:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] transition-colors"
-              >
-                Add Offer
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
+    <AdminLayout>
+      <Container maxWidth="xl" sx={{ py: 4 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
+          <Typography variant="h4" component="h1" fontWeight={700}>
+            Offers
+          </Typography>
+          {!showForm && (
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => setShowForm(true)}
+              disabled={products.length === 0}
+              size="large"
+            >
+              Add Offer
+            </Button>
+          )}
+        </Box>
 
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
-        {showForm ? (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 mb-4 sm:mb-6">
-            <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">
+        {showForm && (
+          <Paper elevation={2} sx={{ p: 3, mb: 3 }}>
+            <Typography variant="h6" fontWeight={600} gutterBottom>
               {editingOffer ? "Edit Offer" : "Add New Offer"}
-            </h2>
+            </Typography>
             <OfferForm
               offer={editingOffer || undefined}
               products={products}
               onSubmit={editingOffer ? handleUpdate : handleCreate}
               onCancel={handleCancel}
             />
-          </div>
-        ) : null}
-
-        {products.length === 0 && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4 sm:mb-6">
-            <p className="text-sm text-yellow-800">
-              <strong>Note:</strong> You need to create products before you can
-              create offers.{" "}
-              <Link href="/admin/products" className="underline">
-                Go to Products
-              </Link>
-            </p>
-          </div>
+          </Paper>
         )}
 
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-          {offers.length === 0 ? (
-            <div className="p-8 sm:p-12 text-center text-gray-600">
-              <p>No offers yet. Add your first offer to get started.</p>
-            </div>
-          ) : (
-            <>
-              {/* Mobile Card View */}
-              <div className="md:hidden divide-y divide-gray-200">
-                {offers.map((offer) => (
-                  <div key={offer.id} className="p-4">
-                    <div className="mb-3">
-                      <h3 className="text-base font-semibold text-gray-900 mb-1">
-                        {offer.name}
-                      </h3>
-                      {offer.description && (
-                        <p className="text-xs text-gray-600 mb-2">
-                          {offer.description}
-                        </p>
-                      )}
-                      <div className="text-sm text-gray-900 mb-2">
-                        Any{" "}
-                        <span className="font-semibold">{offer.quantity}</span>{" "}
-                        for{" "}
-                        <span className="font-semibold">
-                          £{offer.price.toFixed(2)}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 mb-2">
-                        <span
-                          className={`px-3 py-1 rounded-full text-xs font-medium ${
-                            offer.active
-                              ? "bg-green-100 text-green-800"
-                              : "bg-gray-100 text-gray-800"
-                          }`}
-                        >
-                          {offer.active ? "Active" : "Inactive"}
-                        </span>
-                        <span className="text-xs text-gray-600">
-                          {offer.productIds.length} product
-                          {offer.productIds.length !== 1 ? "s" : ""}
-                        </span>
-                      </div>
-                      <div className="text-xs text-gray-600 space-y-1">
-                        <div>
-                          <span className="font-medium">Start:</span>{" "}
-                          {formatDate(offer.startDate)}
-                        </div>
-                        <div>
-                          <span className="font-medium">End:</span>{" "}
-                          {formatDate(offer.endDate)}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex gap-2 pt-3 border-t border-gray-100">
-                      <button
-                        onClick={() => handleEdit(offer)}
-                        className="flex-1 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 active:bg-blue-800 min-h-[44px] transition-colors"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete(offer.id)}
-                        className="flex-1 px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 active:bg-red-800 min-h-[44px] transition-colors"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+        {products.length === 0 && (
+          <Alert severity="warning" sx={{ mb: 3 }}>
+            <strong>Note:</strong> You need to create products before you can create offers.{" "}
+            <Link href="/admin/products" underline="always">
+              Go to Products
+            </Link>
+          </Alert>
+        )}
 
-              {/* Desktop Table View */}
-              <div className="hidden md:block overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50 border-b border-gray-200">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                        Name
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                        Offer Details
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                        Eligible Products
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                        Status
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                        Dates
-                      </th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-700 uppercase tracking-wider">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {offers.map((offer) => (
-                      <tr key={offer.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">
-                            {offer.name}
-                          </div>
-                          {offer.description && (
-                            <div className="text-xs text-gray-500 mt-1">
-                              {offer.description}
-                            </div>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">
-                            Any{" "}
-                            <span className="font-semibold">
-                              {offer.quantity}
-                            </span>{" "}
-                            for{" "}
-                            <span className="font-semibold">
-                              £{offer.price.toFixed(2)}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="text-sm text-gray-600">
-                            {offer.productIds.length} product
-                            {offer.productIds.length !== 1 ? "s" : ""}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span
-                            className={`px-3 py-1 rounded-full text-xs font-medium ${
-                              offer.active
-                                ? "bg-green-100 text-green-800"
-                                : "bg-gray-100 text-gray-800"
-                            }`}
-                          >
-                            {offer.active ? "Active" : "Inactive"}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-xs text-gray-600">
-                            <div>
-                              <span className="font-medium">Start:</span>{" "}
-                              {formatDate(offer.startDate)}
-                            </div>
-                            <div>
-                              <span className="font-medium">End:</span>{" "}
-                              {formatDate(offer.endDate)}
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <div className="flex items-center justify-end gap-2">
-                            <button
-                              onClick={() => handleEdit(offer)}
-                              className="text-blue-600 hover:text-blue-900 min-h-[44px] px-3"
-                            >
-                              Edit
-                            </button>
-                            <button
-                              onClick={() => handleDelete(offer.id)}
-                              className="text-red-600 hover:text-red-900 min-h-[44px] px-3"
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-    </div>
+        {offers.length === 0 ? (
+          <Paper elevation={2} sx={{ p: 8, textAlign: 'center' }}>
+            <Typography variant="body1" color="text.secondary">
+              No offers yet. Add your first offer to get started.
+            </Typography>
+          </Paper>
+        ) : isMobile ? (
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {offers.map((offer) => (
+              <Card key={offer.id} elevation={2}>
+                <CardContent>
+                  <Typography variant="h6" component="h3" fontWeight={600} gutterBottom>
+                    {offer.name}
+                  </Typography>
+                  {offer.description && (
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                      {offer.description}
+                    </Typography>
+                  )}
+                  <Typography variant="body1" sx={{ mb: 1 }}>
+                    Any <strong>{offer.quantity}</strong> for <strong>£{offer.price.toFixed(2)}</strong>
+                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2, flexWrap: 'wrap' }}>
+                    <Chip
+                      label={offer.active ? "Active" : "Inactive"}
+                      color={offer.active ? "success" : "default"}
+                      size="small"
+                    />
+                    <Typography variant="body2" color="text.secondary">
+                      {offer.productIds.length} product{offer.productIds.length !== 1 ? "s" : ""}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                    <Typography variant="caption" color="text.secondary">
+                      <strong>Start:</strong> {formatDate(offer.startDate)}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      <strong>End:</strong> {formatDate(offer.endDate)}
+                    </Typography>
+                  </Box>
+                </CardContent>
+                <CardActions>
+                  <Button
+                    size="small"
+                    startIcon={<EditIcon />}
+                    onClick={() => handleEdit(offer)}
+                  >
+                    Edit
+                  </Button>
+                  <Button
+                    size="small"
+                    color="error"
+                    startIcon={<DeleteIcon />}
+                    onClick={() => handleDelete(offer.id)}
+                  >
+                    Delete
+                  </Button>
+                </CardActions>
+              </Card>
+            ))}
+          </Box>
+        ) : (
+          <TableContainer component={Paper} elevation={2}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Name</TableCell>
+                  <TableCell>Offer Details</TableCell>
+                  <TableCell>Eligible Products</TableCell>
+                  <TableCell>Status</TableCell>
+                  <TableCell>Dates</TableCell>
+                  <TableCell align="right">Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {offers.map((offer) => (
+                  <TableRow key={offer.id} sx={{ '&:hover': { bgcolor: 'action.hover' } }}>
+                    <TableCell>
+                      <Box>
+                        <Typography variant="body1" fontWeight={600}>
+                          {offer.name}
+                        </Typography>
+                        {offer.description && (
+                          <Typography variant="body2" color="text.secondary">
+                            {offer.description}
+                          </Typography>
+                        )}
+                      </Box>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2">
+                        Any <strong>{offer.quantity}</strong> for <strong>£{offer.price.toFixed(2)}</strong>
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2" color="text.secondary">
+                        {offer.productIds.length} product{offer.productIds.length !== 1 ? "s" : ""}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={offer.active ? "Active" : "Inactive"}
+                        color={offer.active ? "success" : "default"}
+                        size="small"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="caption" color="text.secondary" display="block">
+                        <strong>Start:</strong> {formatDate(offer.startDate)}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary" display="block">
+                        <strong>End:</strong> {formatDate(offer.endDate)}
+                      </Typography>
+                    </TableCell>
+                    <TableCell align="right">
+                      <IconButton
+                        size="small"
+                        color="primary"
+                        onClick={() => handleEdit(offer)}
+                      >
+                        <EditIcon />
+                      </IconButton>
+                      <IconButton
+                        size="small"
+                        color="error"
+                        onClick={() => handleDelete(offer.id)}
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
+
+        <Dialog
+          open={showForm}
+          onClose={handleCancel}
+          maxWidth="md"
+          fullWidth
+          fullScreen={isMobile}
+        >
+          <DialogTitle>
+            <Typography variant="h6" fontWeight={600}>
+              {editingOffer ? 'Edit Offer' : 'Add New Offer'}
+            </Typography>
+          </DialogTitle>
+          <DialogContent dividers>
+            <OfferForm
+              offer={editingOffer || undefined}
+              products={products}
+              onSubmit={editingOffer ? handleUpdate : handleCreate}
+              onCancel={handleCancel}
+            />
+          </DialogContent>
+        </Dialog>
+      </Container>
+    </AdminLayout>
   );
 }

@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import ThemeProviders from '@/components/providers/ThemeProviders';
 
 export const metadata: Metadata = {
   title: "Ordering System",
@@ -21,7 +22,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="antialiased min-h-screen bg-gray-50">{children}</body>
+      <body>
+        <ThemeProviders>
+          {children}
+        </ThemeProviders>
+      </body>
     </html>
   );
 }

@@ -2,6 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Box from '@mui/material/Box';
+import TextField from '@mui/material/TextField';
+import Button from '@mui/material/Button';
+import Alert from '@mui/material/Alert';
+import CircularProgress from '@mui/material/CircularProgress';
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
+import InputAdornment from '@mui/material/InputAdornment';
 
 interface LoginFormProps {
   type: "customer" | "admin";
@@ -35,42 +42,50 @@ export default function LoginForm({ type, onSubmit }: LoginFormProps) {
   };
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="w-full max-w-md space-y-4 sm:space-y-6"
-    >
-      <div>
-        <label
-          htmlFor="password"
-          className="block text-sm font-medium text-gray-700 mb-2"
-        >
-          Password
-        </label>
-        <input
-          id="password"
+    <Box component="form" onSubmit={handleSubmit} sx={{ width: '100%', maxWidth: 400 }}>
+      <Box sx={{ mb: 3 }}>
+        <TextField
+          fullWidth
           type="password"
+          label="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[44px]"
-          placeholder="Enter password"
           disabled={loading}
+          placeholder="Enter password"
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <LockOutlinedIcon color="action" />
+              </InputAdornment>
+            ),
+          }}
         />
-      </div>
+      </Box>
 
       {error && (
-        <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+        <Alert severity="error" sx={{ mb: 3 }}>
           {error}
-        </div>
+        </Alert>
       )}
 
-      <button
+      <Button
         type="submit"
+        fullWidth
+        variant="contained"
         disabled={loading}
-        className="w-full py-3 px-4 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 active:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-h-[44px]"
+        size="large"
+        sx={{ minHeight: 48 }}
       >
-        {loading ? "Signing in..." : "Sign In"}
-      </button>
-    </form>
+        {loading ? (
+          <>
+            <CircularProgress size={20} sx={{ mr: 1 }} color="inherit" />
+            Signing in...
+          </>
+        ) : (
+          'Sign In'
+        )}
+      </Button>
+    </Box>
   );
 }

@@ -7,6 +7,12 @@ import Basket from "@/components/store/Basket";
 import { getProducts, getOffers } from "@/lib/actions";
 import type { BasketItem } from "@/types";
 import type { Offer } from "@/lib/offer-utils";
+import Box from '@mui/material/Box';
+import Container from '@mui/material/Container';
+import Typography from '@mui/material/Typography';
+import Grid from '@mui/material/Grid';
+import { useSnackbar } from '@/components/common/SnackbarProvider';
+import LoadingSpinner from '@/components/common/LoadingSpinner';
 
 export default function StorePageClient() {
   const [products, setProducts] = useState<
@@ -31,6 +37,7 @@ export default function StorePageClient() {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { showSnackbar } = useSnackbar();
 
   useEffect(() => {
     // Load products and offers
@@ -96,10 +103,10 @@ export default function StorePageClient() {
     if (searchParams.get("success") === "true") {
       localStorage.removeItem("basket");
       setBasket([]);
-      alert("Order placed successfully!");
+      showSnackbar("Order placed successfully!", "success");
       router.replace("/store");
     }
-  }, [router, searchParams]);
+  }, [router, searchParams, showSnackbar]);
 
   useEffect(() => {
     // Sync basket with products to update stock
@@ -202,51 +209,50 @@ export default function StorePageClient() {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-600">Loading products...</p>
-      </div>
-    );
+    return <LoadingSpinner fullScreen message="Loading products..." />;
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6 pb-24 md:pb-6">
-        <div className="flex flex-col md:flex-row gap-4 md:gap-6">
-          <div className="flex-1">
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">
+    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', pb: { xs: 10, md: 0 }, overflowX: 'hidden' }}>
+      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 0 }}>
+        <Box sx={{ flexGrow: 1, width: '100%', overflowX: 'hidden' }}>
+          <Container maxWidth="xl" sx={{ py: { xs: 2, sm: 3, md: 4 }, px: { xs: 2, sm: 3, md: 4 } }}>
+            <Typography variant="h4" component="h1" fontWeight={700} gutterBottom sx={{ mb: { xs: 2, sm: 3 } }}>
               Products
-            </h1>
+            </Typography>
             {products.length === 0 ? (
-              <div className="text-center py-12 text-gray-600">
-                <p>No products available</p>
-              </div>
+              <Box sx={{ textAlign: 'center', py: { xs: 8, sm: 12 } }}>
+                <Typography variant="body1" color="text.secondary">
+                  No products available
+                </Typography>
+              </Box>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-4">
+              <Grid container spacing={{ xs: 2, sm: 3 }} sx={{ mx: 0 }}>
                 {products.map((product) => (
-                  <ProductCard
-                    key={product.id}
-                    id={product.id}
-                    name={product.name}
-                    price={product.price}
-                    stock={product.stock}
-                    variants={product.variants}
-                    offers={product.offers || []}
-                    onAddToBasket={handleAddToBasket}
-                  />
+                  <Grid item xs={12} sm={6} lg={4} key={product.id} sx={{ width: '100%' }}>
+                    <ProductCard
+                      id={product.id}
+                      name={product.name}
+                      price={product.price}
+                      stock={product.stock}
+                      variants={product.variants}
+                      offers={product.offers || []}
+                      onAddToBasket={handleAddToBasket}
+                    />
+                  </Grid>
                 ))}
-              </div>
+              </Grid>
             )}
-          </div>
-          <Basket
-            items={basket}
-            offers={offers}
-            onUpdateQuantity={handleUpdateQuantity}
-            onRemove={handleRemove}
-            onCheckout={handleCheckout}
-          />
-        </div>
-      </div>
-    </div>
+          </Container>
+        </Box>
+        <Basket
+          items={basket}
+          offers={offers}
+          onUpdateQuantity={handleUpdateQuantity}
+          onRemove={handleRemove}
+          onCheckout={handleCheckout}
+        />
+      </Box>
+    </Box>
   );
 }

@@ -3,9 +3,34 @@
 import { useState } from "react";
 import { OrderStatus, OrderType } from "@/generated/enums";
 import OrderEditModal from "./OrderEditModal";
-import { updateOrderStatus, updateOrder, deleteOrder, deleteAllOrders } from "@/lib/actions";
+import { updateOrderStatus, deleteOrder, deleteAllOrders } from "@/lib/actions";
 import { formatDate } from "@/lib/date-utils";
 import type { OrderWithItems } from "@/types";
+import Box from '@mui/material/Box';
+import Paper from '@mui/material/Paper';
+import Typography from '@mui/material/Typography';
+import Button from '@mui/material/Button';
+import Chip from '@mui/material/Chip';
+import Tabs from '@mui/material/Tabs';
+import Tab from '@mui/material/Tab';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogContentText from '@mui/material/DialogContentText';
+import DialogActions from '@mui/material/DialogActions';
+import CircularProgress from '@mui/material/CircularProgress';
+import Divider from '@mui/material/Divider';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import CardActions from '@mui/material/CardActions';
+import Stack from '@mui/material/Stack';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import CancelIcon from '@mui/icons-material/Cancel';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import RestoreIcon from '@mui/icons-material/Restore';
+import { useSnackbar } from '@/components/common/SnackbarProvider';
 
 interface OrderListProps {
   orders: OrderWithItems[];
@@ -17,6 +42,7 @@ export default function OrderList({ orders }: OrderListProps) {
   const [deletingOrderId, setDeletingOrderId] = useState<string | null>(null);
   const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false);
   const [deletingAll, setDeletingAll] = useState(false);
+  const { showSnackbar } = useSnackbar();
 
   const filteredOrders =
     filter === "ALL"
@@ -24,8 +50,13 @@ export default function OrderList({ orders }: OrderListProps) {
       : orders.filter((order) => order.status === filter);
 
   const handleStatusChange = async (orderId: string, status: OrderStatus) => {
-    await updateOrderStatus(orderId, status);
-    window.location.reload();
+    try {
+      await updateOrderStatus(orderId, status);
+      showSnackbar('Order status updated successfully', 'success');
+      window.location.reload();
+    } catch (error) {
+      showSnackbar('Failed to update order status', 'error');
+    }
   };
 
   const handleEdit = (order: OrderWithItems) => {
@@ -34,6 +65,7 @@ export default function OrderList({ orders }: OrderListProps) {
 
   const handleEditSubmit = async () => {
     setEditingOrder(null);
+    showSnackbar('Order updated successfully', 'success');
     window.location.reload();
   };
 
@@ -46,12 +78,10 @@ export default function OrderList({ orders }: OrderListProps) {
       setDeletingOrderId(orderId);
       try {
         await deleteOrder(orderId);
+        showSnackbar('Order deleted successfully', 'success');
         window.location.reload();
       } catch (error) {
-        alert(
-          "Failed to delete order: " +
-            (error instanceof Error ? error.message : "Unknown error"),
-        );
+        showSnackbar('Failed to delete order', 'error');
         setDeletingOrderId(null);
       }
     }
@@ -61,30 +91,25 @@ export default function OrderList({ orders }: OrderListProps) {
     setDeletingAll(true);
     try {
       await deleteAllOrders();
+      showSnackbar('All orders deleted successfully', 'success');
       window.location.reload();
     } catch (error) {
-      alert(
-        "Failed to delete all orders: " +
-          (error instanceof Error ? error.message : "Unknown error"),
-      );
+      showSnackbar('Failed to delete all orders', 'error');
       setDeletingAll(false);
       setShowDeleteAllConfirm(false);
     }
   };
 
   const totalValue = (order: OrderWithItems) => {
-    // If total override is set, use it
     if (order.totalOverride) {
       return Number(order.totalOverride);
     }
 
-    // Calculate subtotal
     const subtotal = order.items.reduce(
       (sum, item) => sum + Number(item.priceAtTime) * item.quantity,
       0,
     );
 
-    // Apply manual discount if set
     const manualDiscount = order.manualDiscount
       ? Number(order.manualDiscount)
       : 0;
@@ -92,287 +117,299 @@ export default function OrderList({ orders }: OrderListProps) {
     return Math.max(0, subtotal - manualDiscount);
   };
 
-  const getOrderTypeBadge = (orderType: OrderType) => {
+  const getOrderTypeChip = (orderType: OrderType) => {
     switch (orderType) {
       case OrderType.PERSONAL_USE:
-        return (
-          <span className="px-2.5 sm:px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-            PERSONAL USE
-          </span>
-        );
+        return <Chip label="PERSONAL USE" color="secondary" size="small" />;
       case OrderType.REPLACEMENT:
-        return (
-          <span className="px-2.5 sm:px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-            REPLACEMENT
-          </span>
-        );
+        return <Chip label="REPLACEMENT" color="success" size="small" />;
       default:
         return null;
     }
   };
 
-  return (
-    <>
-      <div className="mb-4">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-4">
-          <div className="flex gap-2 overflow-x-auto pb-2 -mx-3 sm:mx-0 px-3 sm:px-0 scrollbar-hide flex-1">
-          <button
-            onClick={() => setFilter("ALL")}
-            className={`px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap min-h-[44px] flex-shrink-0 active:scale-95 transition-transform ${
-              filter === "ALL"
-                ? "bg-blue-600 text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200 active:bg-gray-300"
-            }`}
-          >
-            All ({orders.length})
-          </button>
-          <button
-            onClick={() => setFilter("PENDING")}
-            className={`px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap min-h-[44px] flex-shrink-0 active:scale-95 transition-transform ${
-              filter === "PENDING"
-                ? "bg-blue-600 text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200 active:bg-gray-300"
-            }`}
-          >
-            Pending ({orders.filter((o) => o.status === "PENDING").length})
-          </button>
-          <button
-            onClick={() => setFilter("UNFULFILLED")}
-            className={`px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap min-h-[44px] flex-shrink-0 active:scale-95 transition-transform ${
-              filter === "UNFULFILLED"
-                ? "bg-blue-600 text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200 active:bg-gray-300"
-            }`}
-          >
-            Unfulfilled (
-            {orders.filter((o) => o.status === "UNFULFILLED").length})
-          </button>
-          <button
-            onClick={() => setFilter("FULFILLED")}
-            className={`px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap min-h-[44px] flex-shrink-0 active:scale-95 transition-transform ${
-              filter === "FULFILLED"
-                ? "bg-blue-600 text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200 active:bg-gray-300"
-            }`}
-          >
-            Fulfilled ({orders.filter((o) => o.status === "FULFILLED").length})
-          </button>
-          <button
-            onClick={() => setFilter("CANCELLED")}
-            className={`px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap min-h-[44px] flex-shrink-0 active:scale-95 transition-transform ${
-              filter === "CANCELLED"
-                ? "bg-blue-600 text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200 active:bg-gray-300"
-            }`}
-          >
-            Cancelled ({orders.filter((o) => o.status === "CANCELLED").length})
-          </button>
-          </div>
-          {orders.length > 0 && (
-            <button
-              onClick={() => setShowDeleteAllConfirm(true)}
-              className="w-full sm:w-auto px-4 py-2.5 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 active:bg-red-800 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 min-h-[44px] transition-colors whitespace-nowrap"
-            >
-              Delete All Orders
-            </button>
-          )}
-        </div>
-      </div>
+  const getStatusColor = (status: OrderStatus): "warning" | "error" | "success" | "default" => {
+    switch (status) {
+      case "PENDING":
+        return "warning";
+      case "UNFULFILLED":
+        return "error";
+      case "FULFILLED":
+        return "success";
+      case "CANCELLED":
+        return "default";
+      default:
+        return "default";
+    }
+  };
 
-      <div className="space-y-3 sm:space-y-4">
+  const statusCounts = {
+    all: orders.length,
+    pending: orders.filter((o) => o.status === "PENDING").length,
+    unfulfilled: orders.filter((o) => o.status === "UNFULFILLED").length,
+    fulfilled: orders.filter((o) => o.status === "FULFILLED").length,
+    cancelled: orders.filter((o) => o.status === "CANCELLED").length,
+  };
+
+  return (
+    <Box sx={{ width: '100%', maxWidth: '100%', overflowX: 'hidden', boxSizing: 'border-box' }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2, width: '100%', maxWidth: '100%' }}>
+        <Tabs
+          value={filter}
+          onChange={(_, newValue) => setFilter(newValue)}
+          variant="scrollable"
+          scrollButtons="auto"
+          sx={{ flexGrow: 1, minWidth: 0, maxWidth: { xs: '100%', sm: 'calc(100% - 140px)' }, width: { xs: '100%', sm: 'auto' } }}
+        >
+          <Tab label={`All (${statusCounts.all})`} value="ALL" />
+          <Tab label={`Pending (${statusCounts.pending})`} value="PENDING" />
+          <Tab label={`Unfulfilled (${statusCounts.unfulfilled})`} value="UNFULFILLED" />
+          <Tab label={`Fulfilled (${statusCounts.fulfilled})`} value="FULFILLED" />
+          <Tab label={`Cancelled (${statusCounts.cancelled})`} value="CANCELLED" />
+        </Tabs>
+        {orders.length > 0 && (
+          <Button
+            variant="contained"
+            color="error"
+            onClick={() => setShowDeleteAllConfirm(true)}
+            startIcon={<DeleteIcon />}
+            size="small"
+            sx={{ flexShrink: 0, width: { xs: '100%', sm: 'auto' }, mt: { xs: 1, sm: 0 } }}
+          >
+            Delete All
+          </Button>
+        )}
+      </Box>
+
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, width: '100%', maxWidth: '100%' }}>
         {filteredOrders.length === 0 ? (
-          <div className="text-center py-12 text-gray-600">
-            <p>No orders found</p>
-          </div>
+          <Paper elevation={2} sx={{ p: 8, textAlign: 'center', width: '100%', maxWidth: '100%' }}>
+            <Typography variant="body1" color="text.secondary">
+              No orders found
+            </Typography>
+          </Paper>
         ) : (
           filteredOrders.map((order) => (
-            <div
-              key={order.id}
-              className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6"
-            >
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-2">
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-base sm:text-lg font-semibold text-gray-900">
-                    {order.username}
-                  </h3>
-                  <p className="text-xs sm:text-sm text-gray-600">
-                    Order:{" "}
-                    <span className="font-mono font-medium">
-                      {order.orderNumber}
-                    </span>{" "}
-                    • {formatDate(order.createdAt)}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2 sm:gap-3 flex-wrap justify-end">
-                  {getOrderTypeBadge(order.orderType)}
-                  <span
-                    className={`px-2.5 sm:px-3 py-1 rounded-full text-xs font-medium ${
-                      order.status === "PENDING"
-                        ? "bg-yellow-100 text-yellow-800"
-                        : order.status === "UNFULFILLED"
-                          ? "bg-orange-100 text-orange-800"
-                          : order.status === "FULFILLED"
-                            ? "bg-green-100 text-green-800"
-                            : "bg-red-100 text-red-800"
-                    }`}
-                  >
-                    {order.status}
-                  </span>
-                  <div className="flex flex-col items-end w-full sm:w-auto">
-                    <span className="text-base sm:text-lg font-bold text-gray-900">
-                      £{totalValue(order).toFixed(2)}
-                    </span>
-                    {(order.manualDiscount || order.totalOverride) && (
-                      <span className="text-xs text-gray-500 mt-0.5">
-                        {order.totalOverride
-                          ? "Override"
-                          : order.manualDiscount
+            <Card key={order.id} elevation={2} sx={{ width: '100%', maxWidth: '100%', overflow: 'hidden', boxSizing: 'border-box' }}>
+              <CardContent sx={{ p: { xs: 2, sm: 3 }, '&:last-child': { pb: { xs: 2, sm: 3 } }, width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2, flexWrap: 'wrap', gap: 2, width: '100%', maxWidth: '100%' }}>
+                  <Box sx={{ flexGrow: 1, minWidth: 0, maxWidth: { xs: '100%', sm: 'calc(100% - 200px)' } }}>
+                    <Typography variant="h6" component="h3" fontWeight={600} sx={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}>
+                      {order.username}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ wordBreak: 'break-word', overflowWrap: 'break-word', fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
+                      Order: <Box component="span" sx={{ fontFamily: 'monospace', fontWeight: 600 }}>{order.orderNumber}</Box> • {formatDate(order.createdAt)}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', justifyContent: { xs: 'flex-start', sm: 'flex-end' }, flexShrink: 0, width: { xs: '100%', sm: 'auto' } }}>
+                    {getOrderTypeChip(order.orderType)}
+                    <Chip
+                      label={order.status}
+                      color={getStatusColor(order.status)}
+                      size="small"
+                      sx={{ fontWeight: 600 }}
+                    />
+                    <Box sx={{ textAlign: { xs: 'left', sm: 'right' }, width: { xs: '100%', sm: 'auto' }, flexShrink: 0 }}>
+                      <Typography variant="h6" fontWeight={700} sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+                        £{totalValue(order).toFixed(2)}
+                      </Typography>
+                      {(order.manualDiscount || order.totalOverride) && (
+                        <Typography variant="caption" color="text.secondary">
+                          {order.totalOverride
+                            ? "Override"
+                            : order.manualDiscount
                             ? `-£${Number(order.manualDiscount).toFixed(2)}`
                             : ""}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
+                        </Typography>
+                      )}
+                    </Box>
+                  </Box>
+                </Box>
 
-              <div className="border-t border-gray-200 pt-3 sm:pt-4 mb-4">
-                <h4 className="text-xs sm:text-sm font-medium text-gray-700 mb-2 sm:mb-3">
+                <Divider sx={{ my: 2 }} />
+
+                <Typography variant="subtitle2" fontWeight={600} gutterBottom>
                   Items:
-                </h4>
-                <div className="space-y-2 sm:space-y-2">
+                </Typography>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                   {order.items.map((item) => (
-                    <div
+                    <Box
                       key={item.id}
-                      className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-2 text-xs sm:text-sm text-gray-600"
+                      sx={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        gap: 2,
+                        flexWrap: 'wrap',
+                        width: '100%',
+                      }}
                     >
-                      <span className="flex-1 min-w-0">
-                        <span className="truncate block">
-                          {item.product.name}
-                          {item.flavour && ` (${item.flavour})`}
-                        </span>
-                        <span className="text-gray-500 sm:hidden">
-                          × {item.quantity}
-                        </span>
-                      </span>
-                      <div className="flex items-center justify-between sm:justify-end gap-2 sm:gap-3 flex-shrink-0">
-                        <span className="sm:hidden text-gray-700 font-medium">
-                          × {item.quantity}
-                        </span>
-                        <span className="font-medium text-gray-700">
-                          £{Number(item.priceAtTime).toFixed(2)}
-                        </span>
-                      </div>
-                    </div>
+                      <Typography variant="body2" color="text.secondary" sx={{ flexGrow: 1, minWidth: 0, wordBreak: 'break-word' }}>
+                        {item.product.name}
+                        {item.flavour && ` (${item.flavour})`}
+                        <Box component="span" sx={{ ml: 1 }}>× {item.quantity}</Box>
+                      </Typography>
+                      <Typography variant="body2" fontWeight={600} sx={{ flexShrink: 0 }}>
+                        £{Number(item.priceAtTime).toFixed(2)}
+                      </Typography>
+                    </Box>
                   ))}
-                </div>
-              </div>
+                </Box>
+              </CardContent>
 
-              <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2">
+              <CardActions sx={{ p: { xs: 2, sm: 2 }, pt: 0, flexWrap: 'wrap', gap: 1, width: '100%', maxWidth: '100%', boxSizing: 'border-box', m: 0 }}>
                 {order.status === "PENDING" && (
                   <>
-                    <button
+                    <Button
+                      size="small"
+                      variant="contained"
+                      startIcon={<EditIcon />}
                       onClick={() => handleEdit(order)}
-                      className="w-full sm:w-auto px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 active:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 min-h-[44px] transition-colors"
+                      sx={{ width: { xs: 'calc(50% - 4px)', sm: 'auto' }, flex: { xs: '1 1 calc(50% - 4px)', sm: '0 1 auto' } }}
                     >
                       Edit
-                    </button>
-                    <button
-                      onClick={() =>
-                        handleStatusChange(order.id, "UNFULFILLED")
-                      }
-                      className="w-full sm:w-auto px-4 py-2.5 bg-orange-600 text-white text-sm font-medium rounded-lg hover:bg-orange-700 active:bg-orange-800 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 min-h-[44px] transition-colors"
+                    </Button>
+                    <Button
+                      size="small"
+                      variant="contained"
+                      color="warning"
+                      startIcon={<WarningAmberIcon />}
+                      onClick={() => handleStatusChange(order.id, "UNFULFILLED")}
+                      sx={{ width: { xs: 'calc(50% - 4px)', sm: 'auto' }, flex: { xs: '1 1 calc(50% - 4px)', sm: '0 1 auto' }, fontSize: { xs: '0.7rem', sm: '0.875rem' } }}
                     >
-                      Mark Unfulfilled
-                    </button>
-                    <button
+                      <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Mark </Box>Unfulfilled
+                    </Button>
+                    <Button
+                      size="small"
+                      variant="contained"
+                      color="success"
+                      startIcon={<CheckCircleIcon />}
                       onClick={() => handleStatusChange(order.id, "FULFILLED")}
-                      className="w-full sm:w-auto px-4 py-2.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 active:bg-green-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 min-h-[44px] transition-colors"
+                      sx={{ width: { xs: 'calc(50% - 4px)', sm: 'auto' }, flex: { xs: '1 1 calc(50% - 4px)', sm: '0 1 auto' }, fontSize: { xs: '0.7rem', sm: '0.875rem' } }}
                     >
-                      Mark Fulfilled
-                    </button>
-                    <button
+                      <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Mark </Box>Fulfilled
+                    </Button>
+                    <Button
+                      size="small"
+                      variant="contained"
+                      color="error"
+                      startIcon={<CancelIcon />}
                       onClick={() => handleStatusChange(order.id, "CANCELLED")}
-                      className="w-full sm:w-auto px-4 py-2.5 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 active:bg-red-800 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 min-h-[44px] transition-colors"
+                      sx={{ width: { xs: 'calc(50% - 4px)', sm: 'auto' }, flex: { xs: '1 1 calc(50% - 4px)', sm: '0 1 auto' } }}
                     >
                       Cancel
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      color="error"
+                      startIcon={<DeleteIcon />}
                       onClick={() => handleDelete(order.id)}
                       disabled={deletingOrderId === order.id}
-                      className="w-full sm:w-auto px-4 py-2.5 bg-gray-600 text-white text-sm font-medium rounded-lg hover:bg-gray-700 active:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 min-h-[44px] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      sx={{ width: { xs: 'calc(50% - 4px)', sm: 'auto' }, flex: { xs: '1 1 calc(50% - 4px)', sm: '0 1 auto' } }}
                     >
                       {deletingOrderId === order.id ? "Deleting..." : "Delete"}
-                    </button>
+                    </Button>
                   </>
                 )}
                 {order.status === "UNFULFILLED" && (
                   <>
-                    <button
+                    <Button
+                      size="small"
+                      variant="contained"
+                      startIcon={<EditIcon />}
                       onClick={() => handleEdit(order)}
-                      className="w-full sm:w-auto px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 active:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 min-h-[44px] transition-colors"
+                      sx={{ width: { xs: 'calc(50% - 4px)', sm: 'auto' }, flex: { xs: '1 1 calc(50% - 4px)', sm: '0 1 auto' } }}
                     >
                       Edit
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                      size="small"
+                      variant="contained"
+                      color="success"
+                      startIcon={<CheckCircleIcon />}
                       onClick={() => handleStatusChange(order.id, "FULFILLED")}
-                      className="w-full sm:w-auto px-4 py-2.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 active:bg-green-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 min-h-[44px] transition-colors"
+                      sx={{ width: { xs: 'calc(50% - 4px)', sm: 'auto' }, flex: { xs: '1 1 calc(50% - 4px)', sm: '0 1 auto' } }}
                     >
                       Mark Fulfilled
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                      size="small"
+                      variant="contained"
+                      color="error"
+                      startIcon={<CancelIcon />}
                       onClick={() => handleStatusChange(order.id, "CANCELLED")}
-                      className="w-full sm:w-auto px-4 py-2.5 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 active:bg-red-800 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 min-h-[44px] transition-colors"
+                      sx={{ width: { xs: 'calc(50% - 4px)', sm: 'auto' }, flex: { xs: '1 1 calc(50% - 4px)', sm: '0 1 auto' } }}
                     >
                       Cancel
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      color="error"
+                      startIcon={<DeleteIcon />}
                       onClick={() => handleDelete(order.id)}
                       disabled={deletingOrderId === order.id}
-                      className="w-full sm:w-auto px-4 py-2.5 bg-gray-600 text-white text-sm font-medium rounded-lg hover:bg-gray-700 active:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 min-h-[44px] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      sx={{ width: { xs: 'calc(50% - 4px)', sm: 'auto' }, flex: { xs: '1 1 calc(50% - 4px)', sm: '0 1 auto' } }}
                     >
                       {deletingOrderId === order.id ? "Deleting..." : "Delete"}
-                    </button>
+                    </Button>
                   </>
                 )}
                 {order.status === "FULFILLED" && (
                   <>
-                    <button
+                    <Button
+                      size="small"
+                      variant="contained"
+                      color="error"
+                      startIcon={<CancelIcon />}
                       onClick={() => handleStatusChange(order.id, "CANCELLED")}
-                      className="w-full sm:w-auto px-4 py-2.5 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 active:bg-red-800 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 min-h-[44px] transition-colors"
+                      sx={{ width: { xs: 'calc(50% - 4px)', sm: 'auto' }, flex: { xs: '1 1 calc(50% - 4px)', sm: '0 1 auto' } }}
                     >
                       Cancel
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      color="error"
+                      startIcon={<DeleteIcon />}
                       onClick={() => handleDelete(order.id)}
                       disabled={deletingOrderId === order.id}
-                      className="w-full sm:w-auto px-4 py-2.5 bg-gray-600 text-white text-sm font-medium rounded-lg hover:bg-gray-700 active:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 min-h-[44px] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      sx={{ width: { xs: 'calc(50% - 4px)', sm: 'auto' }, flex: { xs: '1 1 calc(50% - 4px)', sm: '0 1 auto' } }}
                     >
                       {deletingOrderId === order.id ? "Deleting..." : "Delete"}
-                    </button>
+                    </Button>
                   </>
                 )}
                 {order.status === "CANCELLED" && (
                   <>
-                    <button
+                    <Button
+                      size="small"
+                      variant="contained"
+                      startIcon={<RestoreIcon />}
                       onClick={() => handleStatusChange(order.id, "PENDING")}
-                      className="w-full sm:w-auto px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 active:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 min-h-[44px] transition-colors"
+                      sx={{ width: { xs: 'calc(50% - 4px)', sm: 'auto' }, flex: { xs: '1 1 calc(50% - 4px)', sm: '0 1 auto' } }}
                     >
                       Restore
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      color="error"
+                      startIcon={<DeleteIcon />}
                       onClick={() => handleDelete(order.id)}
                       disabled={deletingOrderId === order.id}
-                      className="w-full sm:w-auto px-4 py-2.5 bg-gray-600 text-white text-sm font-medium rounded-lg hover:bg-gray-700 active:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 min-h-[44px] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      sx={{ width: { xs: 'calc(50% - 4px)', sm: 'auto' }, flex: { xs: '1 1 calc(50% - 4px)', sm: '0 1 auto' } }}
                     >
                       {deletingOrderId === order.id ? "Deleting..." : "Delete"}
-                    </button>
+                    </Button>
                   </>
                 )}
-              </div>
-            </div>
+              </CardActions>
+            </Card>
           ))
         )}
-      </div>
+      </Box>
 
       {editingOrder && (
         <OrderEditModal
@@ -382,65 +419,38 @@ export default function OrderList({ orders }: OrderListProps) {
         />
       )}
 
-      {showDeleteAllConfirm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
-            <div className="p-4 sm:p-6">
-              <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">
-                Delete All Orders
-              </h2>
-              <p className="text-sm sm:text-base text-gray-700 mb-6">
-                Are you sure you want to delete all {orders.length} order{orders.length !== 1 ? "s" : ""}? This action cannot be undone. This will permanently delete all order history.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-3">
-                <button
-                  onClick={() => {
-                    setShowDeleteAllConfirm(false);
-                    setDeletingAll(false);
-                  }}
-                  disabled={deletingAll}
-                  className="w-full sm:flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 active:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-h-[44px]"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleDeleteAll}
-                  disabled={deletingAll}
-                  className="w-full sm:flex-1 px-4 py-2.5 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 active:bg-red-800 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-h-[44px] flex items-center justify-center gap-2"
-                >
-                  {deletingAll ? (
-                    <>
-                      <svg
-                        className="animate-spin h-5 w-5 text-white"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        ></circle>
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        ></path>
-                      </svg>
-                      Deleting...
-                    </>
-                  ) : (
-                    "Delete All Orders"
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </>
+      <Dialog
+        open={showDeleteAllConfirm}
+        onClose={() => !deletingAll && setShowDeleteAllConfirm(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Delete All Orders</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to delete all {orders.length} order{orders.length !== 1 ? "s" : ""}? 
+            This action cannot be undone. This will permanently delete all order history.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button
+            onClick={() => setShowDeleteAllConfirm(false)}
+            disabled={deletingAll}
+            variant="outlined"
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleDeleteAll}
+            disabled={deletingAll}
+            variant="contained"
+            color="error"
+            startIcon={deletingAll ? <CircularProgress size={20} color="inherit" /> : <DeleteIcon />}
+          >
+            {deletingAll ? "Deleting..." : "Delete All Orders"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
   );
 }

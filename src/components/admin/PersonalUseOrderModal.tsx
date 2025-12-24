@@ -3,6 +3,28 @@
 import { useState, useEffect } from "react";
 import { createPersonalUseOrder, getProducts } from "@/lib/actions";
 import type { BasketItem } from "@/types";
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
+import TextField from '@mui/material/TextField';
+import Button from '@mui/material/Button';
+import Alert from '@mui/material/Alert';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import IconButton from '@mui/material/IconButton';
+import Paper from '@mui/material/Paper';
+import Grid from '@mui/material/Grid';
+import FormControl from '@mui/material/FormControl';
+import InputLabel from '@mui/material/InputLabel';
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
+import CircularProgress from '@mui/material/CircularProgress';
+import CloseIcon from '@mui/icons-material/Close';
+import DeleteIcon from '@mui/icons-material/Delete';
+import { useSnackbar } from '@/components/common/SnackbarProvider';
+import useMediaQuery from '@mui/material/useMediaQuery';
+import { useTheme } from '@mui/material/styles';
 
 interface PersonalUseOrderModalProps {
   onClose: () => void;
@@ -28,10 +50,13 @@ export default function PersonalUseOrderModal({
   const [quantity, setQuantity] = useState<number>(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const { showSnackbar } = useSnackbar();
 
   useEffect(() => {
     async function loadProducts() {
-      const data = await getProducts(true); // includeHidden: true for admin
+      const data = await getProducts(true);
       setProducts(
         data.map((p) => ({
           id: p.id,
@@ -64,7 +89,6 @@ export default function PersonalUseOrderModal({
     const product = products.find((p) => p.id === selectedProduct);
     if (!product) return;
 
-    // Check if product has variants and one is selected
     if (hasVariants && !selectedVariant) {
       setError("Please select a flavour");
       return;
@@ -90,7 +114,6 @@ export default function PersonalUseOrderModal({
       return;
     }
 
-    // Check if item already exists
     const existingItemIndex = items.findIndex(
       (item) =>
         item.productId === selectedProduct &&
@@ -98,12 +121,10 @@ export default function PersonalUseOrderModal({
     );
 
     if (existingItemIndex >= 0) {
-      // Update quantity
       const newItems = [...items];
       newItems[existingItemIndex].quantity += quantity;
       setItems(newItems);
     } else {
-      // Add new item
       setItems([
         ...items,
         {
@@ -118,7 +139,6 @@ export default function PersonalUseOrderModal({
       ]);
     }
 
-    // Reset form
     setSelectedProduct("");
     setSelectedVariant("");
     setQuantity(1);
@@ -161,201 +181,194 @@ export default function PersonalUseOrderModal({
 
     try {
       await createPersonalUseOrder(items);
+      showSnackbar('Personal use order created successfully', 'success');
       onSuccess();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create order");
+      const message = err instanceof Error ? err.message : "Failed to create order";
+      setError(message);
+      showSnackbar(message, 'error');
       setLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-4 sm:p-6 border-b border-gray-200 bg-purple-50">
-          <h2 className="text-lg sm:text-xl font-bold text-gray-900">
-            Create Personal Use Order
-          </h2>
-          <p className="text-sm text-purple-700 mt-1">
-            Track stock taken for personal use (not counted in revenue)
-          </p>
-        </div>
+    <Dialog
+      open={true}
+      onClose={onClose}
+      maxWidth="md"
+      fullWidth
+      fullScreen={isMobile}
+    >
+      <DialogTitle sx={{ bgcolor: 'secondary.light' }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Box>
+            <Typography variant="h6" fontWeight={700}>
+              Create Personal Use Order
+            </Typography>
+            <Typography variant="body2" color="secondary.dark" sx={{ mt: 0.5 }}>
+              Track stock taken for personal use (not counted in revenue)
+            </Typography>
+          </Box>
+          <IconButton onClick={onClose} size="small">
+            <CloseIcon />
+          </IconButton>
+        </Box>
+      </DialogTitle>
 
-        <form onSubmit={handleSubmit} className="p-4 sm:p-6">
+      <Box component="form" onSubmit={handleSubmit}>
+        <DialogContent dividers>
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+            <Alert severity="error" sx={{ mb: 3 }}>
               {error}
-            </div>
+            </Alert>
           )}
 
-          {/* Add Item Section */}
-          <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-            <h3 className="text-sm font-semibold text-gray-900 mb-4">
+          <Paper variant="outlined" sx={{ p: 3, mb: 3, bgcolor: 'grey.50' }}>
+            <Typography variant="subtitle2" fontWeight={600} gutterBottom>
               Add Item
-            </h3>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Product
-                </label>
-                <select
-                  value={selectedProduct}
-                  onChange={(e) => {
-                    setSelectedProduct(e.target.value);
-                    setSelectedVariant("");
-                  }}
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 min-h-[44px]"
-                  disabled={loading}
-                >
-                  <option value="">Select a product</option>
-                  {products.map((product) => (
-                    <option key={product.id} value={product.id}>
-                      {product.name} (Stock: {product.stock})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {hasVariants && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Flavour
-                  </label>
-                  <select
-                    value={selectedVariant}
-                    onChange={(e) => setSelectedVariant(e.target.value)}
-                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 min-h-[44px]"
+            </Typography>
+            <Grid container spacing={2} sx={{ mb: 2 }}>
+              <Grid item xs={12} sm={hasVariants ? 6 : 4}>
+                <FormControl fullWidth>
+                  <InputLabel>Product</InputLabel>
+                  <Select
+                    value={selectedProduct}
+                    label="Product"
+                    onChange={(e) => {
+                      setSelectedProduct(e.target.value);
+                      setSelectedVariant("");
+                    }}
                     disabled={loading}
                   >
-                    <option value="">Select a flavour</option>
-                    {selectedProductData?.variants?.map((variant) => (
-                      <option key={variant.id} value={variant.id}>
-                        {variant.flavour} (Stock: {variant.stock})
-                      </option>
+                    <MenuItem value="">
+                      <em>Select a product</em>
+                    </MenuItem>
+                    {products.map((product) => (
+                      <MenuItem key={product.id} value={product.id}>
+                        {product.name} (Stock: {product.stock})
+                      </MenuItem>
                     ))}
-                  </select>
-                </div>
+                  </Select>
+                </FormControl>
+              </Grid>
+
+              {hasVariants && (
+                <Grid item xs={12} sm={6}>
+                  <FormControl fullWidth>
+                    <InputLabel>Flavour</InputLabel>
+                    <Select
+                      value={selectedVariant}
+                      label="Flavour"
+                      onChange={(e) => setSelectedVariant(e.target.value)}
+                      disabled={loading}
+                    >
+                      <MenuItem value="">
+                        <em>Select a flavour</em>
+                      </MenuItem>
+                      {selectedProductData?.variants?.map((variant) => (
+                        <MenuItem key={variant.id} value={variant.id}>
+                          {variant.flavour} (Stock: {variant.stock})
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
               )}
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Quantity
-                </label>
-                <input
+              <Grid item xs={12} sm={hasVariants ? 12 : 4}>
+                <TextField
+                  fullWidth
                   type="number"
-                  min="1"
+                  label="Quantity"
                   value={quantity}
                   onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 min-h-[44px]"
+                  inputProps={{ min: 1 }}
                   disabled={loading}
                 />
-              </div>
-            </div>
-
-            <button
+              </Grid>
+            </Grid>
+            <Button
               type="button"
+              variant="contained"
+              color="secondary"
               onClick={addItem}
-              className="w-full sm:w-auto px-4 py-2.5 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 active:bg-purple-800 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 min-h-[44px] transition-colors"
               disabled={loading}
+              size="large"
             >
               Add Item
-            </button>
-          </div>
+            </Button>
+          </Paper>
 
-          {/* Items List */}
           {items.length > 0 && (
-            <div className="mb-6">
-              <h3 className="text-sm font-semibold text-gray-900 mb-3">
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="subtitle2" fontWeight={600} gutterBottom>
                 Items ({items.length})
-              </h3>
-              <div className="space-y-2">
+              </Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                 {items.map((item, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200"
-                  >
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">
-                        {item.name}
-                      </p>
-                      <p className="text-xs text-gray-600">
-                        Stock available: {item.stock}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2 ml-4">
-                      <input
-                        type="number"
-                        min="1"
-                        max={item.stock}
-                        value={item.quantity}
-                        onChange={(e) =>
-                          updateQuantity(index, parseInt(e.target.value) || 1)
-                        }
-                        className="w-20 px-2 py-1.5 border border-gray-300 rounded text-sm text-center min-h-[44px]"
-                        disabled={loading}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removeItem(index)}
-                        className="px-3 py-1.5 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 rounded min-h-[44px] transition-colors"
-                        disabled={loading}
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  </div>
+                  <Paper key={index} variant="outlined" sx={{ p: 2 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>
+                      <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                        <Typography variant="body2" fontWeight={600} noWrap>
+                          {item.name}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Stock available: {item.stock}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <TextField
+                          type="number"
+                          value={item.quantity}
+                          onChange={(e) =>
+                            updateQuantity(index, parseInt(e.target.value) || 1)
+                          }
+                          inputProps={{ min: 1, max: item.stock }}
+                          size="small"
+                          sx={{ width: 80 }}
+                          disabled={loading}
+                        />
+                        <IconButton
+                          onClick={() => removeItem(index)}
+                          color="error"
+                          size="small"
+                          disabled={loading}
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </Box>
+                    </Box>
+                  </Paper>
                 ))}
-              </div>
-            </div>
+              </Box>
+            </Box>
           )}
+        </DialogContent>
 
-          {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-gray-200">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={loading}
-              className="w-full sm:flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 active:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-h-[44px]"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading || items.length === 0}
-              className="w-full sm:flex-1 px-4 py-2.5 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 active:bg-purple-800 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-h-[44px] flex items-center justify-center gap-2"
-            >
-              {loading ? (
-                <>
-                  <svg
-                    className="animate-spin h-5 w-5 text-white"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    ></circle>
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    ></path>
-                  </svg>
-                  Creating...
-                </>
-              ) : (
-                "Create Personal Use Order"
-              )}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        <DialogActions sx={{ p: 2, gap: 2 }}>
+          <Button
+            type="button"
+            onClick={onClose}
+            disabled={loading}
+            variant="outlined"
+            size="large"
+            sx={{ flexGrow: { xs: 1, sm: 0 } }}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            variant="contained"
+            color="secondary"
+            disabled={loading || items.length === 0}
+            size="large"
+            startIcon={loading ? <CircularProgress size={20} color="inherit" /> : null}
+            sx={{ flexGrow: { xs: 1, sm: 0 } }}
+          >
+            {loading ? "Creating..." : "Create Personal Use Order"}
+          </Button>
+        </DialogActions>
+      </Box>
+    </Dialog>
   );
 }
-

@@ -5,6 +5,23 @@ import { formatDate } from "@/lib/date-utils";
 import { updateFaultyReturnStatus } from "@/lib/actions";
 import type { FaultyReturn, ReturnStatus } from "@/types";
 import CreateReplacementOrderModal from "./CreateReplacementOrderModal";
+import Box from '@mui/material/Box';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
+import Typography from '@mui/material/Typography';
+import Button from '@mui/material/Button';
+import Chip from '@mui/material/Chip';
+import Divider from '@mui/material/Divider';
+import Alert from '@mui/material/Alert';
+import CircularProgress from '@mui/material/CircularProgress';
+import IconButton from '@mui/material/IconButton';
+import Grid from '@mui/material/Grid';
+import CloseIcon from '@mui/icons-material/Close';
+import { useSnackbar } from '@/components/common/SnackbarProvider';
+import useMediaQuery from '@mui/material/useMediaQuery';
+import { useTheme } from '@mui/material/styles';
 
 interface FaultyReturnModalProps {
   faultyReturn: FaultyReturn;
@@ -18,6 +35,9 @@ export default function FaultyReturnModal({
   const [isUpdating, setIsUpdating] = useState(false);
   const [showReplacementModal, setShowReplacementModal] = useState(false);
   const [error, setError] = useState("");
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const { showSnackbar } = useSnackbar();
 
   const handleStatusUpdate = async (newStatus: ReturnStatus) => {
     setError("");
@@ -25,9 +45,11 @@ export default function FaultyReturnModal({
 
     try {
       await updateFaultyReturnStatus(faultyReturn.id, newStatus);
+      showSnackbar('Status updated successfully', 'success');
       onClose();
     } catch (err: any) {
       setError(err.message || "Failed to update status");
+      showSnackbar('Failed to update status', 'error');
     } finally {
       setIsUpdating(false);
     }
@@ -35,6 +57,7 @@ export default function FaultyReturnModal({
 
   const handleReplacementCreated = () => {
     setShowReplacementModal(false);
+    showSnackbar('Replacement order created successfully', 'success');
     onClose();
   };
 
@@ -42,253 +65,234 @@ export default function FaultyReturnModal({
     return faultyReturn.product.price * faultyReturn.quantity;
   };
 
-  const getStatusBadge = (status: string) => {
-    const styles = {
-      REPORTED: "bg-yellow-100 text-yellow-800",
-      INSPECTED: "bg-blue-100 text-blue-800",
-      REPLACED: "bg-green-100 text-green-800",
-      DISPOSED: "bg-gray-100 text-gray-800",
-    };
-    return styles[status as keyof typeof styles] || "bg-gray-100 text-gray-800";
+  const getStatusColor = (status: string): "warning" | "info" | "success" | "default" => {
+    switch (status) {
+      case "REPORTED":
+        return "warning";
+      case "INSPECTED":
+        return "info";
+      case "REPLACED":
+        return "success";
+      case "DISPOSED":
+        return "default";
+      default:
+        return "default";
+    }
   };
 
   return (
     <>
-      <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-          {/* Header */}
-          <div className="border-b border-gray-200 p-4 sm:p-6">
-            <div className="flex items-start justify-between">
-              <div>
-                <h2 className="text-xl font-bold text-gray-900">
-                  {faultyReturn.returnNumber}
-                </h2>
-                <div className="flex gap-2 mt-2">
-                  <span
-                    className={`px-2 py-1 text-xs font-medium rounded ${
-                      faultyReturn.orderId
-                        ? "bg-purple-100 text-purple-800"
-                        : "bg-orange-100 text-orange-800"
-                    }`}
-                  >
-                    {faultyReturn.orderId ? "Post-Sale" : "Pre-Sale"}
-                  </span>
-                  <span
-                    className={`px-2 py-1 text-xs font-medium rounded ${getStatusBadge(faultyReturn.status)}`}
-                  >
-                    {faultyReturn.status}
-                  </span>
-                </div>
-              </div>
-              <button
-                onClick={onClose}
-                className="text-gray-400 hover:text-gray-600 min-h-[44px] min-w-[44px] flex items-center justify-center"
-              >
-                <svg
-                  className="w-6 h-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
-            </div>
-          </div>
+      <Dialog
+        open={true}
+        onClose={onClose}
+        maxWidth="md"
+        fullWidth
+        fullScreen={isMobile}
+      >
+        <DialogTitle>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <Box>
+              <Typography variant="h6" fontWeight={700}>
+                {faultyReturn.returnNumber}
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
+                <Chip
+                  label={faultyReturn.orderId ? "Post-Sale" : "Pre-Sale"}
+                  color={faultyReturn.orderId ? "secondary" : "warning"}
+                  size="small"
+                />
+                <Chip
+                  label={faultyReturn.status}
+                  color={getStatusColor(faultyReturn.status)}
+                  size="small"
+                />
+              </Box>
+            </Box>
+            <IconButton onClick={onClose} aria-label="Close">
+              <CloseIcon />
+            </IconButton>
+          </Box>
+        </DialogTitle>
 
-          {/* Content */}
-          <div className="p-4 sm:p-6 space-y-6">
-            {error && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
-                {error}
-              </div>
-            )}
+        <DialogContent dividers>
+          {error && (
+            <Alert severity="error" sx={{ mb: 3 }}>
+              {error}
+            </Alert>
+          )}
 
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
             {/* Product Information */}
-            <div>
-              <h3 className="text-sm font-semibold text-gray-900 mb-3">
+            <Box>
+              <Typography variant="subtitle1" fontWeight={600} gutterBottom>
                 Product Information
-              </h3>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Product:</span>
-                  <span className="font-medium text-gray-900">
+              </Typography>
+              <Grid container spacing={2}>
+                <Grid item xs={6}>
+                  <Typography variant="body2" color="text.secondary">Product:</Typography>
+                  <Typography variant="body2" fontWeight={600}>
                     {faultyReturn.product.name}
-                  </span>
-                </div>
+                  </Typography>
+                </Grid>
                 {faultyReturn.variant && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Variant:</span>
-                    <span className="font-medium text-gray-900">
+                  <Grid item xs={6}>
+                    <Typography variant="body2" color="text.secondary">Variant:</Typography>
+                    <Typography variant="body2" fontWeight={600}>
                       {faultyReturn.variant.flavour}
-                    </span>
-                  </div>
+                    </Typography>
+                  </Grid>
                 )}
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Quantity:</span>
-                  <span className="font-medium text-gray-900">
+                <Grid item xs={6}>
+                  <Typography variant="body2" color="text.secondary">Quantity:</Typography>
+                  <Typography variant="body2" fontWeight={600}>
                     {faultyReturn.quantity}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Unit Price:</span>
-                  <span className="font-medium text-gray-900">
+                  </Typography>
+                </Grid>
+                <Grid item xs={6}>
+                  <Typography variant="body2" color="text.secondary">Unit Price:</Typography>
+                  <Typography variant="body2" fontWeight={600}>
                     £{faultyReturn.product.price.toFixed(2)}
-                  </span>
-                </div>
-                <div className="flex justify-between pt-2 border-t border-gray-200">
-                  <span className="text-gray-600 font-semibold">Total Loss:</span>
-                  <span className="font-bold text-red-600">
-                    £{calculateLoss().toFixed(2)}
-                  </span>
-                </div>
-              </div>
-            </div>
+                  </Typography>
+                </Grid>
+                <Grid item xs={12}>
+                  <Divider sx={{ my: 1 }} />
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <Typography variant="body2" fontWeight={600}>Total Loss:</Typography>
+                    <Typography variant="h6" fontWeight={700} color="error.main">
+                      £{calculateLoss().toFixed(2)}
+                    </Typography>
+                  </Box>
+                </Grid>
+              </Grid>
+            </Box>
 
             {/* Faulty Details */}
-            <div>
-              <h3 className="text-sm font-semibold text-gray-900 mb-3">
+            <Box>
+              <Typography variant="subtitle1" fontWeight={600} gutterBottom>
                 Faulty Details
-              </h3>
-              <div className="space-y-2 text-sm">
-                <div>
-                  <span className="text-gray-600">Reason:</span>
-                  <p className="text-gray-900 mt-1">{faultyReturn.faultyReason}</p>
-                </div>
+              </Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <Box>
+                  <Typography variant="body2" color="text.secondary">Reason:</Typography>
+                  <Typography variant="body2">{faultyReturn.faultyReason}</Typography>
+                </Box>
                 {faultyReturn.notes && (
-                  <div>
-                    <span className="text-gray-600">Notes:</span>
-                    <p className="text-gray-900 mt-1">{faultyReturn.notes}</p>
-                  </div>
+                  <Box>
+                    <Typography variant="body2" color="text.secondary">Notes:</Typography>
+                    <Typography variant="body2">{faultyReturn.notes}</Typography>
+                  </Box>
                 )}
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Reported:</span>
-                  <span className="text-gray-900">
-                    {formatDate(faultyReturn.createdAt)}
-                  </span>
-                </div>
-              </div>
-            </div>
+                <Box>
+                  <Typography variant="body2" color="text.secondary">Reported:</Typography>
+                  <Typography variant="body2">{formatDate(faultyReturn.createdAt)}</Typography>
+                </Box>
+              </Box>
+            </Box>
 
             {/* Order Information (Post-Sale) */}
             {faultyReturn.orderId && faultyReturn.order && (
-              <div>
-                <h3 className="text-sm font-semibold text-gray-900 mb-3">
+              <Box>
+                <Typography variant="subtitle1" fontWeight={600} gutterBottom>
                   Order Information
-                </h3>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Order Number:</span>
-                    <span className="font-medium text-gray-900">
+                </Typography>
+                <Grid container spacing={2}>
+                  <Grid item xs={6}>
+                    <Typography variant="body2" color="text.secondary">Order Number:</Typography>
+                    <Typography variant="body2" fontWeight={600}>
                       {faultyReturn.order.orderNumber}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Customer:</span>
-                    <span className="text-gray-900">
-                      {faultyReturn.order.username}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Order Status:</span>
-                    <span className="text-gray-900">
-                      {faultyReturn.order.status}
-                    </span>
-                  </div>
-                </div>
-              </div>
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography variant="body2" color="text.secondary">Customer:</Typography>
+                    <Typography variant="body2">{faultyReturn.order.username}</Typography>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography variant="body2" color="text.secondary">Order Status:</Typography>
+                    <Typography variant="body2">{faultyReturn.order.status}</Typography>
+                  </Grid>
+                </Grid>
+              </Box>
             )}
 
             {/* Replacement Order Information */}
             {faultyReturn.replacementOrderId && faultyReturn.replacementOrder && (
-              <div>
-                <h3 className="text-sm font-semibold text-gray-900 mb-3">
+              <Box>
+                <Typography variant="subtitle1" fontWeight={600} gutterBottom>
                   Replacement Order
-                </h3>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Order Number:</span>
-                    <span className="font-medium text-gray-900">
+                </Typography>
+                <Grid container spacing={2}>
+                  <Grid item xs={6}>
+                    <Typography variant="body2" color="text.secondary">Order Number:</Typography>
+                    <Typography variant="body2" fontWeight={600}>
                       {faultyReturn.replacementOrder.orderNumber}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Customer:</span>
-                    <span className="text-gray-900">
-                      {faultyReturn.replacementOrder.username}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Status:</span>
-                    <span className="text-gray-900">
-                      {faultyReturn.replacementOrder.status}
-                    </span>
-                  </div>
-                </div>
-              </div>
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography variant="body2" color="text.secondary">Customer:</Typography>
+                    <Typography variant="body2">{faultyReturn.replacementOrder.username}</Typography>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography variant="body2" color="text.secondary">Status:</Typography>
+                    <Typography variant="body2">{faultyReturn.replacementOrder.status}</Typography>
+                  </Grid>
+                </Grid>
+              </Box>
             )}
 
             {/* Status Update Actions */}
-            <div>
-              <h3 className="text-sm font-semibold text-gray-900 mb-3">
+            <Box>
+              <Typography variant="subtitle1" fontWeight={600} gutterBottom>
                 Update Status
-              </h3>
-              <div className="grid grid-cols-2 gap-3">
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
                 {faultyReturn.status === "REPORTED" && (
-                  <button
+                  <Button
+                    variant="contained"
                     onClick={() => handleStatusUpdate("INSPECTED")}
                     disabled={isUpdating}
-                    className="px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 active:bg-blue-800 disabled:bg-gray-400 min-h-[44px] font-medium transition-colours"
+                    size="large"
                   >
-                    Mark as Inspected
-                  </button>
+                    {isUpdating ? <CircularProgress size={20} color="inherit" /> : "Mark as Inspected"}
+                  </Button>
                 )}
-                {(faultyReturn.status === "REPORTED" ||
-                  faultyReturn.status === "INSPECTED") && (
-                  <button
+                {(faultyReturn.status === "REPORTED" || faultyReturn.status === "INSPECTED") && (
+                  <Button
+                    variant="contained"
+                    color="inherit"
                     onClick={() => handleStatusUpdate("DISPOSED")}
                     disabled={isUpdating}
-                    className="px-4 py-2.5 bg-gray-600 text-white rounded-lg hover:bg-gray-700 active:bg-gray-800 disabled:bg-gray-400 min-h-[44px] font-medium transition-colours"
+                    size="large"
                   >
-                    Mark as Disposed
-                  </button>
+                    {isUpdating ? <CircularProgress size={20} color="inherit" /> : "Mark as Disposed"}
+                  </Button>
                 )}
-              </div>
-            </div>
+              </Box>
+            </Box>
 
             {/* Create Replacement Order (Post-Sale Only) */}
             {faultyReturn.orderId &&
               !faultyReturn.replacementOrderId &&
               faultyReturn.status !== "DISPOSED" && (
-                <div>
-                  <button
-                    onClick={() => setShowReplacementModal(true)}
-                    className="w-full px-4 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 active:bg-green-800 min-h-[44px] font-medium transition-colours"
-                  >
-                    Create Replacement Order
-                  </button>
-                </div>
+                <Button
+                  fullWidth
+                  variant="contained"
+                  color="success"
+                  onClick={() => setShowReplacementModal(true)}
+                  size="large"
+                >
+                  Create Replacement Order
+                </Button>
               )}
-          </div>
+          </Box>
+        </DialogContent>
 
-          {/* Footer */}
-          <div className="border-t border-gray-200 p-4 sm:p-6">
-            <button
-              onClick={onClose}
-              className="w-full px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 active:bg-gray-100 min-h-[44px] font-medium transition-colours"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      </div>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={onClose} variant="outlined" fullWidth={isMobile} size="large">
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
 
-      {/* Replacement Order Modal */}
       {showReplacementModal && (
         <CreateReplacementOrderModal
           faultyReturn={faultyReturn}
@@ -299,3 +303,4 @@ export default function FaultyReturnModal({
     </>
   );
 }
+

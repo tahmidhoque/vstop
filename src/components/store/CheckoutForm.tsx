@@ -4,6 +4,18 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { BasketItem } from "@/types";
 import { calculateOffers, type Offer } from "@/lib/offer-utils";
+import Box from '@mui/material/Box';
+import Container from '@mui/material/Container';
+import Paper from '@mui/material/Paper';
+import Typography from '@mui/material/Typography';
+import TextField from '@mui/material/TextField';
+import Button from '@mui/material/Button';
+import Divider from '@mui/material/Divider';
+import Alert from '@mui/material/Alert';
+import CircularProgress from '@mui/material/CircularProgress';
+import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
+import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 
 interface CheckoutFormProps {
   items: BasketItem[];
@@ -52,131 +64,147 @@ export default function CheckoutForm({
   };
 
   return (
-    <div className="max-w-2xl mx-auto px-3 sm:px-4">
-      <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">
+    <Container maxWidth="md" sx={{ py: { xs: 3, sm: 4 } }}>
+      <Typography variant="h4" component="h1" fontWeight={700} gutterBottom sx={{ mb: 3 }}>
         Checkout
-      </h1>
+      </Typography>
 
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 mb-4 sm:mb-6">
-        <h2 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">
+      <Paper elevation={2} sx={{ p: { xs: 2, sm: 3 }, mb: 3 }}>
+        <Typography variant="h6" fontWeight={600} gutterBottom>
           Order Summary
-        </h2>
-        <div className="space-y-3 mb-4">
+        </Typography>
+        <List disablePadding sx={{ mb: 2 }}>
           {items.map((item) => (
-            <div
+            <ListItem
               key={`${item.productId}-${item.variantId || "base"}`}
-              className="flex flex-col sm:flex-row sm:justify-between sm:items-center py-2 sm:py-2.5 border-b border-gray-100 last:border-b-0 gap-2 sm:gap-3"
+              sx={{
+                py: 2,
+                px: 0,
+                borderBottom: 1,
+                borderColor: 'divider',
+                '&:last-child': { borderBottom: 0 },
+                flexDirection: { xs: 'column', sm: 'row' },
+                alignItems: { xs: 'flex-start', sm: 'center' },
+                gap: { xs: 1, sm: 2 }
+              }}
             >
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-sm sm:text-base truncate mb-1 sm:mb-0">
+              <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                <Typography variant="body1" fontWeight={600} noWrap>
                   {item.name}
-                </p>
-                <p className="text-xs sm:text-sm text-gray-600">
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
                   {item.quantity} × £{item.price.toFixed(2)}
-                </p>
-              </div>
-              <p className="font-semibold text-sm sm:text-base flex-shrink-0 text-gray-900 self-end sm:self-auto">
+                </Typography>
+              </Box>
+              <Typography variant="body1" fontWeight={700} sx={{ flexShrink: 0 }}>
                 £{(item.price * item.quantity).toFixed(2)}
-              </p>
-            </div>
+              </Typography>
+            </ListItem>
           ))}
-        </div>
+        </List>
 
         {appliedOffers.length > 0 && (
-          <div className="mb-4 pt-4 border-t border-gray-200">
-            <h3 className="text-sm font-semibold text-green-700 mb-2">
-              Applied Offers:
-            </h3>
-            <div className="space-y-2">
-              {appliedOffers.map((offer) => (
-                <div
-                  key={offer.offerId}
-                  className="text-sm bg-green-50 border border-green-200 rounded p-2"
-                >
-                  <div className="font-medium text-green-800">
-                    {offer.offerName}
-                  </div>
-                  <div className="text-green-700">
-                    Save £{offer.discount.toFixed(2)}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+          <>
+            <Divider sx={{ my: 2 }} />
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="subtitle2" fontWeight={700} color="success.main" gutterBottom>
+                Applied Offers
+              </Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                {appliedOffers.map((offer) => (
+                  <Paper
+                    key={offer.offerId}
+                    elevation={0}
+                    sx={{ p: 1.5, bgcolor: 'success.light', border: 1, borderColor: 'success.main' }}
+                  >
+                    <Typography variant="body2" fontWeight={600} color="success.dark">
+                      {offer.offerName}
+                    </Typography>
+                    <Typography variant="body2" color="success.dark">
+                      Save £{offer.discount.toFixed(2)}
+                    </Typography>
+                  </Paper>
+                ))}
+              </Box>
+            </Box>
+          </>
         )}
 
-        <div className="space-y-2 pt-4 border-t border-gray-200">
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-600">Subtotal:</span>
-            <span className="text-gray-900">£{subtotal.toFixed(2)}</span>
-          </div>
+        <Divider sx={{ my: 2 }} />
+        <Box>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+            <Typography variant="body2" color="text.secondary">Subtotal:</Typography>
+            <Typography variant="body2">£{subtotal.toFixed(2)}</Typography>
+          </Box>
           {discounts > 0 && (
-            <div className="flex justify-between text-sm">
-              <span className="text-green-600">Discounts:</span>
-              <span className="text-green-600 font-semibold">
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+              <Typography variant="body2" color="success.main">Discounts:</Typography>
+              <Typography variant="body2" color="success.main" fontWeight={600}>
                 -£{discounts.toFixed(2)}
-              </span>
-            </div>
+              </Typography>
+            </Box>
           )}
-          <div className="flex justify-between items-center pt-2 border-t border-gray-200">
-            <span className="text-base sm:text-lg font-semibold">Total:</span>
-            <span className="text-xl sm:text-2xl font-bold">
-              £{total.toFixed(2)}
-            </span>
-          </div>
-        </div>
-      </div>
+          <Divider sx={{ my: 1 }} />
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography variant="h6" fontWeight={700}>Total:</Typography>
+            <Typography variant="h5" fontWeight={700}>£{total.toFixed(2)}</Typography>
+          </Box>
+        </Box>
+      </Paper>
 
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6"
-      >
-        <div className="mb-6">
-          <label
-            htmlFor="username"
-            className="block text-sm font-medium text-gray-700 mb-2"
-          >
-            Your Name <span className="text-red-500">*</span>
-          </label>
-          <input
-            id="username"
-            type="text"
+      <Paper elevation={2} component="form" onSubmit={handleSubmit} sx={{ p: { xs: 2, sm: 3 } }}>
+        <Box sx={{ mb: 3 }}>
+          <TextField
+            fullWidth
+            required
+            label="Your Name"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            required
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[44px]"
-            placeholder="Enter your name"
             disabled={loading}
+            placeholder="Enter your name"
+            helperText="This helps us identify who placed the order"
+            InputProps={{
+              startAdornment: <PersonOutlineIcon sx={{ mr: 1, color: 'action.active' }} />,
+            }}
           />
-          <p className="mt-2 text-xs sm:text-sm text-gray-600">
-            This helps us identify who placed the order
-          </p>
-        </div>
+        </Box>
 
         {error && (
-          <div className="mb-6 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+          <Alert severity="error" sx={{ mb: 3 }}>
             {error}
-          </div>
+          </Alert>
         )}
 
-        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-          <button
-            type="button"
+        <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
+          <Button
+            fullWidth
+            variant="outlined"
+            size="large"
             onClick={() => router.back()}
             disabled={loading}
-            className="w-full sm:flex-1 py-3 px-4 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 active:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-h-[44px]"
+            sx={{ minHeight: 48 }}
           >
             Back
-          </button>
-          <button
+          </Button>
+          <Button
+            fullWidth
             type="submit"
+            variant="contained"
+            size="large"
             disabled={loading || items.length === 0}
-            className="w-full sm:flex-1 py-3 px-4 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 active:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-h-[44px]"
+            sx={{ minHeight: 48 }}
           >
-            {loading ? "Placing Order..." : "Place Order"}
-          </button>
-        </div>
-      </form>
-    </div>
+            {loading ? (
+              <>
+                <CircularProgress size={20} sx={{ mr: 1 }} color="inherit" />
+                Placing Order...
+              </>
+            ) : (
+              'Place Order'
+            )}
+          </Button>
+        </Box>
+      </Paper>
+    </Container>
   );
 }

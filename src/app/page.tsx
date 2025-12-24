@@ -2,6 +2,11 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import LoginForm from "@/components/auth/LoginForm";
 import { verifyCustomerPassword, createSession } from "@/lib/auth";
+import Box from '@mui/material/Box';
+import Container from '@mui/material/Container';
+import Paper from '@mui/material/Paper';
+import Typography from '@mui/material/Typography';
+import StorefrontIcon from '@mui/icons-material/Storefront';
 
 async function handleLogin(password: string) {
   "use server";
@@ -24,18 +29,50 @@ export default async function HomePage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-3 sm:px-4 py-8 sm:py-12">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
-            Welcome
-          </h1>
-          <p className="text-sm sm:text-base text-gray-600">
-            Please enter your password to access the store
-          </p>
-        </div>
-        <LoginForm type="customer" onSubmit={handleLogin} />
-      </div>
-    </div>
+    <Container maxWidth="sm">
+      <Box
+        sx={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          py: 4,
+        }}
+      >
+        <Paper
+          elevation={3}
+          sx={{
+            width: '100%',
+            p: { xs: 3, sm: 4 },
+            borderRadius: 2,
+          }}
+        >
+          <Box sx={{ textAlign: 'center', mb: 4 }}>
+            <Box
+              sx={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 64,
+                height: 64,
+                borderRadius: '50%',
+                bgcolor: 'primary.main',
+                color: 'white',
+                mb: 2,
+              }}
+            >
+              <StorefrontIcon sx={{ fontSize: 32 }} />
+            </Box>
+            <Typography variant="h4" component="h1" gutterBottom fontWeight={700}>
+              Welcome
+            </Typography>
+            <Typography variant="body1" color="text.secondary">
+              Please enter your password to access the store
+            </Typography>
+          </Box>
+          <LoginForm type="customer" onSubmit={handleLogin} />
+        </Paper>
+      </Box>
+    </Container>
   );
 }

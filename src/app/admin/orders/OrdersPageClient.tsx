@@ -1,8 +1,11 @@
 "use client";
 
-import Link from "next/link";
 import OrderList from "@/components/admin/OrderList";
 import type { OrderWithItems } from "@/types";
+import Container from '@mui/material/Container';
+import Typography from '@mui/material/Typography';
+import Box from '@mui/material/Box';
+import AdminLayout from '@/components/layout/AdminLayout';
 
 interface OrdersPageClientProps {
   orders: OrderWithItems[];
@@ -10,24 +13,15 @@ interface OrdersPageClientProps {
 
 export default function OrdersPageClient({ orders }: OrdersPageClientProps) {
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 py-3 sm:py-4">
-          <Link
-            href="/admin"
-            className="text-blue-600 hover:text-blue-700 text-sm font-medium mb-3 sm:mb-4 inline-block min-h-[44px] flex items-center"
-          >
-            ← Back to Dashboard
-          </Link>
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
+    <AdminLayout>
+      <Box sx={{ width: '100%', maxWidth: '100%', overflowX: 'hidden' }}>
+        <Container maxWidth="xl" sx={{ py: 4, px: { xs: 2, sm: 3, md: 4 }, width: '100%', maxWidth: '100%', overflowX: 'hidden' }}>
+          <Typography variant="h4" component="h1" fontWeight={700} gutterBottom>
             Orders
-          </h1>
-        </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
-        <OrderList orders={orders} />
-      </div>
-    </div>
+          </Typography>
+          <OrderList orders={orders} />
+        </Container>
+      </Box>
+    </AdminLayout>
   );
 }

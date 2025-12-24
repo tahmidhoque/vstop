@@ -1,6 +1,17 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import Box from '@mui/material/Box';
+import TextField from '@mui/material/TextField';
+import Button from '@mui/material/Button';
+import Alert from '@mui/material/Alert';
+import Typography from '@mui/material/Typography';
+import Grid from '@mui/material/Grid';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import Checkbox from '@mui/material/Checkbox';
+import Paper from '@mui/material/Paper';
+import CircularProgress from '@mui/material/CircularProgress';
+import { FormTextField } from '@/components/common/FormFields';
 
 interface Product {
   id: string;
@@ -128,216 +139,189 @@ export default function OfferForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <Box component="form" onSubmit={handleSubmit}>
       {error && (
-        <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+        <Alert severity="error" sx={{ mb: 3 }}>
           {error}
-        </div>
+        </Alert>
       )}
 
-      <div>
-        <label
-          htmlFor="name"
-          className="block text-sm font-medium text-gray-700 mb-1"
-        >
-          Offer Name <span className="text-red-500">*</span>
-        </label>
-        <input
-          id="name"
-          type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="e.g., Any 2 for £15"
-          required
-          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[44px]"
-          disabled={loading}
-        />
-        <p className="mt-1 text-xs text-gray-500">
-          This will be displayed to customers
-        </p>
-      </div>
+      <Grid container spacing={3}>
+        <Grid item xs={12}>
+          <FormTextField
+            fullWidth
+            label="Offer Name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="e.g., Any 2 for £15"
+            required
+            disabled={loading}
+            helperText="This will be displayed to customers"
+          />
+        </Grid>
 
-      <div>
-        <label
-          htmlFor="description"
-          className="block text-sm font-medium text-gray-700 mb-1"
-        >
-          Description (optional)
-        </label>
-        <textarea
-          id="description"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          placeholder="Additional details about the offer"
-          rows={3}
-          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[44px]"
-          disabled={loading}
-        />
-      </div>
+        <Grid item xs={12}>
+          <TextField
+            fullWidth
+            multiline
+            rows={3}
+            label="Description (optional)"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Additional details about the offer"
+            disabled={loading}
+          />
+        </Grid>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label
-            htmlFor="quantity"
-            className="block text-sm font-medium text-gray-700 mb-1"
-          >
-            Quantity <span className="text-red-500">*</span>
-          </label>
-          <input
-            id="quantity"
+        <Grid item xs={12} sm={6}>
+          <TextField
+            fullWidth
             type="number"
-            min="2"
+            label="Quantity"
             value={quantity}
             onChange={(e) => setQuantity(e.target.value)}
             placeholder="2"
+            inputProps={{ min: 2 }}
             required
-            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[44px]"
             disabled={loading}
+            helperText='Number of items required (e.g., 2 for "Any 2 for £X")'
           />
-          <p className="mt-1 text-xs text-gray-500">
-            Number of items required (e.g., 2 for "Any 2 for £X")
-          </p>
-        </div>
+        </Grid>
 
-        <div>
-          <label
-            htmlFor="price"
-            className="block text-sm font-medium text-gray-700 mb-1"
-          >
-            Offer Price (£) <span className="text-red-500">*</span>
-          </label>
-          <input
-            id="price"
+        <Grid item xs={12} sm={6}>
+          <TextField
+            fullWidth
             type="number"
-            step="0.01"
-            min="0"
+            label="Offer Price (£)"
             value={price}
             onChange={(e) => setPrice(e.target.value)}
             placeholder="15.00"
+            inputProps={{ step: 0.01, min: 0 }}
             required
-            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[44px]"
             disabled={loading}
+            helperText="Total price for the quantity (e.g., £15 for 2 items)"
           />
-          <p className="mt-1 text-xs text-gray-500">
-            Total price for the quantity (e.g., £15 for 2 items)
-          </p>
-        </div>
-      </div>
+        </Grid>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label
-            htmlFor="startDate"
-            className="block text-sm font-medium text-gray-700 mb-1"
-          >
-            Start Date (optional)
-          </label>
-          <input
-            id="startDate"
+        <Grid item xs={12} sm={6}>
+          <TextField
+            fullWidth
             type="date"
+            label="Start Date (optional)"
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
-            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[44px]"
+            InputLabelProps={{ shrink: true }}
             disabled={loading}
           />
-        </div>
+        </Grid>
 
-        <div>
-          <label
-            htmlFor="endDate"
-            className="block text-sm font-medium text-gray-700 mb-1"
-          >
-            End Date (optional)
-          </label>
-          <input
-            id="endDate"
+        <Grid item xs={12} sm={6}>
+          <TextField
+            fullWidth
             type="date"
+            label="End Date (optional)"
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}
-            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[44px]"
+            InputLabelProps={{ shrink: true }}
             disabled={loading}
           />
-        </div>
-      </div>
+        </Grid>
 
-      <div>
-        <label className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            checked={active}
-            onChange={(e) => setActive(e.target.checked)}
-            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-            disabled={loading}
+        <Grid item xs={12}>
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={active}
+                onChange={(e) => setActive(e.target.checked)}
+                disabled={loading}
+              />
+            }
+            label="Active"
           />
-          <span className="text-sm font-medium text-gray-700">Active</span>
-        </label>
-        <p className="mt-1 text-xs text-gray-500">
-          Only active offers will be applied to orders
-        </p>
-      </div>
+          <Typography variant="caption" display="block" color="text.secondary" sx={{ mt: 0.5 }}>
+            Only active offers will be applied to orders
+          </Typography>
+        </Grid>
 
-      <div>
-        <div className="flex items-center justify-between mb-2">
-          <label className="block text-sm font-medium text-gray-700">
-            Eligible Products <span className="text-red-500">*</span>
-          </label>
-          <button
-            type="button"
-            onClick={handleSelectAll}
-            disabled={loading || products.length === 0}
-            className="text-sm text-blue-600 hover:text-blue-700 font-medium"
-          >
-            {selectedProductIds.size === products.length
-              ? "Deselect All"
-              : "Select All"}
-          </button>
-        </div>
-        {products.length === 0 ? (
-          <p className="text-sm text-gray-600 mb-2">
-            No products available. Create products first.
-          </p>
-        ) : (
-          <div className="space-y-2 max-h-60 overflow-y-auto border border-gray-300 rounded-lg p-3">
-            {products.map((product) => (
-              <label
-                key={product.id}
-                className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded cursor-pointer"
-              >
-                <input
-                  type="checkbox"
-                  checked={selectedProductIds.has(product.id)}
-                  onChange={() => handleToggleProduct(product.id)}
-                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                  disabled={loading}
-                />
-                <span className="text-sm text-gray-900">{product.name}</span>
-              </label>
-            ))}
-          </div>
-        )}
-        <p className="mt-1 text-xs text-gray-500">
-          Select products that qualify for this offer. The offer will apply to
-          any combination of selected products.
-        </p>
-      </div>
+        <Grid item xs={12}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+            <Typography variant="subtitle2" fontWeight={600}>
+              Eligible Products <Box component="span" color="error.main">*</Box>
+            </Typography>
+            <Button
+              type="button"
+              onClick={handleSelectAll}
+              disabled={loading || products.length === 0}
+              size="small"
+            >
+              {selectedProductIds.size === products.length ? "Deselect All" : "Select All"}
+            </Button>
+          </Box>
+          {products.length === 0 ? (
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              No products available. Create products first.
+            </Typography>
+          ) : (
+            <Paper
+              variant="outlined"
+              sx={{
+                maxHeight: 240,
+                overflowY: 'auto',
+                p: 2,
+              }}
+            >
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                {products.map((product) => (
+                  <FormControlLabel
+                    key={product.id}
+                    control={
+                      <Checkbox
+                        checked={selectedProductIds.has(product.id)}
+                        onChange={() => handleToggleProduct(product.id)}
+                        disabled={loading}
+                      />
+                    }
+                    label={product.name}
+                    sx={{
+                      '&:hover': { bgcolor: 'action.hover', borderRadius: 1 },
+                      p: 1,
+                      m: 0,
+                    }}
+                  />
+                ))}
+              </Box>
+            </Paper>
+          )}
+          <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+            Select products that qualify for this offer. The offer will apply to any combination of selected products.
+          </Typography>
+        </Grid>
 
-      <div className="flex flex-col sm:flex-row gap-3 pt-2">
-        <button
-          type="button"
-          onClick={onCancel}
-          disabled={loading}
-          className="w-full sm:flex-1 py-2.5 px-4 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 active:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-h-[44px]"
-        >
-          Cancel
-        </button>
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full sm:flex-1 py-2.5 px-4 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 active:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-h-[44px]"
-        >
-          {loading ? "Saving..." : offer ? "Update" : "Create"}
-        </button>
-      </div>
-    </form>
+        <Grid item xs={12}>
+          <Box sx={{ display: 'flex', gap: 2, pt: 2 }}>
+            <Button
+              type="button"
+              onClick={onCancel}
+              disabled={loading}
+              variant="outlined"
+              size="large"
+              sx={{ flexGrow: { xs: 1, sm: 0 }, minWidth: { sm: 120 } }}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="contained"
+              disabled={loading}
+              size="large"
+              startIcon={loading ? <CircularProgress size={20} color="inherit" /> : null}
+              sx={{ flexGrow: { xs: 1, sm: 0 }, minWidth: { sm: 120 } }}
+            >
+              {loading ? "Saving..." : offer ? "Update" : "Create"}
+            </Button>
+          </Box>
+        </Grid>
+      </Grid>
+    </Box>
   );
 }

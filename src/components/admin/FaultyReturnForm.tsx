@@ -2,6 +2,20 @@
 
 import React, { useState, useEffect } from "react";
 import { createFaultyReturn, getProducts, getOrders } from "@/lib/actions";
+import Box from '@mui/material/Box';
+import TextField from '@mui/material/TextField';
+import Button from '@mui/material/Button';
+import Alert from '@mui/material/Alert';
+import Typography from '@mui/material/Typography';
+import Grid from '@mui/material/Grid';
+import ToggleButton from '@mui/material/ToggleButton';
+import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
+import FormControl from '@mui/material/FormControl';
+import InputLabel from '@mui/material/InputLabel';
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
+import CircularProgress from '@mui/material/CircularProgress';
+import { FormTextField } from '@/components/common/FormFields';
 
 interface FaultyReturnFormProps {
   onSuccess: () => void;
@@ -43,7 +57,7 @@ export default function FaultyReturnForm({
     if (productId) {
       const product = products.find((p) => p.id === productId);
       setSelectedProduct(product);
-      setVariantId(""); // Reset variant when product changes
+      setVariantId("");
     } else {
       setSelectedProduct(null);
     }
@@ -86,216 +100,181 @@ export default function FaultyReturnForm({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
-      <h2 className="text-lg font-semibold text-gray-900 mb-4">
+    <Box component="form" onSubmit={handleSubmit}>
+      <Typography variant="h6" fontWeight={600} gutterBottom>
         Report Faulty Item
-      </h2>
+      </Typography>
 
       {error && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+        <Alert severity="error" sx={{ mb: 3 }}>
           {error}
-        </div>
+        </Alert>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Type Selection */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+      <Grid container spacing={3}>
+        <Grid item xs={12}>
+          <Typography variant="subtitle2" fontWeight={600} gutterBottom>
             Type
-          </label>
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              type="button"
-              onClick={() => setType("PRE_SALE")}
-              className={`px-4 py-2.5 rounded-lg border-2 font-medium transition-colours min-h-[44px] ${
-                type === "PRE_SALE"
-                  ? "border-blue-500 bg-blue-50 text-blue-700"
-                  : "border-gray-300 bg-white text-gray-700 hover:border-gray-400"
-              }`}
-            >
-              Pre-Sale Faulty Stock
-            </button>
-            <button
-              type="button"
-              onClick={() => setType("POST_SALE")}
-              className={`px-4 py-2.5 rounded-lg border-2 font-medium transition-colours min-h-[44px] ${
-                type === "POST_SALE"
-                  ? "border-blue-500 bg-blue-50 text-blue-700"
-                  : "border-gray-300 bg-white text-gray-700 hover:border-gray-400"
-              }`}
-            >
-              Post-Sale Return
-            </button>
-          </div>
-        </div>
+          </Typography>
+          <ToggleButtonGroup
+            value={type}
+            exclusive
+            onChange={(_, newType) => newType && setType(newType)}
+            fullWidth
+            size="large"
+          >
+            <ToggleButton value="PRE_SALE">Pre-Sale Faulty Stock</ToggleButton>
+            <ToggleButton value="POST_SALE">Post-Sale Return</ToggleButton>
+          </ToggleButtonGroup>
+        </Grid>
 
-        {/* Order Selection (Post-Sale Only) */}
         {type === "POST_SALE" && (
-          <div>
-            <label
-              htmlFor="order"
-              className="block text-sm font-medium text-gray-700 mb-2"
-            >
-              Order
-            </label>
-            <select
-              id="order"
-              value={orderId}
-              onChange={(e) => {
-                const selectedOrder = orders.find(
-                  (o) => o.id === e.target.value,
-                );
-                setOrderId(e.target.value);
-                setOrderNumber(selectedOrder?.orderNumber || "");
-              }}
-              className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[44px]"
-              required={type === "POST_SALE"}
-            >
-              <option value="">Select an order</option>
-              {orders.map((order) => (
-                <option key={order.id} value={order.id}>
-                  {order.orderNumber} - {order.username} (
-                  {new Date(order.createdAt).toLocaleDateString()})
-                </option>
-              ))}
-            </select>
-          </div>
+          <Grid item xs={12}>
+            <FormControl fullWidth>
+              <InputLabel>Order</InputLabel>
+              <Select
+                value={orderId}
+                label="Order"
+                onChange={(e) => {
+                  const selectedOrder = orders.find(
+                    (o) => o.id === e.target.value,
+                  );
+                  setOrderId(e.target.value);
+                  setOrderNumber(selectedOrder?.orderNumber || "");
+                }}
+                required
+              >
+                <MenuItem value="">
+                  <em>Select an order</em>
+                </MenuItem>
+                {orders.map((order) => (
+                  <MenuItem key={order.id} value={order.id}>
+                    {order.orderNumber} - {order.username} ({new Date(order.createdAt).toLocaleDateString()})
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
         )}
 
-        {/* Product Selection */}
-        <div>
-          <label
-            htmlFor="product"
-            className="block text-sm font-medium text-gray-700 mb-2"
-          >
-            Product
-          </label>
-          <select
-            id="product"
-            value={productId}
-            onChange={(e) => setProductId(e.target.value)}
-            className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[44px]"
-            required
-          >
-            <option value="">Select a product</option>
-            {products.map((product) => (
-              <option key={product.id} value={product.id}>
-                {product.name} - £{product.price.toFixed(2)}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Variant Selection (if product has variants) */}
-        {selectedProduct && selectedProduct.variants.length > 0 && (
-          <div>
-            <label
-              htmlFor="variant"
-              className="block text-sm font-medium text-gray-700 mb-2"
+        <Grid item xs={12}>
+          <FormControl fullWidth>
+            <InputLabel>Product</InputLabel>
+            <Select
+              value={productId}
+              label="Product"
+              onChange={(e) => setProductId(e.target.value)}
+              required
             >
-              Variant
-            </label>
-            <select
-              id="variant"
-              value={variantId}
-              onChange={(e) => setVariantId(e.target.value)}
-              className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[44px]"
-            >
-              <option value="">Base Product</option>
-              {selectedProduct.variants.map((variant: any) => (
-                <option key={variant.id} value={variant.id}>
-                  {variant.flavour} (Stock: {variant.stock})
-                </option>
+              <MenuItem value="">
+                <em>Select a product</em>
+              </MenuItem>
+              {products.map((product) => (
+                <MenuItem key={product.id} value={product.id}>
+                  {product.name} - £{product.price.toFixed(2)}
+                </MenuItem>
               ))}
-            </select>
-          </div>
+            </Select>
+          </FormControl>
+        </Grid>
+
+        {selectedProduct && selectedProduct.variants && selectedProduct.variants.length > 0 && (
+          <Grid item xs={12}>
+            <FormControl fullWidth>
+              <InputLabel>Variant</InputLabel>
+              <Select
+                value={variantId}
+                label="Variant"
+                onChange={(e) => setVariantId(e.target.value)}
+              >
+                <MenuItem value="">
+                  <em>Base Product</em>
+                </MenuItem>
+                {selectedProduct.variants.map((variant: any) => (
+                  <MenuItem key={variant.id} value={variant.id}>
+                    {variant.flavour} (Stock: {variant.stock})
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
         )}
 
-        {/* Quantity */}
-        <div>
-          <label
-            htmlFor="quantity"
-            className="block text-sm font-medium text-gray-700 mb-2"
-          >
-            Quantity
-          </label>
-          <input
+        <Grid item xs={12} sm={6}>
+          <TextField
+            fullWidth
             type="number"
-            id="quantity"
+            label="Quantity"
             value={quantity}
             onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
-            min="1"
-            className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[44px]"
+            inputProps={{ min: 1 }}
             required
           />
-        </div>
+        </Grid>
 
-        {/* Faulty Reason */}
-        <div>
-          <label
-            htmlFor="reason"
-            className="block text-sm font-medium text-gray-700 mb-2"
-          >
-            Faulty Reason
-          </label>
-          <input
-            type="text"
-            id="reason"
+        <Grid item xs={12}>
+          <FormTextField
+            fullWidth
+            label="Faulty Reason"
             value={faultyReason}
             onChange={(e) => setFaultyReason(e.target.value)}
             placeholder="e.g., Damaged packaging, Expired, Defective"
-            className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[44px]"
             required
           />
-        </div>
+        </Grid>
 
-        {/* Notes */}
-        <div>
-          <label
-            htmlFor="notes"
-            className="block text-sm font-medium text-gray-700 mb-2"
-          >
-            Notes (Optional)
-          </label>
-          <textarea
-            id="notes"
+        <Grid item xs={12}>
+          <TextField
+            fullWidth
+            multiline
+            rows={3}
+            label="Notes (Optional)"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            rows={3}
             placeholder="Additional details..."
-            className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
-        </div>
+        </Grid>
 
-        {/* Warning for Pre-Sale */}
         {type === "PRE_SALE" && (
-          <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <p className="text-sm text-yellow-800">
-              <strong>Warning:</strong> This will automatically deduct {quantity}{" "}
-              unit(s) from stock.
-            </p>
-          </div>
+          <Grid item xs={12}>
+            <Alert severity="warning">
+              <strong>Warning:</strong> This will automatically deduct {quantity} unit(s) from stock.
+            </Alert>
+          </Grid>
         )}
 
-        {/* Actions */}
-        <div className="flex gap-3 pt-2">
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 active:bg-blue-800 disabled:bg-gray-400 min-h-[44px] font-medium transition-colours"
-          >
-            {isSubmitting ? "Creating..." : "Create Faulty Return"}
-          </button>
-          <button
-            type="button"
-            onClick={onCancel}
-            disabled={isSubmitting}
-            className="px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 active:bg-gray-100 disabled:bg-gray-100 min-h-[44px] font-medium transition-colours"
-          >
-            Cancel
-          </button>
-        </div>
-      </form>
-    </div>
+        <Grid item xs={12}>
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <Button
+              type="submit"
+              variant="contained"
+              disabled={isSubmitting}
+              size="large"
+              sx={{ flexGrow: 1, minHeight: 48 }}
+            >
+              {isSubmitting ? (
+                <>
+                  <CircularProgress size={20} sx={{ mr: 1 }} color="inherit" />
+                  Creating...
+                </>
+              ) : (
+                'Create Faulty Return'
+              )}
+            </Button>
+            <Button
+              type="button"
+              variant="outlined"
+              onClick={onCancel}
+              disabled={isSubmitting}
+              size="large"
+              sx={{ minHeight: 48 }}
+            >
+              Cancel
+            </Button>
+          </Box>
+        </Grid>
+      </Grid>
+    </Box>
   );
 }
+
