@@ -243,11 +243,17 @@ export default function PersonalUseOrderModal({
                     <MenuItem value="">
                       <em>Select a product</em>
                     </MenuItem>
-                    {products.map((product) => (
-                      <MenuItem key={product.id} value={product.id}>
-                        {product.name} (Stock: {product.stock})
-                      </MenuItem>
-                    ))}
+                    {products.map((product) => {
+                      // Calculate total stock - use variant stock if product has variants, otherwise use base stock
+                      const totalStock = product.variants && product.variants.length > 0
+                        ? product.variants.reduce((sum, v) => sum + v.stock, 0)
+                        : product.stock;
+                      return (
+                        <MenuItem key={product.id} value={product.id}>
+                          {product.name} (Stock: {totalStock})
+                        </MenuItem>
+                      );
+                    })}
                   </Select>
                 </FormControl>
               </Grid>

@@ -12,12 +12,20 @@ import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import Chip from '@mui/material/Chip';
 import Button from '@mui/material/Button';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
 import AdminLayout from '@/components/layout/AdminLayout';
 import StatCard from '@/components/common/StatCard';
 import PendingActionsIcon from '@mui/icons-material/PendingActions';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import InventoryIcon from '@mui/icons-material/Inventory';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import AddIcon from '@mui/icons-material/Add';
+import LocalOfferIcon from '@mui/icons-material/LocalOffer';
+import WarehouseIcon from '@mui/icons-material/Warehouse';
+import BuildIcon from '@mui/icons-material/Build';
+import AssessmentIcon from '@mui/icons-material/Assessment';
+import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
 
 interface AdminDashboardClientProps {
   pendingOrders: number;
@@ -62,6 +70,141 @@ export default function AdminDashboardClient({
             />
           </Grid>
         </Grid>
+
+        {/* Quick Actions */}
+        <Paper elevation={2} sx={{ p: 3, mb: 4 }}>
+          <Typography variant="h6" fontWeight={600} gutterBottom sx={{ mb: 3 }}>
+            Quick Actions
+          </Typography>
+          <Grid container spacing={2}>
+            <Grid size={{ xs: 6, sm: 4, md: 3 }}>
+              <Button
+                component={Link}
+                href="/admin/products"
+                variant="outlined"
+                fullWidth
+                startIcon={<AddIcon />}
+                sx={{
+                  py: 2,
+                  flexDirection: 'column',
+                  gap: 1,
+                  minHeight: 100,
+                  borderWidth: 2,
+                  '&:hover': { borderWidth: 2 }
+                }}
+              >
+                <Typography variant="body2" fontWeight={600}>
+                  Create Product
+                </Typography>
+              </Button>
+            </Grid>
+            <Grid size={{ xs: 6, sm: 4, md: 3 }}>
+              <Button
+                component={Link}
+                href="/admin/offers"
+                variant="outlined"
+                fullWidth
+                startIcon={<LocalOfferIcon />}
+                sx={{
+                  py: 2,
+                  flexDirection: 'column',
+                  gap: 1,
+                  minHeight: 100,
+                  borderWidth: 2,
+                  '&:hover': { borderWidth: 2 }
+                }}
+              >
+                <Typography variant="body2" fontWeight={600}>
+                  Create Offer
+                </Typography>
+              </Button>
+            </Grid>
+            <Grid size={{ xs: 6, sm: 4, md: 3 }}>
+              <Button
+                component={Link}
+                href="/admin/stock"
+                variant="outlined"
+                fullWidth
+                startIcon={<WarehouseIcon />}
+                sx={{
+                  py: 2,
+                  flexDirection: 'column',
+                  gap: 1,
+                  minHeight: 100,
+                  borderWidth: 2,
+                  '&:hover': { borderWidth: 2 }
+                }}
+              >
+                <Typography variant="body2" fontWeight={600}>
+                  Stock Check
+                </Typography>
+              </Button>
+            </Grid>
+            <Grid size={{ xs: 6, sm: 4, md: 3 }}>
+              <Button
+                component={Link}
+                href="/admin/faulty"
+                variant="outlined"
+                fullWidth
+                startIcon={<BuildIcon />}
+                sx={{
+                  py: 2,
+                  flexDirection: 'column',
+                  gap: 1,
+                  minHeight: 100,
+                  borderWidth: 2,
+                  '&:hover': { borderWidth: 2 }
+                }}
+              >
+                <Typography variant="body2" fontWeight={600}>
+                  Faulty Returns
+                </Typography>
+              </Button>
+            </Grid>
+            <Grid size={{ xs: 6, sm: 4, md: 3 }}>
+              <Button
+                component={Link}
+                href="/admin/reports"
+                variant="outlined"
+                fullWidth
+                startIcon={<AssessmentIcon />}
+                sx={{
+                  py: 2,
+                  flexDirection: 'column',
+                  gap: 1,
+                  minHeight: 100,
+                  borderWidth: 2,
+                  '&:hover': { borderWidth: 2 }
+                }}
+              >
+                <Typography variant="body2" fontWeight={600}>
+                  View Reports
+                </Typography>
+              </Button>
+            </Grid>
+            <Grid size={{ xs: 6, sm: 4, md: 3 }}>
+              <Button
+                component={Link}
+                href="/admin/orders"
+                variant="outlined"
+                fullWidth
+                startIcon={<ShoppingBagIcon />}
+                sx={{
+                  py: 2,
+                  flexDirection: 'column',
+                  gap: 1,
+                  minHeight: 100,
+                  borderWidth: 2,
+                  '&:hover': { borderWidth: 2 }
+                }}
+              >
+                <Typography variant="body2" fontWeight={600}>
+                  View Orders
+                </Typography>
+              </Button>
+            </Grid>
+          </Grid>
+        </Paper>
 
         {/* Recent Orders */}
         <Paper elevation={2} sx={{ p: 3 }}>
