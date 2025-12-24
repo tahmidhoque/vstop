@@ -130,7 +130,7 @@ export default function ProductForm({
       )}
 
       <Grid container spacing={3}>
-        <Grid item xs={12}>
+        <Grid size={12}>
           <TextField
             fullWidth
             required
@@ -141,7 +141,7 @@ export default function ProductForm({
           />
         </Grid>
 
-        <Grid item xs={12} sm={6}>
+        <Grid size={{ xs: 12, sm: 6 }}>
           <TextField
             fullWidth
             required
@@ -154,7 +154,7 @@ export default function ProductForm({
           />
         </Grid>
 
-        <Grid item xs={12} sm={6}>
+        <Grid size={{ xs: 12, sm: 6 }}>
           <TextField
             fullWidth
             required
@@ -168,7 +168,7 @@ export default function ProductForm({
           />
         </Grid>
 
-        <Grid item xs={12}>
+        <Grid size={12}>
           <FormControlLabel
             control={
               <Switch
@@ -184,7 +184,7 @@ export default function ProductForm({
           </Typography>
         </Grid>
 
-        <Grid item xs={12}>
+        <Grid size={12}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
             <Typography variant="subtitle1" fontWeight={600}>
               Flavour Variants (optional)
@@ -213,7 +213,7 @@ export default function ProductForm({
                   sx={{ p: 2, bgcolor: 'background.default', border: 1, borderColor: 'divider' }}
                 >
                   <Grid container spacing={2} alignItems="center">
-                    <Grid item xs={12} sm={6}>
+                    <Grid size={{ xs: 12, sm: 6 }}>
                       <TextField
                         fullWidth
                         label="Flavour name"
@@ -226,7 +226,7 @@ export default function ProductForm({
                         size="small"
                       />
                     </Grid>
-                    <Grid item xs={10} sm={5}>
+                    <Grid size={{ xs: 10, sm: 5 }}>
                       <TextField
                         fullWidth
                         type="number"
@@ -244,7 +244,7 @@ export default function ProductForm({
                         size="small"
                       />
                     </Grid>
-                    <Grid item xs={2} sm={1}>
+                    <Grid size={{ xs: 2, sm: 1 }}>
                       <IconButton
                         color="error"
                         onClick={() => handleRemoveVariant(index)}
@@ -261,7 +261,7 @@ export default function ProductForm({
           )}
         </Grid>
 
-        <Grid item xs={12}>
+        <Grid size={12}>
           <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
             <Button
               variant="outlined"

@@ -47,8 +47,8 @@ export default function FaultyReturnModal({
       await updateFaultyReturnStatus(faultyReturn.id, newStatus);
       showSnackbar('Status updated successfully', 'success');
       onClose();
-    } catch (err: any) {
-      setError(err.message || "Failed to update status");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to update status");
       showSnackbar('Failed to update status', 'error');
     } finally {
       setIsUpdating(false);
@@ -128,33 +128,33 @@ export default function FaultyReturnModal({
                 Product Information
               </Typography>
               <Grid container spacing={2}>
-                <Grid item xs={6}>
+                <Grid size={6}>
                   <Typography variant="body2" color="text.secondary">Product:</Typography>
                   <Typography variant="body2" fontWeight={600}>
                     {faultyReturn.product.name}
                   </Typography>
                 </Grid>
                 {faultyReturn.variant && (
-                  <Grid item xs={6}>
+                  <Grid size={6}>
                     <Typography variant="body2" color="text.secondary">Variant:</Typography>
                     <Typography variant="body2" fontWeight={600}>
                       {faultyReturn.variant.flavour}
                     </Typography>
                   </Grid>
                 )}
-                <Grid item xs={6}>
+                <Grid size={6}>
                   <Typography variant="body2" color="text.secondary">Quantity:</Typography>
                   <Typography variant="body2" fontWeight={600}>
                     {faultyReturn.quantity}
                   </Typography>
                 </Grid>
-                <Grid item xs={6}>
+                <Grid size={6}>
                   <Typography variant="body2" color="text.secondary">Unit Price:</Typography>
                   <Typography variant="body2" fontWeight={600}>
                     £{faultyReturn.product.price.toFixed(2)}
                   </Typography>
                 </Grid>
-                <Grid item xs={12}>
+                <Grid size={12}>
                   <Divider sx={{ my: 1 }} />
                   <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                     <Typography variant="body2" fontWeight={600}>Total Loss:</Typography>
@@ -196,17 +196,17 @@ export default function FaultyReturnModal({
                   Order Information
                 </Typography>
                 <Grid container spacing={2}>
-                  <Grid item xs={6}>
+                  <Grid size={6}>
                     <Typography variant="body2" color="text.secondary">Order Number:</Typography>
                     <Typography variant="body2" fontWeight={600}>
                       {faultyReturn.order.orderNumber}
                     </Typography>
                   </Grid>
-                  <Grid item xs={6}>
+                  <Grid size={6}>
                     <Typography variant="body2" color="text.secondary">Customer:</Typography>
                     <Typography variant="body2">{faultyReturn.order.username}</Typography>
                   </Grid>
-                  <Grid item xs={6}>
+                  <Grid size={6}>
                     <Typography variant="body2" color="text.secondary">Order Status:</Typography>
                     <Typography variant="body2">{faultyReturn.order.status}</Typography>
                   </Grid>
@@ -221,17 +221,17 @@ export default function FaultyReturnModal({
                   Replacement Order
                 </Typography>
                 <Grid container spacing={2}>
-                  <Grid item xs={6}>
+                  <Grid size={6}>
                     <Typography variant="body2" color="text.secondary">Order Number:</Typography>
                     <Typography variant="body2" fontWeight={600}>
                       {faultyReturn.replacementOrder.orderNumber}
                     </Typography>
                   </Grid>
-                  <Grid item xs={6}>
+                  <Grid size={6}>
                     <Typography variant="body2" color="text.secondary">Customer:</Typography>
                     <Typography variant="body2">{faultyReturn.replacementOrder.username}</Typography>
                   </Grid>
-                  <Grid item xs={6}>
+                  <Grid size={6}>
                     <Typography variant="body2" color="text.secondary">Status:</Typography>
                     <Typography variant="body2">{faultyReturn.replacementOrder.status}</Typography>
                   </Grid>

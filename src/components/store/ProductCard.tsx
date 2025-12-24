@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import type { BasketItem } from "@/types";
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
@@ -71,28 +71,10 @@ export default function ProductCard({
   const isOutOfStock = displayStock === 0;
   const maxQuantity = Math.max(1, displayStock);
 
-  // Reset quantity when variant changes or stock changes
-  useEffect(() => {
-    setQuantity(1);
-  }, [selectedVariant?.id, displayStock]);
-
   const handleQuantityChange = (newQuantity: number) => {
     // Clamp quantity between 1 and available stock
     const clampedQuantity = Math.max(1, Math.min(newQuantity, maxQuantity));
     setQuantity(clampedQuantity);
-  };
-
-  const handleQuantityInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    // Allow empty input for better UX
-    if (value === "") {
-      setQuantity(1);
-      return;
-    }
-    const numValue = parseInt(value, 10);
-    if (!isNaN(numValue) && numValue > 0) {
-      handleQuantityChange(numValue);
-    }
   };
 
   const incrementQuantity = () => {
@@ -159,6 +141,7 @@ export default function ProductCard({
                 onChange={(e) => {
                   const variant = variants.find((v) => v.id === e.target.value);
                   setSelectedVariant(variant || null);
+                  setQuantity(1);
                 }}
               >
                 <MenuItem value="">
