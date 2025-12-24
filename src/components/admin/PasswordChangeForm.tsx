@@ -72,6 +72,7 @@ export default function PasswordChangeForm() {
             onChange={(e) => setNewPassword(e.target.value)}
             disabled={loading}
             helperText="Minimum 6 characters"
+            autoComplete="new-password"
             inputProps={{ minLength: 6 }}
           />
         </Grid>
@@ -85,6 +86,7 @@ export default function PasswordChangeForm() {
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             disabled={loading}
+            autoComplete="new-password"
             inputProps={{ minLength: 6 }}
           />
         </Grid>

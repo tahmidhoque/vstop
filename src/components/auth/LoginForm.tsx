@@ -53,6 +53,7 @@ export default function LoginForm({ type, onSubmit }: LoginFormProps) {
           required
           disabled={loading}
           placeholder="Enter password"
+          autoComplete="off"
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
