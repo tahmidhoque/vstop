@@ -16,10 +16,10 @@ export interface OrderWithItems {
   orderNumber: string;
   username: string;
   status: OrderStatus;
+  manualDiscount?: number | null;
+  totalOverride?: number | null;
   createdAt: Date;
   updatedAt: Date;
-  manualDiscount?: number | string | null;
-  totalOverride?: number | string | null;
   items: Array<{
     id: string;
     quantity: number;
@@ -35,36 +35,23 @@ export interface OrderWithItems {
       stock: number;
     } | null;
   }>;
+  faultyReturns?: Array<{
+    id: string;
+    returnNumber: string;
+    quantity: number;
+    faultyReason: string;
+    status: ReturnStatus;
+    product: {
+      id: string;
+      name: string;
+      price: number;
+    };
+  }>;
 }
 
-export interface ProductBreakdownVariant {
-  variantId: string | null;
-  variantFlavour: string | null;
-  totalQuantity: number;
-  totalRevenue: number;
-  orderCount: number;
-}
+export type FaultyReturnType = "PRE_SALE" | "POST_SALE";
 
-export interface ProductBreakdown {
-  productId: string;
-  productName: string;
-  totalQuantity: number;
-  totalRevenue: number;
-  orderCount: number;
-  variants: ProductBreakdownVariant[];
-}
-
-export interface ReportsData {
-  totalOrders: number;
-  cancelledOrders: number;
-  fulfilledOrders: number;
-  unfulfilledOrders: number;
-  totalSales: number;
-  orders: OrderWithItems[];
-  productBreakdown: ProductBreakdown[];
-}
-
-export interface FaultyReturnWithRelations {
+export interface FaultyReturn {
   id: string;
   returnNumber: string;
   orderId: string | null;
@@ -82,6 +69,7 @@ export interface FaultyReturnWithRelations {
     id: string;
     name: string;
     price: number;
+    stock: number;
   };
   variant?: {
     id: string;
@@ -93,22 +81,44 @@ export interface FaultyReturnWithRelations {
     orderNumber: string;
     username: string;
     status: OrderStatus;
-    createdAt: Date;
-    updatedAt: Date;
+    manualDiscount: number | null;
+    totalOverride: number | null;
   } | null;
   replacementOrder?: {
     id: string;
     orderNumber: string;
     username: string;
     status: OrderStatus;
-    createdAt: Date;
-    updatedAt: Date;
+    manualDiscount: number | null;
+    totalOverride: number | null;
   } | null;
 }
 
-export interface StockBreakdownWithFaulty {
-  physical: number;
-  faulty: number;
-  pending: number;
-  available: number;
+export interface FaultyLossSummary {
+  totalLoss: number;
+  preSaleLoss: number;
+  postSaleLoss: number;
+  count: number;
+  preSaleCount: number;
+  postSaleCount: number;
+}
+
+export interface ReportsData {
+  totalOrders: number;
+  cancelledOrders: number;
+  fulfilledOrders: number;
+  unfulfilledOrders: number;
+  totalSales: number;
+  orders: OrderWithItems[];
+  replacementOrders?: OrderWithItems[];
+  faultyLosses?: FaultyLossSummary;
+  productBreakdown?: ProductBreakdown[];
+}
+
+export interface ProductBreakdown {
+  productId: string;
+  productName: string;
+  totalQuantity: number;
+  totalRevenue: number;
+  orderCount: number;
 }

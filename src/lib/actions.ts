@@ -2,7 +2,7 @@
 
 import { db } from "./db";
 import { revalidatePath } from "next/cache";
-import { OrderStatus, ReturnStatus } from "@/generated/enums";
+import { OrderStatus } from "@/generated/enums";
 import type { BasketItem } from "@/types";
 import {
   calculateDiscountedPrices,
@@ -86,7 +86,7 @@ export async function createOrder(username: string, items: BasketItem[]) {
     orderNumber = "ORD-000001";
   }
 
-  // Create order - DO NOT deduct stock yet (stock only deducted on fulfilment)
+  // Create order and items, then update stock
   const order = await db.order.create({
     data: {
       orderNumber,
@@ -112,8 +112,30 @@ export async function createOrder(username: string, items: BasketItem[]) {
     },
   });
 
-  // Stock is NOT deducted here - it remains at physical count
-  // Stock will be deducted when order status changes to FULFILLED
+  // Update stock levels
+  for (const item of items) {
+    if (item.variantId) {
+      // Update variant stock
+      await db.productVariant.update({
+        where: { id: item.variantId },
+        data: {
+          stock: {
+            decrement: item.quantity,
+          },
+        },
+      });
+    } else {
+      // Update base product stock
+      await db.product.update({
+        where: { id: item.productId },
+        data: {
+          stock: {
+            decrement: item.quantity,
+          },
+        },
+      });
+    }
+  }
 
   revalidatePath("/admin/orders");
   return order;
@@ -129,35 +151,8 @@ export async function updateOrderStatus(orderId: string, status: OrderStatus) {
     throw new Error("Order not found");
   }
 
-  const oldStatus = order.status;
-
-  // Deduct stock when fulfilling an order (physical stock moves to customer)
-  if (status === "FULFILLED" && oldStatus !== "FULFILLED") {
-    for (const item of order.items) {
-      if (item.variantId) {
-        await db.productVariant.update({
-          where: { id: item.variantId },
-          data: {
-            stock: {
-              decrement: item.quantity,
-            },
-          },
-        });
-      } else {
-        await db.product.update({
-          where: { id: item.productId },
-          data: {
-            stock: {
-              decrement: item.quantity,
-            },
-          },
-        });
-      }
-    }
-  }
-
-  // Restore stock when unfulfilling an order (moving back from FULFILLED)
-  if (oldStatus === "FULFILLED" && status !== "FULFILLED") {
+  // If cancelling, restore stock
+  if (status === "CANCELLED" && order.status !== "CANCELLED") {
     for (const item of order.items) {
       if (item.variantId) {
         await db.productVariant.update({
@@ -181,8 +176,30 @@ export async function updateOrderStatus(orderId: string, status: OrderStatus) {
     }
   }
 
-  // Note: PENDING, UNFULFILLED, and CANCELLED orders do NOT affect physical stock
-  // Stock remains at physical inventory level until order is FULFILLED
+  // If un-cancelling, deduct stock again
+  if (order.status === "CANCELLED" && status !== "CANCELLED") {
+    for (const item of order.items) {
+      if (item.variantId) {
+        await db.productVariant.update({
+          where: { id: item.variantId },
+          data: {
+            stock: {
+              decrement: item.quantity,
+            },
+          },
+        });
+      } else {
+        await db.product.update({
+          where: { id: item.productId },
+          data: {
+            stock: {
+              decrement: item.quantity,
+            },
+          },
+        });
+      }
+    }
+  }
 
   await db.order.update({
     where: { id: orderId },
@@ -208,51 +225,46 @@ export async function updateOrder(
     throw new Error("Order not found");
   }
 
-  // Only restore stock from old items if order is FULFILLED
-  // (PENDING/UNFULFILLED orders don't affect physical stock)
-  if (order.status === "FULFILLED") {
-    for (const oldItem of order.items) {
-      if (oldItem.variantId) {
-        await db.productVariant.update({
-          where: { id: oldItem.variantId },
-          data: {
-            stock: {
-              increment: oldItem.quantity,
-            },
+  // Restore stock from old items
+  for (const oldItem of order.items) {
+    if (oldItem.variantId) {
+      await db.productVariant.update({
+        where: { id: oldItem.variantId },
+        data: {
+          stock: {
+            increment: oldItem.quantity,
           },
-        });
-      } else {
-        await db.product.update({
-          where: { id: oldItem.productId },
-          data: {
-            stock: {
-              increment: oldItem.quantity,
-            },
+        },
+      });
+    } else {
+      await db.product.update({
+        where: { id: oldItem.productId },
+        data: {
+          stock: {
+            increment: oldItem.quantity,
           },
-        });
-      }
+        },
+      });
     }
   }
 
-  // Validate new stock availability (only if order is FULFILLED)
-  if (order.status === "FULFILLED") {
-    for (const item of items) {
-      if (item.variantId) {
-        const variant = await db.productVariant.findUnique({
-          where: { id: item.variantId },
-        });
+  // Validate new stock availability
+  for (const item of items) {
+    if (item.variantId) {
+      const variant = await db.productVariant.findUnique({
+        where: { id: item.variantId },
+      });
 
-        if (!variant || variant.stock < item.quantity) {
-          throw new Error(`Insufficient stock for ${item.name}`);
-        }
-      } else {
-        const product = await db.product.findUnique({
-          where: { id: item.productId },
-        });
+      if (!variant || variant.stock < item.quantity) {
+        throw new Error(`Insufficient stock for ${item.name}`);
+      }
+    } else {
+      const product = await db.product.findUnique({
+        where: { id: item.productId },
+      });
 
-        if (!product || product.stock < item.quantity) {
-          throw new Error(`Insufficient stock for ${item.name}`);
-        }
+      if (!product || product.stock < item.quantity) {
+        throw new Error(`Insufficient stock for ${item.name}`);
       }
     }
   }
@@ -345,29 +357,26 @@ export async function updateOrder(
     },
   });
 
-  // Deduct new stock (only if order is FULFILLED)
-  // (PENDING/UNFULFILLED/CANCELLED orders don't affect physical stock)
-  if (order.status === "FULFILLED") {
-    for (const item of items) {
-      if (item.variantId) {
-        await db.productVariant.update({
-          where: { id: item.variantId },
-          data: {
-            stock: {
-              decrement: item.quantity,
-            },
+  // Deduct new stock
+  for (const item of items) {
+    if (item.variantId) {
+      await db.productVariant.update({
+        where: { id: item.variantId },
+        data: {
+          stock: {
+            decrement: item.quantity,
           },
-        });
-      } else {
-        await db.product.update({
-          where: { id: item.productId },
-          data: {
-            stock: {
-              decrement: item.quantity,
-            },
+        },
+      });
+    } else {
+      await db.product.update({
+        where: { id: item.productId },
+        data: {
+          stock: {
+            decrement: item.quantity,
           },
-        });
-      }
+        },
+      });
     }
   }
 
@@ -384,9 +393,8 @@ export async function deleteOrder(orderId: string) {
     throw new Error("Order not found");
   }
 
-  // Restore stock if order is FULFILLED (physical stock needs to be returned)
-  // PENDING/UNFULFILLED/CANCELLED orders don't affect physical stock
-  if (order.status === "FULFILLED") {
+  // Restore stock if order is not cancelled (cancelled orders already had stock restored)
+  if (order.status !== "CANCELLED") {
     for (const item of order.items) {
       if (item.variantId) {
         await db.productVariant.update({
@@ -858,42 +866,72 @@ export async function getReportsData(
           variant: true,
         },
       },
+      faultyReturns: {
+        include: {
+          product: true,
+        },
+      },
+      replacementForReturns: true,
     },
     orderBy: { createdAt: "desc" },
   });
 
-  const totalOrders = orders.length;
-  const cancelledOrders = orders.filter((o) => o.status === "CANCELLED").length;
-  const fulfilledOrders = orders.filter((o) => o.status === "FULFILLED").length;
-  const unfulfilledOrders = orders.filter(
+  // Separate replacement orders from regular orders
+  const replacementOrders = orders.filter(
+    (o) => o.replacementForReturns.length > 0,
+  );
+  const regularOrders = orders.filter((o) => o.replacementForReturns.length === 0);
+
+  const totalOrders = regularOrders.length;
+  const cancelledOrders = regularOrders.filter(
+    (o) => o.status === "CANCELLED",
+  ).length;
+  const fulfilledOrders = regularOrders.filter(
+    (o) => o.status === "FULFILLED",
+  ).length;
+  const unfulfilledOrders = regularOrders.filter(
     (o) => o.status === "UNFULFILLED",
   ).length;
 
-  // Calculate total sales from non-cancelled orders in filtered set
-  const totalSales = orders
+  // Calculate total sales from non-cancelled, non-replacement orders
+  // Subtract value of faulty returns from each order
+  const totalSales = regularOrders
     .filter((order) => order.status !== "CANCELLED")
     .reduce((sum, order) => {
+      let orderTotal = 0;
+
       // If total override is set, use it
       if (order.totalOverride) {
-        return sum + Number(order.totalOverride);
+        orderTotal = Number(order.totalOverride);
+      } else {
+        // Calculate subtotal
+        const subtotal = order.items.reduce(
+          (itemSum, item) => itemSum + Number(item.priceAtTime) * item.quantity,
+          0,
+        );
+
+        // Apply manual discount if set
+        const manualDiscount = order.manualDiscount
+          ? Number(order.manualDiscount)
+          : 0;
+
+        orderTotal = Math.max(0, subtotal - manualDiscount);
       }
 
-      // Calculate subtotal
-      const subtotal = order.items.reduce(
-        (itemSum, item) => itemSum + Number(item.priceAtTime) * item.quantity,
+      // Subtract faulty return losses from this order
+      const faultyLoss = order.faultyReturns.reduce(
+        (loss, fr) => loss + Number(fr.product.price) * fr.quantity,
         0,
       );
 
-      // Apply manual discount if set
-      const manualDiscount = order.manualDiscount
-        ? Number(order.manualDiscount)
-        : 0;
-
-      return sum + Math.max(0, subtotal - manualDiscount);
+      return sum + Math.max(0, orderTotal - faultyLoss);
     }, 0);
 
+  // Get faulty losses for the period
+  const faultyLosses = await getFaultyLosses(start, end);
+
   // Convert Decimal to number for client component serialization
-  const ordersWithItems = orders.map((order) => ({
+  const ordersWithItems = regularOrders.map((order) => ({
     ...order,
     manualDiscount: order.manualDiscount
       ? Number(order.manualDiscount)
@@ -912,111 +950,52 @@ export async function getReportsData(
           }
         : null,
     })),
+    faultyReturns: order.faultyReturns.map((fr) => ({
+      id: fr.id,
+      returnNumber: fr.returnNumber,
+      quantity: fr.quantity,
+      faultyReason: fr.faultyReason,
+      status: fr.status,
+      product: {
+        id: fr.product.id,
+        name: fr.product.name,
+        price: Number(fr.product.price),
+      },
+    })),
   }));
 
-  // Calculate product breakdown from non-cancelled orders
-  // First, collect variant-level data
-  const variantMap = new Map<
-    string,
-    {
-      productId: string;
-      productName: string;
-      variantId: string | null;
-      variantFlavour: string | null;
-      totalQuantity: number;
-      totalRevenue: number;
-      orderIds: Set<string>;
-    }
-  >();
-
-  // Process items from non-cancelled orders
-  orders
-    .filter((order) => order.status !== "CANCELLED")
-    .forEach((order) => {
-      order.items.forEach((item) => {
-        // Create a unique key for product + variant combination
-        const key = `${item.productId}-${item.variantId || "base"}`;
-
-        if (!variantMap.has(key)) {
-          variantMap.set(key, {
-            productId: item.productId,
-            productName: item.product.name,
-            variantId: item.variantId || null,
-            variantFlavour: item.variant?.flavour || item.flavour || null,
-            totalQuantity: 0,
-            totalRevenue: 0,
-            orderIds: new Set(),
-          });
-        }
-
-        const breakdown = variantMap.get(key)!;
-        breakdown.totalQuantity += item.quantity;
-        breakdown.totalRevenue += Number(item.priceAtTime) * item.quantity;
-        breakdown.orderIds.add(order.id);
-      });
-    });
-
-  // Group variants by product
-  const productMap = new Map<
-    string,
-    {
-      productId: string;
-      productName: string;
-      totalQuantity: number;
-      totalRevenue: number;
-      orderIds: Set<string>;
-      variants: Array<{
-        variantId: string | null;
-        variantFlavour: string | null;
-        totalQuantity: number;
-        totalRevenue: number;
-        orderCount: number;
-      }>;
-    }
-  >();
-
-  // Group variants under products
-  variantMap.forEach((variant) => {
-    if (!productMap.has(variant.productId)) {
-      productMap.set(variant.productId, {
-        productId: variant.productId,
-        productName: variant.productName,
-        totalQuantity: 0,
-        totalRevenue: 0,
-        orderIds: new Set(),
-        variants: [],
-      });
-    }
-
-    const product = productMap.get(variant.productId)!;
-    product.totalQuantity += variant.totalQuantity;
-    product.totalRevenue += variant.totalRevenue;
-    variant.orderIds.forEach((id) => product.orderIds.add(id));
-    product.variants.push({
-      variantId: variant.variantId,
-      variantFlavour: variant.variantFlavour,
-      totalQuantity: variant.totalQuantity,
-      totalRevenue: variant.totalRevenue,
-      orderCount: variant.orderIds.size,
-    });
-  });
-
-  // Convert to array and sort variants within each product
-  const productBreakdown = Array.from(productMap.values()).map((product) => {
-    // Sort variants by revenue descending
-    product.variants.sort((a, b) => b.totalRevenue - a.totalRevenue);
-    return {
-      productId: product.productId,
-      productName: product.productName,
-      totalQuantity: product.totalQuantity,
-      totalRevenue: product.totalRevenue,
-      orderCount: product.orderIds.size,
-      variants: product.variants,
-    };
-  });
-
-  // Sort products by total revenue descending
-  productBreakdown.sort((a, b) => b.totalRevenue - a.totalRevenue);
+  const replacementOrdersWithItems = replacementOrders.map((order) => ({
+    ...order,
+    manualDiscount: order.manualDiscount
+      ? Number(order.manualDiscount)
+      : null,
+    totalOverride: order.totalOverride ? Number(order.totalOverride) : null,
+    items: order.items.map((item) => ({
+      ...item,
+      priceAtTime: Number(item.priceAtTime),
+      product: {
+        ...item.product,
+        price: Number(item.product.price),
+      },
+      variant: item.variant
+        ? {
+            ...item.variant,
+          }
+        : null,
+    })),
+    faultyReturns: order.faultyReturns.map((fr) => ({
+      id: fr.id,
+      returnNumber: fr.returnNumber,
+      quantity: fr.quantity,
+      faultyReason: fr.faultyReason,
+      status: fr.status,
+      product: {
+        id: fr.product.id,
+        name: fr.product.name,
+        price: Number(fr.product.price),
+      },
+    })),
+  }));
 
   return {
     totalOrders,
@@ -1025,119 +1004,21 @@ export async function getReportsData(
     unfulfilledOrders,
     totalSales,
     orders: ordersWithItems,
-    productBreakdown,
+    replacementOrders: replacementOrdersWithItems,
+    faultyLosses,
   };
 }
 
-export async function getStockData(includeHidden: boolean = false) {
-  // Fetch all products with variants
-  const products = await db.product.findMany({
-    where: includeHidden ? undefined : { visible: true },
-    include: {
-      variants: {
-        orderBy: { flavour: "asc" },
-      },
-    },
-    orderBy: { createdAt: "desc" },
-  });
-
-  // Fetch order items from PENDING and UNFULFILLED orders (reserved stock)
-  const pendingItems = await db.orderItem.findMany({
-    where: {
-      order: {
-        status: {
-          in: ["PENDING", "UNFULFILLED"],
-        },
-      },
-    },
-    select: {
-      productId: true,
-      variantId: true,
-      quantity: true,
-    },
-  });
-
-  // Fetch faulty returns (not disposed yet)
-  const faultyReturns = await db.faultyReturn.findMany({
-    select: {
-      productId: true,
-      variantId: true,
-      quantity: true,
-    },
-  });
-
-  // Group pending quantities by product and variant
-  const pendingMap = new Map<string, number>();
-  pendingItems.forEach((item) => {
-    const key = `${item.productId}-${item.variantId || "base"}`;
-    pendingMap.set(key, (pendingMap.get(key) || 0) + item.quantity);
-  });
-
-  // Group faulty quantities by product and variant
-  const faultyMap = new Map<string, number>();
-  faultyReturns.forEach((item) => {
-    const key = `${item.productId}-${item.variantId || "base"}`;
-    faultyMap.set(key, (faultyMap.get(key) || 0) + item.quantity);
-  });
-
-  // Map products with stock breakdown
-  return products.map((product) => {
-    const baseKey = `${product.id}-base`;
-    const basePending = pendingMap.get(baseKey) || 0;
-    const baseFaulty = faultyMap.get(baseKey) || 0;
-    const basePhysical = product.stock;
-    const baseAvailable = Math.max(0, basePhysical - baseFaulty - basePending);
-
-    return {
-      id: product.id,
-      name: product.name,
-      price: Number(product.price),
-      stock: product.stock,
-      visible: product.visible,
-      stockBreakdown: {
-        physical: basePhysical,
-        faulty: baseFaulty,
-        pending: basePending,
-        available: baseAvailable,
-      },
-      variants: product.variants.map((variant) => {
-        const variantKey = `${product.id}-${variant.id}`;
-        const variantPending = pendingMap.get(variantKey) || 0;
-        const variantFaulty = faultyMap.get(variantKey) || 0;
-        const variantPhysical = variant.stock;
-        const variantAvailable = Math.max(
-          0,
-          variantPhysical - variantFaulty - variantPending
-        );
-
-        return {
-          id: variant.id,
-          flavour: variant.flavour,
-          stock: variant.stock,
-          stockBreakdown: {
-            physical: variantPhysical,
-            faulty: variantFaulty,
-            pending: variantPending,
-            available: variantAvailable,
-          },
-        };
-      }),
-    };
-  });
-}
-
-// ============================================
-// FAULTY RETURNS ACTIONS
-// ============================================
+// Faulty Returns Actions
 
 export async function createFaultyReturn(data: {
-  orderId?: string;
-  orderNumber?: string;
+  orderId?: string | null;
+  orderNumber?: string | null;
   productId: string;
-  variantId?: string;
+  variantId?: string | null;
   quantity: number;
   faultyReason: string;
-  notes?: string;
+  notes?: string | null;
 }) {
   // Generate return number
   const lastReturn = await db.faultyReturn.findFirst({
@@ -1153,55 +1034,29 @@ export async function createFaultyReturn(data: {
     returnNumber = "RET-000001";
   }
 
-  // Validate that the product/variant exists
-  if (data.variantId) {
-    const variant = await db.productVariant.findUnique({
-      where: { id: data.variantId },
-    });
-    if (!variant) {
-      throw new Error("Variant not found");
-    }
-  } else {
-    const product = await db.product.findUnique({
-      where: { id: data.productId },
-    });
-    if (!product) {
-      throw new Error("Product not found");
-    }
-  }
-
-  // If linked to an order, validate the order exists and has the item
-  if (data.orderId) {
-    const order = await db.order.findUnique({
-      where: { id: data.orderId },
-      include: { items: true },
-    });
-
-    if (!order) {
-      throw new Error("Order not found");
-    }
-
-    // Check if the order contains this product/variant
-    const orderItem = order.items.find(
-      (item) =>
-        item.productId === data.productId &&
-        (data.variantId ? item.variantId === data.variantId : !item.variantId)
-    );
-
-    if (!orderItem) {
-      throw new Error("Product not found in order");
-    }
-
-    // Validate quantity doesn't exceed order quantity
-    if (data.quantity > orderItem.quantity) {
-      throw new Error(
-        `Return quantity (${data.quantity}) exceeds order quantity (${orderItem.quantity})`
-      );
+  // If pre-sale (no orderId), deduct stock
+  if (!data.orderId) {
+    if (data.variantId) {
+      await db.productVariant.update({
+        where: { id: data.variantId },
+        data: {
+          stock: {
+            decrement: data.quantity,
+          },
+        },
+      });
+    } else {
+      await db.product.update({
+        where: { id: data.productId },
+        data: {
+          stock: {
+            decrement: data.quantity,
+          },
+        },
+      });
     }
   }
 
-  // Create faulty return
-  // Note: Physical stock is NOT increased - faulty items are tracked separately
   const faultyReturn = await db.faultyReturn.create({
     data: {
       returnNumber,
@@ -1221,31 +1076,61 @@ export async function createFaultyReturn(data: {
     },
   });
 
-  revalidatePath("/admin/returns");
-  revalidatePath("/admin/stock");
-  return faultyReturn;
+  revalidatePath("/admin/faulty");
+  
+  // Convert Decimal to number for client component serialization
+  return {
+    id: faultyReturn.id,
+    returnNumber: faultyReturn.returnNumber,
+    orderId: faultyReturn.orderId,
+    orderNumber: faultyReturn.orderNumber,
+    productId: faultyReturn.productId,
+    variantId: faultyReturn.variantId,
+    quantity: faultyReturn.quantity,
+    faultyReason: faultyReturn.faultyReason,
+    notes: faultyReturn.notes,
+    status: faultyReturn.status,
+    replacementOrderId: faultyReturn.replacementOrderId,
+    createdAt: faultyReturn.createdAt,
+    updatedAt: faultyReturn.updatedAt,
+    product: {
+      id: faultyReturn.product.id,
+      name: faultyReturn.product.name,
+      price: Number(faultyReturn.product.price),
+      stock: faultyReturn.product.stock,
+    },
+    variant: faultyReturn.variant
+      ? {
+          id: faultyReturn.variant.id,
+          flavour: faultyReturn.variant.flavour,
+          stock: faultyReturn.variant.stock,
+        }
+      : null,
+    order: faultyReturn.order
+      ? {
+          id: faultyReturn.order.id,
+          orderNumber: faultyReturn.order.orderNumber,
+          username: faultyReturn.order.username,
+          status: faultyReturn.order.status,
+          manualDiscount: faultyReturn.order.manualDiscount
+            ? Number(faultyReturn.order.manualDiscount)
+            : null,
+          totalOverride: faultyReturn.order.totalOverride
+            ? Number(faultyReturn.order.totalOverride)
+            : null,
+        }
+      : null,
+    replacementOrder: null,
+  };
 }
 
 export async function updateFaultyReturnStatus(
-  returnId: string,
-  status: ReturnStatus,
-  notes?: string
+  id: string,
+  status: "REPORTED" | "INSPECTED" | "REPLACED" | "DISPOSED",
 ) {
-  const faultyReturn = await db.faultyReturn.findUnique({
-    where: { id: returnId },
-  });
-
-  if (!faultyReturn) {
-    throw new Error("Faulty return not found");
-  }
-
-  // Update the return status and optionally add notes
-  const updated = await db.faultyReturn.update({
-    where: { id: returnId },
-    data: {
-      status,
-      notes: notes !== undefined ? notes : faultyReturn.notes,
-    },
+  const faultyReturn = await db.faultyReturn.update({
+    where: { id },
+    data: { status },
     include: {
       product: true,
       variant: true,
@@ -1254,16 +1139,73 @@ export async function updateFaultyReturnStatus(
     },
   });
 
-  revalidatePath("/admin/returns");
-  return updated;
+  revalidatePath("/admin/faulty");
+  
+  // Convert Decimal to number for client component serialization
+  return {
+    id: faultyReturn.id,
+    returnNumber: faultyReturn.returnNumber,
+    orderId: faultyReturn.orderId,
+    orderNumber: faultyReturn.orderNumber,
+    productId: faultyReturn.productId,
+    variantId: faultyReturn.variantId,
+    quantity: faultyReturn.quantity,
+    faultyReason: faultyReturn.faultyReason,
+    notes: faultyReturn.notes,
+    status: faultyReturn.status,
+    replacementOrderId: faultyReturn.replacementOrderId,
+    createdAt: faultyReturn.createdAt,
+    updatedAt: faultyReturn.updatedAt,
+    product: {
+      id: faultyReturn.product.id,
+      name: faultyReturn.product.name,
+      price: Number(faultyReturn.product.price),
+      stock: faultyReturn.product.stock,
+    },
+    variant: faultyReturn.variant
+      ? {
+          id: faultyReturn.variant.id,
+          flavour: faultyReturn.variant.flavour,
+          stock: faultyReturn.variant.stock,
+        }
+      : null,
+    order: faultyReturn.order
+      ? {
+          id: faultyReturn.order.id,
+          orderNumber: faultyReturn.order.orderNumber,
+          username: faultyReturn.order.username,
+          status: faultyReturn.order.status,
+          manualDiscount: faultyReturn.order.manualDiscount
+            ? Number(faultyReturn.order.manualDiscount)
+            : null,
+          totalOverride: faultyReturn.order.totalOverride
+            ? Number(faultyReturn.order.totalOverride)
+            : null,
+        }
+      : null,
+    replacementOrder: faultyReturn.replacementOrder
+      ? {
+          id: faultyReturn.replacementOrder.id,
+          orderNumber: faultyReturn.replacementOrder.orderNumber,
+          username: faultyReturn.replacementOrder.username,
+          status: faultyReturn.replacementOrder.status,
+          manualDiscount: faultyReturn.replacementOrder.manualDiscount
+            ? Number(faultyReturn.replacementOrder.manualDiscount)
+            : null,
+          totalOverride: faultyReturn.replacementOrder.totalOverride
+            ? Number(faultyReturn.replacementOrder.totalOverride)
+            : null,
+        }
+      : null,
+  };
 }
 
 export async function createReplacementOrder(
-  returnId: string,
-  username: string
+  faultyReturnId: string,
+  username: string,
 ) {
   const faultyReturn = await db.faultyReturn.findUnique({
-    where: { id: returnId },
+    where: { id: faultyReturnId },
     include: {
       product: true,
       variant: true,
@@ -1292,55 +1234,73 @@ export async function createReplacementOrder(
     orderNumber = "ORD-000001";
   }
 
-  // Create replacement order
+  // Create replacement order with price 0 (free replacement)
   const replacementOrder = await db.order.create({
     data: {
       orderNumber,
       username,
       status: "PENDING",
       items: {
-        create: [
-          {
-            productId: faultyReturn.productId,
-            variantId: faultyReturn.variantId,
-            flavour: faultyReturn.variant?.flavour || null,
-            quantity: faultyReturn.quantity,
-            priceAtTime: faultyReturn.product.price,
-          },
-        ],
-      },
-    },
-    include: {
-      items: {
-        include: {
-          product: true,
-          variant: true,
+        create: {
+          productId: faultyReturn.productId,
+          variantId: faultyReturn.variantId,
+          flavour: faultyReturn.variant?.flavour || null,
+          quantity: faultyReturn.quantity,
+          priceAtTime: 0, // Free replacement
+          offerId: null,
         },
       },
     },
   });
 
-  // Link replacement order to faulty return and update status
+  // Link replacement order to faulty return
   await db.faultyReturn.update({
-    where: { id: returnId },
+    where: { id: faultyReturnId },
     data: {
       replacementOrderId: replacementOrder.id,
       status: "REPLACED",
     },
   });
 
-  revalidatePath("/admin/returns");
+  // Deduct stock for replacement
+  if (faultyReturn.variantId) {
+    await db.productVariant.update({
+      where: { id: faultyReturn.variantId },
+      data: {
+        stock: {
+          decrement: faultyReturn.quantity,
+        },
+      },
+    });
+  } else {
+    await db.product.update({
+      where: { id: faultyReturn.productId },
+      data: {
+        stock: {
+          decrement: faultyReturn.quantity,
+        },
+      },
+    });
+  }
+
+  revalidatePath("/admin/faulty");
   revalidatePath("/admin/orders");
   return replacementOrder;
 }
 
 export async function getFaultyReturns(filters?: {
-  status?: ReturnStatus;
+  type?: "PRE_SALE" | "POST_SALE" | "ALL";
+  status?: "REPORTED" | "INSPECTED" | "REPLACED" | "DISPOSED";
   startDate?: Date;
   endDate?: Date;
-  productId?: string;
 }) {
   const where: any = {};
+
+  if (filters?.type === "PRE_SALE") {
+    where.orderId = null;
+  } else if (filters?.type === "POST_SALE") {
+    where.orderId = { not: null };
+  }
 
   if (filters?.status) {
     where.status = filters.status;
@@ -1349,22 +1309,14 @@ export async function getFaultyReturns(filters?: {
   if (filters?.startDate || filters?.endDate) {
     where.createdAt = {};
     if (filters.startDate) {
-      const start = new Date(filters.startDate);
-      start.setHours(0, 0, 0, 0);
-      where.createdAt.gte = start;
+      where.createdAt.gte = filters.startDate;
     }
     if (filters.endDate) {
-      const end = new Date(filters.endDate);
-      end.setHours(23, 59, 59, 999);
-      where.createdAt.lte = end;
+      where.createdAt.lte = filters.endDate;
     }
   }
 
-  if (filters?.productId) {
-    where.productId = filters.productId;
-  }
-
-  const returns = await db.faultyReturn.findMany({
+  const faultyReturns = await db.faultyReturn.findMany({
     where,
     include: {
       product: true,
@@ -1375,174 +1327,105 @@ export async function getFaultyReturns(filters?: {
     orderBy: { createdAt: "desc" },
   });
 
-  // Convert Decimal to number for serialization
-  return returns.map((ret) => ({
-    ...ret,
+  // Convert Decimal to number for client component serialization
+  return faultyReturns.map((fr) => ({
+    id: fr.id,
+    returnNumber: fr.returnNumber,
+    orderId: fr.orderId,
+    orderNumber: fr.orderNumber,
+    productId: fr.productId,
+    variantId: fr.variantId,
+    quantity: fr.quantity,
+    faultyReason: fr.faultyReason,
+    notes: fr.notes,
+    status: fr.status,
+    replacementOrderId: fr.replacementOrderId,
+    createdAt: fr.createdAt,
+    updatedAt: fr.updatedAt,
     product: {
-      ...ret.product,
-      price: Number(ret.product.price),
+      id: fr.product.id,
+      name: fr.product.name,
+      price: Number(fr.product.price),
+      stock: fr.product.stock,
     },
+    variant: fr.variant
+      ? {
+          id: fr.variant.id,
+          flavour: fr.variant.flavour,
+          stock: fr.variant.stock,
+        }
+      : null,
+    order: fr.order
+      ? {
+          id: fr.order.id,
+          orderNumber: fr.order.orderNumber,
+          username: fr.order.username,
+          status: fr.order.status,
+          manualDiscount: fr.order.manualDiscount
+            ? Number(fr.order.manualDiscount)
+            : null,
+          totalOverride: fr.order.totalOverride
+            ? Number(fr.order.totalOverride)
+            : null,
+        }
+      : null,
+    replacementOrder: fr.replacementOrder
+      ? {
+          id: fr.replacementOrder.id,
+          orderNumber: fr.replacementOrder.orderNumber,
+          username: fr.replacementOrder.username,
+          status: fr.replacementOrder.status,
+          manualDiscount: fr.replacementOrder.manualDiscount
+            ? Number(fr.replacementOrder.manualDiscount)
+            : null,
+          totalOverride: fr.replacementOrder.totalOverride
+            ? Number(fr.replacementOrder.totalOverride)
+            : null,
+        }
+      : null,
   }));
 }
 
-export async function getFaultyReturn(id: string) {
-  const faultyReturn = await db.faultyReturn.findUnique({
-    where: { id },
+export async function getFaultyLosses(startDate: Date, endDate: Date) {
+  const start = new Date(startDate);
+  start.setHours(0, 0, 0, 0);
+
+  const end = new Date(endDate);
+  end.setHours(23, 59, 59, 999);
+
+  const faultyReturns = await db.faultyReturn.findMany({
+    where: {
+      createdAt: {
+        gte: start,
+        lte: end,
+      },
+    },
     include: {
       product: true,
-      variant: true,
-      order: {
-        include: {
-          items: {
-            include: {
-              product: true,
-              variant: true,
-            },
-          },
-        },
-      },
-      replacementOrder: {
-        include: {
-          items: {
-            include: {
-              product: true,
-              variant: true,
-            },
-          },
-        },
-      },
     },
   });
 
-  if (!faultyReturn) return null;
+  let preSaleLoss = 0;
+  let postSaleLoss = 0;
+  let totalLoss = 0;
 
-  // Convert Decimal to number for serialization
+  for (const fr of faultyReturns) {
+    const loss = Number(fr.product.price) * fr.quantity;
+    totalLoss += loss;
+
+    if (fr.orderId) {
+      postSaleLoss += loss;
+    } else {
+      preSaleLoss += loss;
+    }
+  }
+
   return {
-    ...faultyReturn,
-    product: {
-      ...faultyReturn.product,
-      price: Number(faultyReturn.product.price),
-    },
-    order: faultyReturn.order
-      ? {
-          ...faultyReturn.order,
-          manualDiscount: faultyReturn.order.manualDiscount
-            ? Number(faultyReturn.order.manualDiscount)
-            : null,
-          totalOverride: faultyReturn.order.totalOverride
-            ? Number(faultyReturn.order.totalOverride)
-            : null,
-          items: faultyReturn.order.items.map((item) => ({
-            ...item,
-            priceAtTime: Number(item.priceAtTime),
-            product: {
-              ...item.product,
-              price: Number(item.product.price),
-            },
-          })),
-        }
-      : null,
-    replacementOrder: faultyReturn.replacementOrder
-      ? {
-          ...faultyReturn.replacementOrder,
-          manualDiscount: faultyReturn.replacementOrder.manualDiscount
-            ? Number(faultyReturn.replacementOrder.manualDiscount)
-            : null,
-          totalOverride: faultyReturn.replacementOrder.totalOverride
-            ? Number(faultyReturn.replacementOrder.totalOverride)
-            : null,
-          items: faultyReturn.replacementOrder.items.map((item) => ({
-            ...item,
-            priceAtTime: Number(item.priceAtTime),
-            product: {
-              ...item.product,
-              price: Number(item.product.price),
-            },
-          })),
-        }
-      : null,
+    totalLoss,
+    preSaleLoss,
+    postSaleLoss,
+    count: faultyReturns.length,
+    preSaleCount: faultyReturns.filter((fr) => !fr.orderId).length,
+    postSaleCount: faultyReturns.filter((fr) => fr.orderId).length,
   };
-}
-
-export async function deleteFaultyReturn(id: string) {
-  const faultyReturn = await db.faultyReturn.findUnique({
-    where: { id },
-  });
-
-  if (!faultyReturn) {
-    throw new Error("Faulty return not found");
-  }
-
-  // Delete the faulty return
-  await db.faultyReturn.delete({
-    where: { id },
-  });
-
-  revalidatePath("/admin/returns");
-  revalidatePath("/admin/stock");
-}
-
-export async function updateFaultyReturn(
-  id: string,
-  data: {
-    quantity?: number;
-    faultyReason?: string;
-    notes?: string;
-  }
-) {
-  const faultyReturn = await db.faultyReturn.findUnique({
-    where: { id },
-  });
-
-  if (!faultyReturn) {
-    throw new Error("Faulty return not found");
-  }
-
-  const updated = await db.faultyReturn.update({
-    where: { id },
-    data: {
-      quantity: data.quantity !== undefined ? data.quantity : undefined,
-      faultyReason:
-        data.faultyReason !== undefined ? data.faultyReason : undefined,
-      notes: data.notes !== undefined ? data.notes : undefined,
-    },
-    include: {
-      product: true,
-      variant: true,
-      order: true,
-      replacementOrder: true,
-    },
-  });
-
-  revalidatePath("/admin/returns");
-  return updated;
-}
-
-export async function createBatchFaultyReturns(
-  items: Array<{
-    orderId?: string;
-    orderNumber?: string;
-    productId: string;
-    variantId?: string;
-    quantity: number;
-  }>,
-  faultyReason: string,
-  notes?: string
-) {
-  const returns = [];
-
-  for (const item of items) {
-    const faultyReturn = await createFaultyReturn({
-      orderId: item.orderId,
-      orderNumber: item.orderNumber,
-      productId: item.productId,
-      variantId: item.variantId,
-      quantity: item.quantity,
-      faultyReason,
-      notes,
-    });
-    returns.push(faultyReturn);
-  }
-
-  return returns;
 }

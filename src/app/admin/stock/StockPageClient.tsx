@@ -2,25 +2,12 @@
 
 import Link from "next/link";
 
-interface StockBreakdown {
-  physical: number;
-  faulty: number;
-  pending: number;
-  available: number;
-}
-
 interface Product {
   id: string;
   name: string;
   stock: number;
   visible?: boolean;
-  stockBreakdown: StockBreakdown;
-  variants?: Array<{
-    id: string;
-    flavour: string;
-    stock: number;
-    stockBreakdown: StockBreakdown;
-  }>;
+  variants?: Array<{ id: string; flavour: string; stock: number }>;
 }
 
 interface StockPageClientProps {
@@ -28,53 +15,12 @@ interface StockPageClientProps {
 }
 
 export default function StockPageClient({ products }: StockPageClientProps) {
-  // Calculate total physical stock for each product
-  const calculateTotalPhysical = (product: Product): number => {
+  // Calculate total stock for each product
+  const calculateTotalStock = (product: Product): number => {
     if (product.variants && product.variants.length > 0) {
-      return product.variants.reduce(
-        (total, variant) => total + variant.stockBreakdown.physical,
-        0
-      );
+      return product.variants.reduce((total, variant) => total + variant.stock, 0);
     }
-    return product.stockBreakdown.physical;
-  };
-
-  // Calculate total faulty stock for each product
-  const calculateTotalFaulty = (product: Product): number => {
-    if (product.variants && product.variants.length > 0) {
-      return product.variants.reduce(
-        (total, variant) => total + variant.stockBreakdown.faulty,
-        0
-      );
-    }
-    return product.stockBreakdown.faulty;
-  };
-
-  // Calculate total pending stock for each product
-  const calculateTotalPending = (product: Product): number => {
-    if (product.variants && product.variants.length > 0) {
-      return product.variants.reduce(
-        (total, variant) => total + variant.stockBreakdown.pending,
-        0
-      );
-    }
-    return product.stockBreakdown.pending;
-  };
-
-  // Calculate total available stock for each product
-  const calculateTotalAvailable = (product: Product): number => {
-    if (product.variants && product.variants.length > 0) {
-      return product.variants.reduce(
-        (total, variant) => total + variant.stockBreakdown.available,
-        0
-      );
-    }
-    return product.stockBreakdown.available;
-  };
-
-  // Format stock breakdown display
-  const formatStockBreakdown = (breakdown: StockBreakdown): string => {
-    return `Physical: ${breakdown.physical} | Faulty: ${breakdown.faulty} | Pending: ${breakdown.pending} | Available: ${breakdown.available}`;
+    return product.stock || 0;
   };
 
   return (
@@ -94,6 +40,29 @@ export default function StockPageClient({ products }: StockPageClientProps) {
       </div>
 
       <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
+        {/* Quick Action */}
+        <div className="mb-4 sm:mb-6">
+          <Link
+            href="/admin/faulty"
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-orange-600 text-white rounded-lg hover:bg-orange-700 active:bg-orange-800 min-h-[44px] font-medium transition-colours"
+          >
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+              />
+            </svg>
+            Report Faulty Stock
+          </Link>
+        </div>
+
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
           {products.length === 0 ? (
             <div className="p-8 sm:p-12 text-center text-gray-600">
@@ -120,57 +89,44 @@ export default function StockPageClient({ products }: StockPageClientProps) {
                         {product.variants && product.variants.length > 0 ? (
                           <div className="mt-3">
                             <div
-                              className={`text-sm font-semibold mb-3 py-2 px-3 rounded ${
-                                calculateTotalAvailable(product) <= 5
+                              className={`text-base font-semibold mb-3 py-2 px-3 rounded ${
+                                calculateTotalStock(product) <= 5
                                   ? "text-orange-600 bg-orange-50"
                                   : "text-gray-900 bg-blue-50"
                               }`}
                             >
-                              {formatStockBreakdown({
-                                physical: calculateTotalPhysical(product),
-                                faulty: calculateTotalFaulty(product),
-                                pending: calculateTotalPending(product),
-                                available: calculateTotalAvailable(product),
-                              })}
+                              Total Stock: {calculateTotalStock(product)}
                             </div>
                             <div className="text-sm font-semibold text-gray-900 mb-3">
                               Variants:
                             </div>
                             <div className="space-y-2.5">
                               {product.variants.map((variant) => (
-                                <div key={variant.id} className="text-xs">
-                                  <div className="font-medium text-gray-900 mb-1">
+                                <div
+                                  key={variant.id}
+                                  className={`text-sm py-1.5 px-2 rounded ${
+                                    variant.stock <= 5
+                                      ? "text-orange-600 font-medium bg-orange-50"
+                                      : "text-gray-700 bg-gray-50"
+                                  }`}
+                                >
+                                  <span className="font-medium">
                                     {variant.flavour}:
-                                  </div>
-                                  <div
-                                    className={`py-1.5 px-2 rounded ${
-                                      variant.stockBreakdown.available <= 5
-                                        ? "text-orange-600 font-medium bg-orange-50"
-                                        : "text-gray-700 bg-gray-50"
-                                    }`}
-                                  >
-                                    {formatStockBreakdown(variant.stockBreakdown)}
-                                  </div>
+                                  </span>{" "}
+                                  {variant.stock} available
                                 </div>
                               ))}
                             </div>
                           </div>
                         ) : (
-                          <div>
-                            <div
-                              className={`text-sm font-medium mt-3 py-2 px-3 rounded ${
-                                product.stockBreakdown.available <= 5
-                                  ? "text-orange-600 bg-orange-50"
-                                  : "text-gray-700 bg-gray-50"
-                              }`}
-                            >
-                              {formatStockBreakdown(product.stockBreakdown)}
-                            </div>
-                            {product.stockBreakdown.faulty > 0 && (
-                              <p className="text-xs text-orange-600 mt-2 font-medium">
-                                ⚠️ {product.stockBreakdown.faulty} faulty unit{product.stockBreakdown.faulty !== 1 ? 's' : ''} not sellable
-                              </p>
-                            )}
+                          <div
+                            className={`text-base font-medium mt-3 py-2 px-3 rounded ${
+                              product.stock <= 5
+                                ? "text-orange-600 bg-orange-50"
+                                : "text-gray-700 bg-gray-50"
+                            }`}
+                          >
+                            {product.stock} available
                           </div>
                         )}
                       </div>
@@ -216,57 +172,44 @@ export default function StockPageClient({ products }: StockPageClientProps) {
                           {product.variants && product.variants.length > 0 ? (
                             <div>
                               <div
-                                className={`text-sm font-semibold mb-3 py-2 px-3 rounded inline-block ${
-                                  calculateTotalAvailable(product) <= 5
+                                className={`text-base font-semibold mb-3 py-2 px-3 rounded inline-block ${
+                                  calculateTotalStock(product) <= 5
                                     ? "text-orange-600 bg-orange-50"
                                     : "text-gray-900 bg-blue-50"
                                 }`}
                               >
-                                {formatStockBreakdown({
-                                  physical: calculateTotalPhysical(product),
-                                  faulty: calculateTotalFaulty(product),
-                                  pending: calculateTotalPending(product),
-                                  available: calculateTotalAvailable(product),
-                                })}
+                                Total Stock: {calculateTotalStock(product)}
                               </div>
                               <div className="text-sm font-semibold text-gray-900 mb-3 mt-4">
                                 Variants:
                               </div>
                               <div className="space-y-2">
                                 {product.variants.map((variant) => (
-                                  <div key={variant.id} className="text-sm">
-                                    <div className="font-medium text-gray-900 mb-1">
+                                  <div
+                                    key={variant.id}
+                                    className={`text-sm py-2 px-3 rounded ${
+                                      variant.stock <= 5
+                                        ? "text-orange-600 font-medium bg-orange-50"
+                                        : "text-gray-700 bg-gray-50"
+                                    }`}
+                                  >
+                                    <span className="font-medium">
                                       {variant.flavour}:
-                                    </div>
-                                    <div
-                                      className={`py-2 px-3 rounded ${
-                                        variant.stockBreakdown.available <= 5
-                                          ? "text-orange-600 font-medium bg-orange-50"
-                                          : "text-gray-700 bg-gray-50"
-                                      }`}
-                                    >
-                                      {formatStockBreakdown(variant.stockBreakdown)}
-                                    </div>
+                                    </span>{" "}
+                                    {variant.stock} available
                                   </div>
                                 ))}
                               </div>
                             </div>
                           ) : (
-                            <div>
-                              <div
-                                className={`text-sm font-medium py-2 px-3 rounded inline-block ${
-                                  product.stockBreakdown.available <= 5
-                                    ? "text-orange-600 bg-orange-50"
-                                    : "text-gray-900 bg-gray-50"
-                                }`}
-                              >
-                                {formatStockBreakdown(product.stockBreakdown)}
-                              </div>
-                              {product.stockBreakdown.faulty > 0 && (
-                                <p className="text-xs text-orange-600 mt-2 font-medium">
-                                  ⚠️ {product.stockBreakdown.faulty} faulty unit{product.stockBreakdown.faulty !== 1 ? 's' : ''} not sellable
-                                </p>
-                              )}
+                            <div
+                              className={`text-base font-medium py-2 px-3 rounded inline-block ${
+                                product.stock <= 5
+                                  ? "text-orange-600 bg-orange-50"
+                                  : "text-gray-900 bg-gray-50"
+                              }`}
+                            >
+                              {product.stock} available
                             </div>
                           )}
                         </td>

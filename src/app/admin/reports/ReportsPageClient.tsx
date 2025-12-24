@@ -366,10 +366,89 @@ export default function ReportsPageClient({
               {formatCurrency(reportsData.totalSales)}
             </p>
             <p className="text-xs sm:text-sm text-gray-500 mt-2">
-              Based on selected filters (excluding cancelled orders from sales)
+              Based on selected filters (excluding cancelled orders and faulty returns from sales)
             </p>
           </div>
         </div>
+
+        {/* Faulty Losses & Replacement Orders */}
+        {reportsData.faultyLosses && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4 sm:mb-8">
+            {/* Faulty Losses Card */}
+            <div className="bg-white rounded-lg shadow-sm border-2 border-red-200 p-6">
+              <h3 className="text-base font-semibold text-gray-900 mb-4">
+                Faulty Stock Losses
+              </h3>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center pb-3 border-b border-gray-200">
+                  <span className="text-sm text-gray-600">Total Loss</span>
+                  <span className="text-2xl font-bold text-red-600">
+                    {formatCurrency(reportsData.faultyLosses.totalLoss)}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs text-gray-600 mb-1">Pre-Sale Faulty</p>
+                    <p className="text-lg font-semibold text-orange-600">
+                      {formatCurrency(reportsData.faultyLosses.preSaleLoss)}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {reportsData.faultyLosses.preSaleCount} item(s)
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-600 mb-1">Post-Sale Returns</p>
+                    <p className="text-lg font-semibold text-purple-600">
+                      {formatCurrency(reportsData.faultyLosses.postSaleLoss)}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {reportsData.faultyLosses.postSaleCount} item(s)
+                    </p>
+                  </div>
+                </div>
+                <div className="pt-3 border-t border-gray-200">
+                  <p className="text-xs text-gray-600">
+                    Total faulty items: {reportsData.faultyLosses.count}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Replacement Orders Card */}
+            <div className="bg-white rounded-lg shadow-sm border-2 border-green-200 p-6">
+              <h3 className="text-base font-semibold text-gray-900 mb-4">
+                Replacement Orders
+              </h3>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center pb-3 border-b border-gray-200">
+                  <span className="text-sm text-gray-600">Total Replacements</span>
+                  <span className="text-2xl font-bold text-green-600">
+                    {reportsData.replacementOrders?.length || 0}
+                  </span>
+                </div>
+                <div className="text-sm text-gray-600">
+                  <p className="mb-2">
+                    Replacement orders are free replacements for faulty items and
+                    do not count towards revenue.
+                  </p>
+                  {reportsData.replacementOrders && reportsData.replacementOrders.length > 0 && (
+                    <div className="mt-4 space-y-2">
+                      <p className="font-medium text-gray-900">Recent Replacements:</p>
+                      <div className="space-y-1 max-h-32 overflow-y-auto">
+                        {reportsData.replacementOrders.slice(0, 5).map((order) => (
+                          <div key={order.id} className="text-xs text-gray-600 flex justify-between">
+                            <span>{order.orderNumber}</span>
+                            <span>{formatDate(order.createdAt)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Product Breakdown */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-4 sm:mb-8">
@@ -466,11 +545,11 @@ export default function ReportsPageClient({
                             {product.orderCount}
                           </td>
                         </tr>
-                        {/* Variant Rows */}
-                        {product.variants.map((variant, variantIndex) => (
+                        {/* Variant Rows - Commented out as variants not in ProductBreakdown type */}
+                        {/* {product.variants && product.variants.map((variant, variantIndex) => (
                           <tr
                             key={`${product.productId}-${variant.variantId || "base"}`}
-                            className={`border-b border-gray-100 hover:bg-gray-50 transition-colors ${
+                            className={`border-b border-gray-100 hover:bg-gray-50 transition-colours ${
                               productIndex === sortedProductBreakdown.length - 1 &&
                               variantIndex === product.variants.length - 1
                                 ? "border-b-0"
@@ -500,7 +579,7 @@ export default function ReportsPageClient({
                               {variant.orderCount}
                             </td>
                           </tr>
-                        ))}
+                        ))} */}
                       </React.Fragment>
                     ))}
                   </tbody>
