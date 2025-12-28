@@ -1093,8 +1093,10 @@ export async function getReportsData(
   }));
 
   // Calculate product breakdown from non-cancelled customer orders
+  // Group by both product and variant to show each variant separately
   const productBreakdownMap = new Map<string, {
     productId: string;
+    variantId: string | null;
     productName: string;
     totalQuantity: number;
     totalRevenue: number;
@@ -1105,9 +1107,16 @@ export async function getReportsData(
     .filter((order) => order.status !== "CANCELLED")
     .forEach((order) => {
       order.items.forEach((item) => {
-        const key = item.productId;
+        // Create unique key for product + variant combination
+        const key = `${item.productId}-${item.variantId || 'base'}`;
         const existing = productBreakdownMap.get(key);
         const itemRevenue = Number(item.priceAtTime) * item.quantity;
+
+        // Build product name with variant/flavour if applicable
+        let displayName = item.product.name;
+        if (item.flavour) {
+          displayName += ` (${item.flavour})`;
+        }
 
         if (existing) {
           existing.totalQuantity += item.quantity;
@@ -1116,7 +1125,8 @@ export async function getReportsData(
         } else {
           productBreakdownMap.set(key, {
             productId: item.productId,
-            productName: item.product.name,
+            variantId: item.variantId || null,
+            productName: displayName,
             totalQuantity: item.quantity,
             totalRevenue: itemRevenue,
             orderIds: new Set([order.id]),
@@ -1127,6 +1137,7 @@ export async function getReportsData(
 
   const productBreakdown = Array.from(productBreakdownMap.values()).map((item) => ({
     productId: item.productId,
+    variantId: item.variantId,
     productName: item.productName,
     totalQuantity: item.totalQuantity,
     totalRevenue: item.totalRevenue,

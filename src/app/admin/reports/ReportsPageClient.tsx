@@ -493,7 +493,7 @@ export default function ReportsPageClient({
                   <TableBody>
                     {sortedProductBreakdown.map((product) => (
                       <TableRow
-                        key={product.productId}
+                        key={`${product.productId}-${product.variantId || 'base'}`}
                         sx={{ '&:hover': { bgcolor: 'action.hover' } }}
                       >
                         <TableCell>
