@@ -1092,6 +1092,47 @@ export async function getReportsData(
     })),
   }));
 
+  // Calculate product breakdown from non-cancelled customer orders
+  const productBreakdownMap = new Map<string, {
+    productId: string;
+    productName: string;
+    totalQuantity: number;
+    totalRevenue: number;
+    orderIds: Set<string>;
+  }>();
+
+  customerOrders
+    .filter((order) => order.status !== "CANCELLED")
+    .forEach((order) => {
+      order.items.forEach((item) => {
+        const key = item.productId;
+        const existing = productBreakdownMap.get(key);
+        const itemRevenue = Number(item.priceAtTime) * item.quantity;
+
+        if (existing) {
+          existing.totalQuantity += item.quantity;
+          existing.totalRevenue += itemRevenue;
+          existing.orderIds.add(order.id);
+        } else {
+          productBreakdownMap.set(key, {
+            productId: item.productId,
+            productName: item.product.name,
+            totalQuantity: item.quantity,
+            totalRevenue: itemRevenue,
+            orderIds: new Set([order.id]),
+          });
+        }
+      });
+    });
+
+  const productBreakdown = Array.from(productBreakdownMap.values()).map((item) => ({
+    productId: item.productId,
+    productName: item.productName,
+    totalQuantity: item.totalQuantity,
+    totalRevenue: item.totalRevenue,
+    orderCount: item.orderIds.size,
+  }));
+
   return {
     totalOrders,
     cancelledOrders,
@@ -1101,6 +1142,7 @@ export async function getReportsData(
     orders: ordersWithItems,
     replacementOrders: replacementOrdersWithItems,
     faultyLosses,
+    productBreakdown,
   };
 }
 
