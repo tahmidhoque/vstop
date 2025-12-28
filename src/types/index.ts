@@ -120,6 +120,7 @@ export interface ReportsData {
 
 export interface ProductBreakdown {
   productId: string;
+  variantId: string | null;
   productName: string;
   totalQuantity: number;
   totalRevenue: number;
