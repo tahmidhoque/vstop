@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useTransition, useMemo } from "react";
+import React, { useState, useTransition, useMemo, useEffect, useCallback } from "react";
 import { getReportsData } from "@/lib/actions";
 import { formatDate } from "@/lib/date-utils";
 import type { OrderWithItems, ReportsData } from "@/types";
@@ -25,9 +25,22 @@ import Grid from '@mui/material/Grid';
 import Divider from '@mui/material/Divider';
 import Alert from '@mui/material/Alert';
 import CircularProgress from '@mui/material/CircularProgress';
+import ButtonGroup from '@mui/material/ButtonGroup';
+import Collapse from '@mui/material/Collapse';
+import IconButton from '@mui/material/IconButton';
+import InputAdornment from '@mui/material/InputAdornment';
+import Tooltip from '@mui/material/Tooltip';
+import Stack from '@mui/material/Stack';
 import AdminLayout from '@/components/layout/AdminLayout';
 import StatCard from '@/components/common/StatCard';
 import { useSnackbar } from '@/components/common/SnackbarProvider';
+import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
+import FilterListIcon from '@mui/icons-material/FilterList';
+import DownloadIcon from '@mui/icons-material/Download';
+import SearchIcon from '@mui/icons-material/Search';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 
 interface StatusFilters {
   PENDING: boolean;
@@ -42,6 +55,8 @@ interface ReportsPageClientProps {
   initialEndDate: Date;
   initialStatusFilters: StatusFilters;
 }
+
+type DatePreset = '7days' | '30days' | 'thisMonth' | 'lastMonth' | 'custom';
 
 export default function ReportsPageClient({
   initialData,
@@ -63,29 +78,81 @@ export default function ReportsPageClient({
     "product" | "quantity" | "revenue" | "orders"
   >("revenue");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+  const [selectedPreset, setSelectedPreset] = useState<DatePreset>('7days');
+  const [showFilters, setShowFilters] = useState(false);
+  const [transactionSearch, setTransactionSearch] = useState('');
+  const [showAllTransactions, setShowAllTransactions] = useState(false);
   const { showSnackbar } = useSnackbar();
 
-  const handleDateRangeChange = () => {
+  // Auto-update when filters change
+  const fetchReportData = useCallback(async () => {
     startTransition(async () => {
-      const start = new Date(startDate);
-      const end = new Date(endDate);
+      try {
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        
+        start.setHours(0, 0, 0, 0);
+        end.setHours(23, 59, 59, 999);
 
-      if (start > end) {
-        showSnackbar("Start date must be before or equal to end date", "error");
-        return;
+        if (start > end) {
+          showSnackbar("Start date must be before or equal to end date", "error");
+          return;
+        }
+
+        const includeStatuses: OrderStatus[] = [];
+        if (statusFilters.PENDING) includeStatuses.push(OrderStatus.PENDING);
+        if (statusFilters.UNFULFILLED)
+          includeStatuses.push(OrderStatus.UNFULFILLED);
+        if (statusFilters.FULFILLED) includeStatuses.push(OrderStatus.FULFILLED);
+        if (statusFilters.CANCELLED)
+          includeStatuses.push(OrderStatus.CANCELLED);
+
+        const data = await getReportsData(start, end, includeStatuses);
+        setReportsData(data);
+      } catch (error) {
+        showSnackbar("Failed to fetch report data", "error");
+        console.error(error);
       }
-
-      const includeStatuses: OrderStatus[] = [];
-      if (statusFilters.PENDING) includeStatuses.push(OrderStatus.PENDING);
-      if (statusFilters.UNFULFILLED)
-        includeStatuses.push(OrderStatus.UNFULFILLED);
-      if (statusFilters.FULFILLED) includeStatuses.push(OrderStatus.FULFILLED);
-      if (statusFilters.CANCELLED)
-        includeStatuses.push(OrderStatus.CANCELLED);
-
-      const data = await getReportsData(start, end, includeStatuses);
-      setReportsData(data);
     });
+  }, [startDate, endDate, statusFilters, showSnackbar]);
+
+  // Auto-update when dates or filters change
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      fetchReportData();
+    }, 500); // Debounce by 500ms
+
+    return () => clearTimeout(timeoutId);
+  }, [startDate, endDate, statusFilters, fetchReportData]);
+
+  // Handle date preset selection
+  const handleDatePreset = (preset: DatePreset) => {
+    setSelectedPreset(preset);
+    const today = new Date();
+    let start = new Date();
+    let end = new Date();
+
+    switch (preset) {
+      case '7days':
+        start.setDate(today.getDate() - 7);
+        break;
+      case '30days':
+        start.setDate(today.getDate() - 30);
+        break;
+      case 'thisMonth':
+        start = new Date(today.getFullYear(), today.getMonth(), 1);
+        end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+        break;
+      case 'lastMonth':
+        start = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+        end = new Date(today.getFullYear(), today.getMonth(), 0);
+        break;
+      case 'custom':
+        return; // Don't change dates for custom
+    }
+
+    setStartDate(start.toISOString().split("T")[0]);
+    setEndDate(end.toISOString().split("T")[0]);
   };
 
   const formatCurrency = (amount: number) => {
@@ -93,10 +160,85 @@ export default function ReportsPageClient({
   };
 
   const totalValue = (order: OrderWithItems) => {
-    return order.items.reduce(
+    // If total override is set, use it
+    if (order.totalOverride) {
+      return Number(order.totalOverride);
+    }
+    
+    // Calculate subtotal
+    const subtotal = order.items.reduce(
       (sum, item) => sum + Number(item.priceAtTime) * item.quantity,
       0,
     );
+    
+    // Apply manual discount if set
+    const manualDiscount = order.manualDiscount ? Number(order.manualDiscount) : 0;
+    
+    return Math.max(0, subtotal - manualDiscount);
+  };
+
+  // Export to CSV functionality
+  const exportToCSV = () => {
+    try {
+      // Product breakdown CSV
+      const productHeaders = ['Product', 'Quantity Sold', 'Total Revenue', 'Number of Orders'];
+      const productRows = sortedProductBreakdown.map(p => [
+        p.productName,
+        p.totalQuantity.toString(),
+        p.totalRevenue.toFixed(2),
+        p.orderCount.toString()
+      ]);
+      
+      // Transactions CSV
+      const transactionHeaders = ['Date', 'Order Number', 'Customer', 'Status', 'Items', 'Total'];
+      const transactionRows = filteredTransactions.map(order => [
+        formatDate(order.createdAt),
+        order.orderNumber || '',
+        order.username,
+        order.status,
+        order.items.map(item => `${item.product.name}${item.flavour ? ` (${item.flavour})` : ''} x${item.quantity}`).join('; '),
+        totalValue(order).toFixed(2)
+      ]);
+
+      // Combine into one CSV
+      let csv = '=== SUMMARY ===\n';
+      csv += `Date Range:,${startDate} to ${endDate}\n`;
+      csv += `Total Orders:,${reportsData.totalOrders}\n`;
+      csv += `Fulfilled Orders:,${reportsData.fulfilledOrders}\n`;
+      csv += `Cancelled Orders:,${reportsData.cancelledOrders}\n`;
+      csv += `Unfulfilled Orders:,${reportsData.unfulfilledOrders}\n`;
+      csv += `Total Sales:,£${reportsData.totalSales.toFixed(2)}\n\n`;
+
+      if (reportsData.faultyLosses) {
+        csv += `Faulty Losses:,£${reportsData.faultyLosses.totalLoss.toFixed(2)}\n`;
+        csv += `Pre-Sale Losses:,£${reportsData.faultyLosses.preSaleLoss.toFixed(2)}\n`;
+        csv += `Post-Sale Losses:,£${reportsData.faultyLosses.postSaleLoss.toFixed(2)}\n\n`;
+      }
+
+      csv += '\n=== PRODUCT BREAKDOWN ===\n';
+      csv += productHeaders.join(',') + '\n';
+      csv += productRows.map(row => row.join(',')).join('\n');
+
+      csv += '\n\n=== TRANSACTIONS ===\n';
+      csv += transactionHeaders.join(',') + '\n';
+      csv += transactionRows.map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+
+      // Download
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `report-${startDate}-to-${endDate}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      
+      showSnackbar('Report exported successfully', 'success');
+    } catch (error) {
+      showSnackbar('Failed to export report', 'error');
+      console.error(error);
+    }
   };
 
   const sortedProductBreakdown = useMemo(() => {
@@ -121,6 +263,28 @@ export default function ReportsPageClient({
     });
     return breakdown;
   }, [reportsData.productBreakdown, sortBy, sortDirection]);
+
+  // Filter transactions based on search
+  const filteredTransactions = useMemo(() => {
+    if (!transactionSearch.trim()) {
+      return reportsData.orders;
+    }
+    
+    const searchLower = transactionSearch.toLowerCase();
+    return reportsData.orders.filter(order => 
+      order.username.toLowerCase().includes(searchLower) ||
+      order.orderNumber?.toLowerCase().includes(searchLower) ||
+      order.items.some(item => 
+        item.product.name.toLowerCase().includes(searchLower) ||
+        item.flavour?.toLowerCase().includes(searchLower)
+      )
+    );
+  }, [reportsData.orders, transactionSearch]);
+
+  // Limit displayed transactions
+  const displayedTransactions = showAllTransactions 
+    ? filteredTransactions 
+    : filteredTransactions.slice(0, 10);
 
   const handleSort = (column: "product" | "quantity" | "revenue" | "orders") => {
     if (sortBy === column) {
@@ -149,170 +313,291 @@ export default function ReportsPageClient({
   return (
     <AdminLayout>
       <Container maxWidth="xl" sx={{ py: 4 }}>
-        <Typography variant="h4" component="h1" fontWeight={700} gutterBottom sx={{ mb: 4 }}>
-          Reports
-        </Typography>
-
-        {/* Date Range Selector */}
-        <Paper elevation={2} sx={{ p: 3, mb: 4 }}>
-          <Typography variant="h6" fontWeight={600} gutterBottom>
-            Date Range
-          </Typography>
-          <Grid container spacing={3} sx={{ mb: 3 }}>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
-                fullWidth
-                type="date"
-                label="Start Date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                disabled={isPending}
-                InputLabelProps={{ shrink: true }}
-              />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
-                fullWidth
-                type="date"
-                label="End Date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                disabled={isPending}
-                InputLabelProps={{ shrink: true }}
-              />
-            </Grid>
-          </Grid>
-          <Button
-            variant="contained"
-            onClick={handleDateRangeChange}
-            disabled={isPending}
-            size="large"
-            startIcon={isPending ? <CircularProgress size={20} color="inherit" /> : null}
-          >
-            {isPending ? "Loading..." : "Update Report"}
-          </Button>
-        </Paper>
-
-        {/* Status Filters */}
-        <Paper elevation={2} sx={{ p: 3, mb: 4 }}>
-          <Typography variant="h6" fontWeight={600} gutterBottom>
-            Order Status Filters
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            Select which order statuses to include in the report. Filters apply to all statistics, sales calculations, and the transactions list.
-          </Typography>
-          <Grid container spacing={2} sx={{ mb: 3 }}>
-            <Grid size={{ xs: 6, sm: 3 }}>
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={statusFilters.PENDING}
-                    onChange={(e) =>
-                      setStatusFilters({
-                        ...statusFilters,
-                        PENDING: e.target.checked,
-                      })
-                    }
-                    disabled={isPending}
-                  />
-                }
-                label="Pending"
-              />
-            </Grid>
-            <Grid size={{ xs: 6, sm: 3 }}>
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={statusFilters.UNFULFILLED}
-                    onChange={(e) =>
-                      setStatusFilters({
-                        ...statusFilters,
-                        UNFULFILLED: e.target.checked,
-                      })
-                    }
-                    disabled={isPending}
-                  />
-                }
-                label="Unfulfilled"
-              />
-            </Grid>
-            <Grid size={{ xs: 6, sm: 3 }}>
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={statusFilters.FULFILLED}
-                    onChange={(e) =>
-                      setStatusFilters({
-                        ...statusFilters,
-                        FULFILLED: e.target.checked,
-                      })
-                    }
-                    disabled={isPending}
-                  />
-                }
-                label="Fulfilled"
-              />
-            </Grid>
-            <Grid size={{ xs: 6, sm: 3 }}>
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={statusFilters.CANCELLED}
-                    onChange={(e) =>
-                      setStatusFilters({
-                        ...statusFilters,
-                        CANCELLED: e.target.checked,
-                      })
-                    }
-                    disabled={isPending}
-                  />
-                }
-                label="Cancelled"
-              />
-            </Grid>
-          </Grid>
-          <Alert severity="info" sx={{ bgcolor: 'info.light' }}>
-            <Typography variant="subtitle2" fontWeight={600} gutterBottom>
-              How to Use Status Filters
+        {/* Header */}
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4, flexWrap: 'wrap', gap: 2 }}>
+          <Box>
+            <Typography variant="h4" component="h1" fontWeight={700} gutterBottom>
+              Reports
             </Typography>
-            <Box component="ul" sx={{ m: 0, pl: 2 }}>
-              <li>Check the boxes for statuses you want to include in the report</li>
-              <li>Click &quot;Update Report&quot; after changing filters to refresh the data</li>
-              <li>Example: To see only completed orders, check &quot;Fulfilled&quot; and uncheck all others</li>
-              <li>Note: Cancelled orders, personal use orders, and replacement orders are always excluded from sales calculations</li>
+            <Typography variant="body2" color="text.secondary">
+              {startDate} to {endDate}
+              {isPending && (
+                <CircularProgress size={16} sx={{ ml: 2 }} />
+              )}
+            </Typography>
+          </Box>
+          <Stack direction="row" spacing={2}>
+            <Button
+              variant="outlined"
+              startIcon={<FilterListIcon />}
+              onClick={() => setShowFilters(!showFilters)}
+              sx={{ borderRadius: '8px', fontWeight: 600 }}
+            >
+              Filters
+            </Button>
+            <Button
+              variant="contained"
+              startIcon={<DownloadIcon />}
+              onClick={exportToCSV}
+              disabled={isPending}
+              sx={{ borderRadius: '8px', fontWeight: 600 }}
+            >
+              Export
+            </Button>
+          </Stack>
+        </Box>
+
+        {/* Collapsible Filters Section */}
+        <Collapse in={showFilters}>
+          <Paper elevation={2} sx={{ p: 3, mb: 4, bgcolor: 'grey.50' }}>
+            {/* Date Range Presets */}
+            <Box sx={{ mb: 4 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                <CalendarTodayIcon color="primary" fontSize="small" />
+                <Typography variant="h6" fontWeight={600}>
+                  Date Range
+                </Typography>
+                <Tooltip title="Select a preset period or choose custom dates">
+                  <InfoOutlinedIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
+                </Tooltip>
+              </Box>
+              
+              <ButtonGroup 
+                variant="outlined" 
+                sx={{ mb: 3, flexWrap: 'wrap' }}
+                disabled={isPending}
+              >
+                <Button
+                  onClick={() => handleDatePreset('7days')}
+                  variant={selectedPreset === '7days' ? 'contained' : 'outlined'}
+                  sx={{ borderRadius: '8px 0 0 8px' }}
+                >
+                  Last 7 Days
+                </Button>
+                <Button
+                  onClick={() => handleDatePreset('30days')}
+                  variant={selectedPreset === '30days' ? 'contained' : 'outlined'}
+                >
+                  Last 30 Days
+                </Button>
+                <Button
+                  onClick={() => handleDatePreset('thisMonth')}
+                  variant={selectedPreset === 'thisMonth' ? 'contained' : 'outlined'}
+                >
+                  This Month
+                </Button>
+                <Button
+                  onClick={() => handleDatePreset('lastMonth')}
+                  variant={selectedPreset === 'lastMonth' ? 'contained' : 'outlined'}
+                >
+                  Last Month
+                </Button>
+                <Button
+                  onClick={() => setSelectedPreset('custom')}
+                  variant={selectedPreset === 'custom' ? 'contained' : 'outlined'}
+                  sx={{ borderRadius: '0 8px 8px 0' }}
+                >
+                  Custom
+                </Button>
+              </ButtonGroup>
+
+              <Grid container spacing={3}>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <TextField
+                    fullWidth
+                    type="date"
+                    label="Start Date"
+                    value={startDate}
+                    onChange={(e) => {
+                      setStartDate(e.target.value);
+                      setSelectedPreset('custom');
+                    }}
+                    disabled={isPending}
+                    InputLabelProps={{ shrink: true }}
+                    sx={{ 
+                      '& .MuiOutlinedInput-root': { 
+                        bgcolor: 'background.paper',
+                        borderRadius: '8px'
+                      } 
+                    }}
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <TextField
+                    fullWidth
+                    type="date"
+                    label="End Date"
+                    value={endDate}
+                    onChange={(e) => {
+                      setEndDate(e.target.value);
+                      setSelectedPreset('custom');
+                    }}
+                    disabled={isPending}
+                    InputLabelProps={{ shrink: true }}
+                    sx={{ 
+                      '& .MuiOutlinedInput-root': { 
+                        bgcolor: 'background.paper',
+                        borderRadius: '8px'
+                      } 
+                    }}
+                  />
+                </Grid>
+              </Grid>
             </Box>
-          </Alert>
-        </Paper>
+
+            <Divider sx={{ my: 3 }} />
+
+            {/* Status Filters */}
+            <Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                <FilterListIcon color="primary" fontSize="small" />
+                <Typography variant="h6" fontWeight={600}>
+                  Order Status Filters
+                </Typography>
+                <Tooltip title="Select which order statuses to include in the report. Changes are applied automatically.">
+                  <InfoOutlinedIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
+                </Tooltip>
+              </Box>
+              
+              <Grid container spacing={2}>
+                <Grid size={{ xs: 6, sm: 3 }}>
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={statusFilters.PENDING}
+                        onChange={(e) =>
+                          setStatusFilters({
+                            ...statusFilters,
+                            PENDING: e.target.checked,
+                          })
+                        }
+                        disabled={isPending}
+                      />
+                    }
+                    label={
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <span>Pending</span>
+                        <Chip label={reportsData.orders.filter(o => o.status === 'PENDING').length} size="small" />
+                      </Box>
+                    }
+                  />
+                </Grid>
+                <Grid size={{ xs: 6, sm: 3 }}>
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={statusFilters.UNFULFILLED}
+                        onChange={(e) =>
+                          setStatusFilters({
+                            ...statusFilters,
+                            UNFULFILLED: e.target.checked,
+                          })
+                        }
+                        disabled={isPending}
+                      />
+                    }
+                    label={
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <span>Unfulfilled</span>
+                        <Chip label={reportsData.unfulfilledOrders} size="small" />
+                      </Box>
+                    }
+                  />
+                </Grid>
+                <Grid size={{ xs: 6, sm: 3 }}>
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={statusFilters.FULFILLED}
+                        onChange={(e) =>
+                          setStatusFilters({
+                            ...statusFilters,
+                            FULFILLED: e.target.checked,
+                          })
+                        }
+                        disabled={isPending}
+                      />
+                    }
+                    label={
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <span>Fulfilled</span>
+                        <Chip label={reportsData.fulfilledOrders} size="small" color="success" />
+                      </Box>
+                    }
+                  />
+                </Grid>
+                <Grid size={{ xs: 6, sm: 3 }}>
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={statusFilters.CANCELLED}
+                        onChange={(e) =>
+                          setStatusFilters({
+                            ...statusFilters,
+                            CANCELLED: e.target.checked,
+                          })
+                        }
+                        disabled={isPending}
+                      />
+                    }
+                    label={
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <span>Cancelled</span>
+                        <Chip label={reportsData.cancelledOrders} size="small" />
+                      </Box>
+                    }
+                  />
+                </Grid>
+              </Grid>
+            </Box>
+          </Paper>
+        </Collapse>
 
         {/* Statistics Cards */}
         <Grid container spacing={3} sx={{ mb: 4 }}>
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <StatCard
-              title="Total Orders"
-              value={reportsData.totalOrders}
-              color="primary"
-            />
+            <Tooltip title="Total number of customer orders in the selected period">
+              <Box>
+                <StatCard
+                  title="Total Orders"
+                  value={reportsData.totalOrders}
+                  color="primary"
+                />
+              </Box>
+            </Tooltip>
           </Grid>
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <StatCard
-              title="Cancelled Orders"
-              value={reportsData.cancelledOrders}
-              color="error"
-            />
+            <Tooltip title="Orders that have been successfully completed">
+              <Box>
+                <StatCard
+                  title="Fulfilled Orders"
+                  value={reportsData.fulfilledOrders}
+                  color="success"
+                />
+              </Box>
+            </Tooltip>
           </Grid>
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <StatCard
-              title="Fulfilled Orders"
-              value={reportsData.fulfilledOrders}
-              color="success"
-            />
+            <Tooltip title="Orders awaiting fulfilment">
+              <Box>
+                <StatCard
+                  title="Unfulfilled Orders"
+                  value={reportsData.unfulfilledOrders}
+                  color="warning"
+                />
+              </Box>
+            </Tooltip>
           </Grid>
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <StatCard
-              title="Unfulfilled Orders"
-              value={reportsData.unfulfilledOrders}
-              color="warning"
-            />
+            <Tooltip title="Orders that were cancelled (stock restored)">
+              <Box>
+                <StatCard
+                  title="Cancelled Orders"
+                  value={reportsData.cancelledOrders}
+                  color="error"
+                />
+              </Box>
+            </Tooltip>
           </Grid>
         </Grid>
 
@@ -324,17 +609,35 @@ export default function ReportsPageClient({
             mb: 4,
             border: 2,
             borderColor: 'primary.main',
+            background: 'linear-gradient(135deg, #ffffff 0%, #f0f7ff 100%)',
             textAlign: 'center',
+            position: 'relative',
+            overflow: 'hidden',
           }}
         >
-          <Typography variant="body2" color="text.secondary" gutterBottom>
-            Total Sales
-          </Typography>
-          <Typography variant="h3" component="div" fontWeight={700} color="primary.main" gutterBottom>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1, mb: 1 }}>
+            <Typography variant="body2" color="text.secondary" fontWeight={600}>
+              Total Sales Revenue
+            </Typography>
+            <Tooltip title="Total revenue from customer orders. Excludes cancelled orders, personal use orders, replacement orders, and adjusts for faulty returns.">
+              <InfoOutlinedIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
+            </Tooltip>
+          </Box>
+          <Typography 
+            variant="h2" 
+            component="div" 
+            fontWeight={700} 
+            color="primary.main" 
+            gutterBottom
+            sx={{ 
+              fontSize: { xs: '2.5rem', sm: '3rem' },
+              textShadow: '0 2px 4px rgba(37, 99, 235, 0.1)'
+            }}
+          >
             {formatCurrency(reportsData.totalSales)}
           </Typography>
           <Typography variant="caption" color="text.secondary">
-            Based on selected filters (excluding cancelled orders, personal use orders, replacement orders, and faulty returns from sales)
+            Based on active filters • Customer orders only
           </Typography>
         </Paper>
 
@@ -348,41 +651,56 @@ export default function ReportsPageClient({
                   p: 3,
                   border: 2,
                   borderColor: 'error.main',
+                  bgcolor: '#fef2f2',
+                  height: '100%',
                 }}
               >
-                <Typography variant="h6" fontWeight={600} gutterBottom>
-                  Faulty Stock Losses
-                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                  <Typography variant="h6" fontWeight={600}>
+                    Faulty Stock Losses
+                  </Typography>
+                  <Tooltip title="Total value of faulty stock in this period">
+                    <InfoOutlinedIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
+                  </Tooltip>
+                </Box>
                 <Divider sx={{ my: 2 }} />
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                  <Typography variant="body2" color="text.secondary">Total Loss</Typography>
-                  <Typography variant="h5" fontWeight={700} color="error.main">
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, p: 2, bgcolor: 'background.paper', borderRadius: 2 }}>
+                  <Typography variant="body2" color="text.secondary" fontWeight={600}>Total Loss</Typography>
+                  <Typography variant="h4" fontWeight={700} color="error.main">
                     {formatCurrency(reportsData.faultyLosses.totalLoss)}
                   </Typography>
                 </Box>
                 <Grid container spacing={2}>
                   <Grid size={6}>
-                    <Typography variant="caption" color="text.secondary">Pre-Sale Faulty</Typography>
-                    <Typography variant="h6" fontWeight={600} color="warning.main">
-                      {formatCurrency(reportsData.faultyLosses.preSaleLoss)}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {reportsData.faultyLosses.preSaleCount} item(s)
-                    </Typography>
+                    <Paper sx={{ p: 2, bgcolor: 'background.paper', borderRadius: 2 }}>
+                      <Typography variant="caption" color="text.secondary" fontWeight={600}>Pre-Sale Faulty</Typography>
+                      <Typography variant="h6" fontWeight={700} color="warning.main" sx={{ my: 1 }}>
+                        {formatCurrency(reportsData.faultyLosses.preSaleLoss)}
+                      </Typography>
+                      <Chip 
+                        label={`${reportsData.faultyLosses.preSaleCount} item(s)`}
+                        size="small"
+                        sx={{ mt: 0.5 }}
+                      />
+                    </Paper>
                   </Grid>
                   <Grid size={6}>
-                    <Typography variant="caption" color="text.secondary">Post-Sale Returns</Typography>
-                    <Typography variant="h6" fontWeight={600} color="secondary.main">
-                      {formatCurrency(reportsData.faultyLosses.postSaleLoss)}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {reportsData.faultyLosses.postSaleCount} item(s)
-                    </Typography>
+                    <Paper sx={{ p: 2, bgcolor: 'background.paper', borderRadius: 2 }}>
+                      <Typography variant="caption" color="text.secondary" fontWeight={600}>Post-Sale Returns</Typography>
+                      <Typography variant="h6" fontWeight={700} color="secondary.main" sx={{ my: 1 }}>
+                        {formatCurrency(reportsData.faultyLosses.postSaleLoss)}
+                      </Typography>
+                      <Chip 
+                        label={`${reportsData.faultyLosses.postSaleCount} item(s)`}
+                        size="small"
+                        sx={{ mt: 0.5 }}
+                      />
+                    </Paper>
                   </Grid>
                 </Grid>
                 <Divider sx={{ my: 2 }} />
                 <Typography variant="caption" color="text.secondary">
-                  Total faulty items: {reportsData.faultyLosses.count}
+                  Total faulty items: <strong>{reportsData.faultyLosses.count}</strong>
                 </Typography>
               </Paper>
             </Grid>
@@ -393,36 +711,55 @@ export default function ReportsPageClient({
                   p: 3,
                   border: 2,
                   borderColor: 'success.main',
+                  bgcolor: '#f0fdf4',
+                  height: '100%',
                 }}
               >
-                <Typography variant="h6" fontWeight={600} gutterBottom>
-                  Replacement Orders
-                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                  <Typography variant="h6" fontWeight={600}>
+                    Replacement Orders
+                  </Typography>
+                  <Tooltip title="Free replacement orders for faulty items (not included in revenue)">
+                    <InfoOutlinedIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
+                  </Tooltip>
+                </Box>
                 <Divider sx={{ my: 2 }} />
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                  <Typography variant="body2" color="text.secondary">Total Replacements</Typography>
-                  <Typography variant="h5" fontWeight={700} color="success.main">
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, p: 2, bgcolor: 'background.paper', borderRadius: 2 }}>
+                  <Typography variant="body2" color="text.secondary" fontWeight={600}>Total Replacements</Typography>
+                  <Typography variant="h4" fontWeight={700} color="success.main">
                     {reportsData.replacementOrders?.length || 0}
                   </Typography>
                 </Box>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                  Replacement orders are free replacements for faulty items and do not count towards revenue.
-                </Typography>
+                <Alert severity="info" sx={{ mb: 2 }}>
+                  <Typography variant="body2">
+                    Replacement orders are free replacements for faulty items and do not count towards revenue.
+                  </Typography>
+                </Alert>
                 {reportsData.replacementOrders && reportsData.replacementOrders.length > 0 && (
                   <Box>
                     <Typography variant="subtitle2" fontWeight={600} gutterBottom>
                       Recent Replacements:
                     </Typography>
-                    <Box sx={{ maxHeight: 120, overflowY: 'auto' }}>
+                    <Paper sx={{ maxHeight: 150, overflowY: 'auto', p: 1.5, bgcolor: 'background.paper' }}>
                       {reportsData.replacementOrders.slice(0, 5).map((order) => (
-                        <Box key={order.id} sx={{ display: 'flex', justifyContent: 'space-between', py: 0.5 }}>
-                          <Typography variant="caption">{order.orderNumber}</Typography>
+                        <Box 
+                          key={order.id} 
+                          sx={{ 
+                            display: 'flex', 
+                            justifyContent: 'space-between',
+                            py: 1,
+                            borderBottom: 1,
+                            borderColor: 'divider',
+                            '&:last-child': { borderBottom: 0 }
+                          }}
+                        >
+                          <Chip label={order.orderNumber} size="small" variant="outlined" />
                           <Typography variant="caption" color="text.secondary">
                             {formatDate(order.createdAt)}
                           </Typography>
                         </Box>
                       ))}
-                    </Box>
+                    </Paper>
                   </Box>
                 )}
               </Paper>
@@ -433,9 +770,12 @@ export default function ReportsPageClient({
         {/* Product Breakdown */}
         <Paper elevation={2} sx={{ mb: 4 }}>
           <Box sx={{ p: 3, borderBottom: 1, borderColor: 'divider' }}>
-            <Typography variant="h6" fontWeight={600} gutterBottom>
-              Product Breakdown
-            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography variant="h6" fontWeight={600}>
+                Product Breakdown
+              </Typography>
+              {isPending && <CircularProgress size={20} />}
+            </Box>
             <Typography variant="body2" color="text.secondary">
               Sales breakdown by product for the selected period
             </Typography>
@@ -458,7 +798,9 @@ export default function ReportsPageClient({
                           direction={sortBy === "product" ? sortDirection : "asc"}
                           onClick={() => handleSort("product")}
                         >
-                          Product
+                          <Typography variant="body2" fontWeight={600}>
+                            Product
+                          </Typography>
                         </TableSortLabel>
                       </TableCell>
                       <TableCell align="right">
@@ -467,7 +809,9 @@ export default function ReportsPageClient({
                           direction={sortBy === "quantity" ? sortDirection : "asc"}
                           onClick={() => handleSort("quantity")}
                         >
-                          Quantity Sold
+                          <Typography variant="body2" fontWeight={600}>
+                            Quantity Sold
+                          </Typography>
                         </TableSortLabel>
                       </TableCell>
                       <TableCell align="right">
@@ -476,7 +820,9 @@ export default function ReportsPageClient({
                           direction={sortBy === "revenue" ? sortDirection : "asc"}
                           onClick={() => handleSort("revenue")}
                         >
-                          Total Revenue
+                          <Typography variant="body2" fontWeight={600}>
+                            Total Revenue
+                          </Typography>
                         </TableSortLabel>
                       </TableCell>
                       <TableCell align="right">
@@ -485,29 +831,50 @@ export default function ReportsPageClient({
                           direction={sortBy === "orders" ? sortDirection : "asc"}
                           onClick={() => handleSort("orders")}
                         >
-                          Orders
+                          <Typography variant="body2" fontWeight={600}>
+                            Orders
+                          </Typography>
                         </TableSortLabel>
                       </TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {sortedProductBreakdown.map((product) => (
+                    {sortedProductBreakdown.map((product, index) => (
                       <TableRow
                         key={`${product.productId}-${product.variantId || 'base'}`}
-                        sx={{ '&:hover': { bgcolor: 'action.hover' } }}
+                        sx={{ 
+                          '&:hover': { bgcolor: 'action.hover' },
+                          transition: 'background-color 0.2s'
+                        }}
                       >
                         <TableCell>
-                          <Typography variant="body2" fontWeight={600}>
-                            {product.productName}
-                          </Typography>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Chip 
+                              label={index + 1} 
+                              size="small" 
+                              sx={{ 
+                                width: 32, 
+                                height: 24,
+                                fontSize: '0.75rem',
+                                bgcolor: 'grey.200',
+                                fontWeight: 600
+                              }} 
+                            />
+                            <Typography variant="body2" fontWeight={600}>
+                              {product.productName}
+                            </Typography>
+                          </Box>
                         </TableCell>
                         <TableCell align="right">
-                          <Typography variant="body2" fontWeight={600}>
-                            {product.totalQuantity}
-                          </Typography>
+                          <Chip 
+                            label={product.totalQuantity}
+                            size="small"
+                            color="primary"
+                            variant="outlined"
+                          />
                         </TableCell>
                         <TableCell align="right">
-                          <Typography variant="body2" fontWeight={600}>
+                          <Typography variant="body2" fontWeight={700} color="success.main">
                             {formatCurrency(product.totalRevenue)}
                           </Typography>
                         </TableCell>
@@ -519,12 +886,14 @@ export default function ReportsPageClient({
                       </TableRow>
                     ))}
                   </TableBody>
-                  <TableRow sx={{ bgcolor: 'grey.100' }}>
+                  <TableRow sx={{ bgcolor: 'primary.light', '&:hover': { bgcolor: 'primary.light !important' } }}>
                     <TableCell>
-                      <Typography variant="body2" fontWeight={700}>Total</Typography>
+                      <Typography variant="body1" fontWeight={700} color="white">
+                        Total
+                      </Typography>
                     </TableCell>
                     <TableCell align="right">
-                      <Typography variant="body2" fontWeight={700}>
+                      <Typography variant="body1" fontWeight={700} color="white">
                         {sortedProductBreakdown.reduce(
                           (sum, p) => sum + p.totalQuantity,
                           0,
@@ -532,7 +901,7 @@ export default function ReportsPageClient({
                       </Typography>
                     </TableCell>
                     <TableCell align="right">
-                      <Typography variant="body2" fontWeight={700}>
+                      <Typography variant="body1" fontWeight={700} color="white">
                         {formatCurrency(
                           sortedProductBreakdown.reduce(
                             (sum, p) => sum + p.totalRevenue,
@@ -542,7 +911,7 @@ export default function ReportsPageClient({
                       </Typography>
                     </TableCell>
                     <TableCell align="right">
-                      <Typography variant="body2" fontWeight={600} color="text.secondary">
+                      <Typography variant="body1" fontWeight={700} color="white">
                         {reportsData.orders
                           .filter((order) => order.status !== "CANCELLED")
                           .length}
@@ -558,76 +927,148 @@ export default function ReportsPageClient({
         {/* Transactions List */}
         <Paper elevation={2}>
           <Box sx={{ p: 3, borderBottom: 1, borderColor: 'divider' }}>
-            <Typography variant="h6" fontWeight={600} gutterBottom>
-              Transactions
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {reportsData.orders.length} transaction{reportsData.orders.length !== 1 ? "s" : ""} in selected date range
-            </Typography>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 2 }}>
+              <Box>
+                <Typography variant="h6" fontWeight={600} gutterBottom>
+                  Transactions
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {filteredTransactions.length} transaction{filteredTransactions.length !== 1 ? "s" : ""} 
+                  {transactionSearch && ` matching "${transactionSearch}"`}
+                </Typography>
+              </Box>
+              <TextField
+                placeholder="Search transactions..."
+                value={transactionSearch}
+                onChange={(e) => setTransactionSearch(e.target.value)}
+                size="small"
+                sx={{ 
+                  minWidth: 250,
+                  '& .MuiOutlinedInput-root': { 
+                    borderRadius: '8px'
+                  } 
+                }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon fontSize="small" />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </Box>
           </Box>
           <Box sx={{ p: 3 }}>
-            {reportsData.orders.length === 0 ? (
+            {filteredTransactions.length === 0 ? (
               <Box sx={{ textAlign: 'center', py: 8 }}>
                 <Typography variant="body1" color="text.secondary">
-                  No transactions found in the selected date range
+                  {transactionSearch 
+                    ? `No transactions found matching "${transactionSearch}"`
+                    : "No transactions found in the selected date range"}
                 </Typography>
               </Box>
             ) : (
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                {reportsData.orders.map((order) => (
-                  <Box
-                    key={order.id}
-                    sx={{
-                      borderBottom: 1,
-                      borderColor: 'divider',
-                      pb: 3,
-                      '&:last-child': { borderBottom: 0, pb: 0 },
-                    }}
-                  >
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 2 }}>
-                      <Box>
-                        <Typography variant="h6" fontWeight={600}>
-                          {order.username}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          {formatDate(order.createdAt)}
-                        </Typography>
-                      </Box>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                        <Chip
-                          label={order.status}
-                          color={getStatusColor(order.status)}
-                          size="small"
-                          sx={{ fontWeight: 600 }}
-                        />
-                        <Typography variant="h6" fontWeight={700}>
-                          {formatCurrency(totalValue(order))}
-                        </Typography>
-                      </Box>
-                    </Box>
-                    <Divider sx={{ my: 2 }} />
-                    <Typography variant="subtitle2" fontWeight={600} gutterBottom>
-                      Items:
-                    </Typography>
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                      {order.items.map((item) => (
-                        <Box
-                          key={item.id}
-                          sx={{ display: 'flex', justifyContent: 'space-between' }}
-                        >
+              <>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                  {displayedTransactions.map((order) => (
+                    <Box
+                      key={order.id}
+                      sx={{
+                        borderBottom: 1,
+                        borderColor: 'divider',
+                        pb: 3,
+                        '&:last-child': { borderBottom: 0, pb: 0 },
+                      }}
+                    >
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 2 }}>
+                        <Box>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                            <Typography variant="h6" fontWeight={600}>
+                              {order.username}
+                            </Typography>
+                            {order.orderNumber && (
+                              <Chip 
+                                label={order.orderNumber} 
+                                size="small" 
+                                variant="outlined"
+                                sx={{ fontFamily: 'monospace' }}
+                              />
+                            )}
+                          </Box>
                           <Typography variant="body2" color="text.secondary">
-                            {item.product.name}
-                            {item.flavour && ` (${item.flavour})`} × {item.quantity}
-                          </Typography>
-                          <Typography variant="body2" fontWeight={600}>
-                            {formatCurrency(Number(item.priceAtTime))}
+                            {formatDate(order.createdAt)}
                           </Typography>
                         </Box>
-                      ))}
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                          <Chip
+                            label={order.status}
+                            color={getStatusColor(order.status)}
+                            size="small"
+                            sx={{ fontWeight: 600 }}
+                          />
+                          <Typography variant="h6" fontWeight={700}>
+                            {formatCurrency(totalValue(order))}
+                          </Typography>
+                        </Box>
+                      </Box>
+                      <Divider sx={{ my: 2 }} />
+                      <Typography variant="subtitle2" fontWeight={600} gutterBottom>
+                        Items:
+                      </Typography>
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                        {order.items.map((item) => (
+                          <Box
+                            key={item.id}
+                            sx={{ display: 'flex', justifyContent: 'space-between' }}
+                          >
+                            <Typography variant="body2" color="text.secondary">
+                              {item.product.name}
+                              {item.flavour && ` (${item.flavour})`} × {item.quantity}
+                            </Typography>
+                            <Typography variant="body2" fontWeight={600}>
+                              {formatCurrency(Number(item.priceAtTime) * item.quantity)}
+                            </Typography>
+                          </Box>
+                        ))}
+                      </Box>
+                      {order.manualDiscount && order.manualDiscount > 0 && (
+                        <Box sx={{ mt: 2, pt: 2, borderTop: 1, borderColor: 'divider' }}>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <Typography variant="body2" color="warning.main" fontWeight={600}>
+                              Manual Discount
+                            </Typography>
+                            <Typography variant="body2" color="warning.main" fontWeight={600}>
+                              -{formatCurrency(Number(order.manualDiscount))}
+                            </Typography>
+                          </Box>
+                        </Box>
+                      )}
+                      {order.totalOverride && (
+                        <Box sx={{ mt: 1 }}>
+                          <Typography variant="caption" color="info.main">
+                            Total Override Applied
+                          </Typography>
+                        </Box>
+                      )}
                     </Box>
+                  ))}
+                </Box>
+                
+                {filteredTransactions.length > 10 && (
+                  <Box sx={{ textAlign: 'center', mt: 3 }}>
+                    <Button
+                      variant="outlined"
+                      onClick={() => setShowAllTransactions(!showAllTransactions)}
+                      endIcon={showAllTransactions ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                      sx={{ borderRadius: '8px' }}
+                    >
+                      {showAllTransactions 
+                        ? 'Show Less' 
+                        : `Show All ${filteredTransactions.length} Transactions`}
+                    </Button>
                   </Box>
-                ))}
-              </Box>
+                )}
+              </>
             )}
           </Box>
         </Paper>
