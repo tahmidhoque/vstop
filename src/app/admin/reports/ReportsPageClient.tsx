@@ -312,49 +312,69 @@ export default function ReportsPageClient({
 
   return (
     <AdminLayout>
-      <Container maxWidth="xl" sx={{ py: 4 }}>
+      <Container maxWidth="xl" sx={{ py: { xs: 2, sm: 4 }, px: { xs: 2, sm: 3 } }}>
         {/* Header */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4, flexWrap: 'wrap', gap: 2 }}>
-          <Box>
-            <Typography variant="h4" component="h1" fontWeight={700} gutterBottom>
-              Reports
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {startDate} to {endDate}
-              {isPending && (
-                <CircularProgress size={16} sx={{ ml: 2 }} />
-              )}
-            </Typography>
+        <Box sx={{ mb: { xs: 3, sm: 4 } }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2, flexWrap: 'wrap', gap: 2 }}>
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Typography 
+                variant="h4" 
+                component="h1" 
+                fontWeight={700} 
+                gutterBottom
+                sx={{ fontSize: { xs: '1.75rem', sm: '2.125rem' } }}
+              >
+                Reports
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.813rem', sm: '0.875rem' } }}>
+                {startDate} to {endDate}
+                {isPending && (
+                  <CircularProgress size={16} sx={{ ml: 2 }} />
+                )}
+              </Typography>
+            </Box>
+            <Stack direction="row" spacing={1} sx={{ flexShrink: 0 }}>
+              <Button
+                variant="outlined"
+                startIcon={<FilterListIcon sx={{ display: { xs: 'none', sm: 'block' } }} />}
+                onClick={() => setShowFilters(!showFilters)}
+                sx={{ 
+                  borderRadius: '8px', 
+                  fontWeight: 600,
+                  minWidth: { xs: 44, sm: 'auto' },
+                  px: { xs: 1, sm: 2 }
+                }}
+              >
+                <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Filters</Box>
+                <FilterListIcon sx={{ display: { xs: 'block', sm: 'none' } }} />
+              </Button>
+              <Button
+                variant="contained"
+                startIcon={<DownloadIcon sx={{ display: { xs: 'none', sm: 'block' } }} />}
+                onClick={exportToCSV}
+                disabled={isPending}
+                sx={{ 
+                  borderRadius: '8px', 
+                  fontWeight: 600,
+                  minWidth: { xs: 44, sm: 'auto' },
+                  px: { xs: 1, sm: 2 }
+                }}
+              >
+                <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Export</Box>
+                <DownloadIcon sx={{ display: { xs: 'block', sm: 'none' } }} />
+              </Button>
+            </Stack>
           </Box>
-          <Stack direction="row" spacing={2}>
-            <Button
-              variant="outlined"
-              startIcon={<FilterListIcon />}
-              onClick={() => setShowFilters(!showFilters)}
-              sx={{ borderRadius: '8px', fontWeight: 600 }}
-            >
-              Filters
-            </Button>
-            <Button
-              variant="contained"
-              startIcon={<DownloadIcon />}
-              onClick={exportToCSV}
-              disabled={isPending}
-              sx={{ borderRadius: '8px', fontWeight: 600 }}
-            >
-              Export
-            </Button>
-          </Stack>
         </Box>
 
         {/* Collapsible Filters Section */}
         <Collapse in={showFilters}>
-          <Paper elevation={2} sx={{ p: 3, mb: 4, bgcolor: 'grey.50' }}>
+          <Paper elevation={2} sx={{ p: { xs: 2, sm: 3 }, mb: { xs: 3, sm: 4 }, bgcolor: 'grey.50' }}>
             {/* Date Range Presets */}
-            <Box sx={{ mb: 4 }}>
+            <Box sx={{ mb: { xs: 3, sm: 4 } }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
                 <CalendarTodayIcon color="primary" fontSize="small" />
-                <Typography variant="h6" fontWeight={600}>
+                <Typography variant="h6" fontWeight={600} sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>
                   Date Range
                 </Typography>
                 <Tooltip title="Select a preset period or choose custom dates">
@@ -362,44 +382,79 @@ export default function ReportsPageClient({
                 </Tooltip>
               </Box>
               
-              <ButtonGroup 
-                variant="outlined" 
-                sx={{ mb: 3, flexWrap: 'wrap' }}
-                disabled={isPending}
-              >
+              {/* Mobile-friendly preset buttons */}
+              <Box sx={{ 
+                display: 'grid',
+                gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(5, 1fr)' },
+                gap: 1,
+                mb: 3
+              }}>
                 <Button
                   onClick={() => handleDatePreset('7days')}
                   variant={selectedPreset === '7days' ? 'contained' : 'outlined'}
-                  sx={{ borderRadius: '8px 0 0 8px' }}
+                  disabled={isPending}
+                  fullWidth
+                  sx={{ 
+                    borderRadius: '8px',
+                    fontSize: { xs: '0.813rem', sm: '0.875rem' },
+                    py: 1
+                  }}
                 >
                   Last 7 Days
                 </Button>
                 <Button
                   onClick={() => handleDatePreset('30days')}
                   variant={selectedPreset === '30days' ? 'contained' : 'outlined'}
+                  disabled={isPending}
+                  fullWidth
+                  sx={{ 
+                    borderRadius: '8px',
+                    fontSize: { xs: '0.813rem', sm: '0.875rem' },
+                    py: 1
+                  }}
                 >
                   Last 30 Days
                 </Button>
                 <Button
                   onClick={() => handleDatePreset('thisMonth')}
                   variant={selectedPreset === 'thisMonth' ? 'contained' : 'outlined'}
+                  disabled={isPending}
+                  fullWidth
+                  sx={{ 
+                    borderRadius: '8px',
+                    fontSize: { xs: '0.813rem', sm: '0.875rem' },
+                    py: 1
+                  }}
                 >
                   This Month
                 </Button>
                 <Button
                   onClick={() => handleDatePreset('lastMonth')}
                   variant={selectedPreset === 'lastMonth' ? 'contained' : 'outlined'}
+                  disabled={isPending}
+                  fullWidth
+                  sx={{ 
+                    borderRadius: '8px',
+                    fontSize: { xs: '0.813rem', sm: '0.875rem' },
+                    py: 1
+                  }}
                 >
                   Last Month
                 </Button>
                 <Button
                   onClick={() => setSelectedPreset('custom')}
                   variant={selectedPreset === 'custom' ? 'contained' : 'outlined'}
-                  sx={{ borderRadius: '0 8px 8px 0' }}
+                  disabled={isPending}
+                  fullWidth
+                  sx={{ 
+                    borderRadius: '8px',
+                    fontSize: { xs: '0.813rem', sm: '0.875rem' },
+                    py: 1
+                  }}
                 >
                   Custom
                 </Button>
-              </ButtonGroup>
+              </Box>
 
               <Grid container spacing={3}>
                 <Grid size={{ xs: 12, sm: 6 }}>
@@ -451,7 +506,7 @@ export default function ReportsPageClient({
             <Box>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
                 <FilterListIcon color="primary" fontSize="small" />
-                <Typography variant="h6" fontWeight={600}>
+                <Typography variant="h6" fontWeight={600} sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>
                   Order Status Filters
                 </Typography>
                 <Tooltip title="Select which order statuses to include in the report. Changes are applied automatically.">
@@ -475,9 +530,15 @@ export default function ReportsPageClient({
                       />
                     }
                     label={
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <span>Pending</span>
-                        <Chip label={reportsData.orders.filter(o => o.status === 'PENDING').length} size="small" />
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap' }}>
+                        <Typography variant="body2" sx={{ fontSize: { xs: '0.813rem', sm: '0.875rem' } }}>
+                          Pending
+                        </Typography>
+                        <Chip 
+                          label={reportsData.orders.filter(o => o.status === 'PENDING').length} 
+                          size="small"
+                          sx={{ height: 20, fontSize: '0.75rem' }}
+                        />
                       </Box>
                     }
                   />
@@ -497,9 +558,15 @@ export default function ReportsPageClient({
                       />
                     }
                     label={
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <span>Unfulfilled</span>
-                        <Chip label={reportsData.unfulfilledOrders} size="small" />
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap' }}>
+                        <Typography variant="body2" sx={{ fontSize: { xs: '0.813rem', sm: '0.875rem' } }}>
+                          Unfulfilled
+                        </Typography>
+                        <Chip 
+                          label={reportsData.unfulfilledOrders} 
+                          size="small"
+                          sx={{ height: 20, fontSize: '0.75rem' }}
+                        />
                       </Box>
                     }
                   />
@@ -519,9 +586,16 @@ export default function ReportsPageClient({
                       />
                     }
                     label={
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <span>Fulfilled</span>
-                        <Chip label={reportsData.fulfilledOrders} size="small" color="success" />
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap' }}>
+                        <Typography variant="body2" sx={{ fontSize: { xs: '0.813rem', sm: '0.875rem' } }}>
+                          Fulfilled
+                        </Typography>
+                        <Chip 
+                          label={reportsData.fulfilledOrders} 
+                          size="small" 
+                          color="success"
+                          sx={{ height: 20, fontSize: '0.75rem' }}
+                        />
                       </Box>
                     }
                   />
@@ -541,9 +615,15 @@ export default function ReportsPageClient({
                       />
                     }
                     label={
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <span>Cancelled</span>
-                        <Chip label={reportsData.cancelledOrders} size="small" />
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap' }}>
+                        <Typography variant="body2" sx={{ fontSize: { xs: '0.813rem', sm: '0.875rem' } }}>
+                          Cancelled
+                        </Typography>
+                        <Chip 
+                          label={reportsData.cancelledOrders} 
+                          size="small"
+                          sx={{ height: 20, fontSize: '0.75rem' }}
+                        />
                       </Box>
                     }
                   />
@@ -605,8 +685,8 @@ export default function ReportsPageClient({
         <Paper
           elevation={3}
           sx={{
-            p: 4,
-            mb: 4,
+            p: { xs: 3, sm: 4 },
+            mb: { xs: 3, sm: 4 },
             border: 2,
             borderColor: 'primary.main',
             background: 'linear-gradient(135deg, #ffffff 0%, #f0f7ff 100%)',
@@ -615,8 +695,13 @@ export default function ReportsPageClient({
             overflow: 'hidden',
           }}
         >
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1, mb: 1 }}>
-            <Typography variant="body2" color="text.secondary" fontWeight={600}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1, mb: 1, flexWrap: 'wrap' }}>
+            <Typography 
+              variant="body2" 
+              color="text.secondary" 
+              fontWeight={600}
+              sx={{ fontSize: { xs: '0.813rem', sm: '0.875rem' } }}
+            >
               Total Sales Revenue
             </Typography>
             <Tooltip title="Total revenue from customer orders. Excludes cancelled orders, personal use orders, replacement orders, and adjusts for faulty returns.">
@@ -630,76 +715,135 @@ export default function ReportsPageClient({
             color="primary.main" 
             gutterBottom
             sx={{ 
-              fontSize: { xs: '2.5rem', sm: '3rem' },
-              textShadow: '0 2px 4px rgba(37, 99, 235, 0.1)'
+              fontSize: { xs: '2rem', sm: '2.5rem', md: '3rem' },
+              textShadow: '0 2px 4px rgba(37, 99, 235, 0.1)',
+              wordBreak: 'break-word'
             }}
           >
             {formatCurrency(reportsData.totalSales)}
           </Typography>
-          <Typography variant="caption" color="text.secondary">
+          <Typography 
+            variant="caption" 
+            color="text.secondary"
+            sx={{ fontSize: { xs: '0.75rem', sm: '0.813rem' } }}
+          >
             Based on active filters • Customer orders only
           </Typography>
         </Paper>
 
         {/* Faulty Losses & Replacement Orders */}
         {reportsData.faultyLosses && (
-          <Grid container spacing={3} sx={{ mb: 4 }}>
+          <Grid container spacing={{ xs: 2, sm: 3 }} sx={{ mb: { xs: 3, sm: 4 } }}>
             <Grid size={{ xs: 12, lg: 6 }}>
               <Paper
                 elevation={2}
                 sx={{
-                  p: 3,
+                  p: { xs: 2, sm: 3 },
                   border: 2,
                   borderColor: 'error.main',
                   bgcolor: '#fef2f2',
                   height: '100%',
                 }}
               >
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                  <Typography variant="h6" fontWeight={600}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2, flexWrap: 'wrap' }}>
+                  <Typography 
+                    variant="h6" 
+                    fontWeight={600}
+                    sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}
+                  >
                     Faulty Stock Losses
                   </Typography>
                   <Tooltip title="Total value of faulty stock in this period">
                     <InfoOutlinedIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
                   </Tooltip>
                 </Box>
-                <Divider sx={{ my: 2 }} />
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, p: 2, bgcolor: 'background.paper', borderRadius: 2 }}>
-                  <Typography variant="body2" color="text.secondary" fontWeight={600}>Total Loss</Typography>
-                  <Typography variant="h4" fontWeight={700} color="error.main">
+                <Divider sx={{ my: { xs: 1.5, sm: 2 } }} />
+                <Box sx={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  alignItems: 'center', 
+                  mb: { xs: 2, sm: 3 }, 
+                  p: { xs: 1.5, sm: 2 }, 
+                  bgcolor: 'background.paper', 
+                  borderRadius: 2,
+                  gap: 1,
+                  flexWrap: 'wrap'
+                }}>
+                  <Typography 
+                    variant="body2" 
+                    color="text.secondary" 
+                    fontWeight={600}
+                    sx={{ fontSize: { xs: '0.813rem', sm: '0.875rem' } }}
+                  >
+                    Total Loss
+                  </Typography>
+                  <Typography 
+                    variant="h4" 
+                    fontWeight={700} 
+                    color="error.main"
+                    sx={{ fontSize: { xs: '1.75rem', sm: '2.125rem' } }}
+                  >
                     {formatCurrency(reportsData.faultyLosses.totalLoss)}
                   </Typography>
                 </Box>
-                <Grid container spacing={2}>
-                  <Grid size={6}>
-                    <Paper sx={{ p: 2, bgcolor: 'background.paper', borderRadius: 2 }}>
-                      <Typography variant="caption" color="text.secondary" fontWeight={600}>Pre-Sale Faulty</Typography>
-                      <Typography variant="h6" fontWeight={700} color="warning.main" sx={{ my: 1 }}>
+                <Grid container spacing={{ xs: 1.5, sm: 2 }}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <Paper sx={{ p: { xs: 1.5, sm: 2 }, bgcolor: 'background.paper', borderRadius: 2 }}>
+                      <Typography 
+                        variant="caption" 
+                        color="text.secondary" 
+                        fontWeight={600}
+                        sx={{ fontSize: { xs: '0.75rem', sm: '0.813rem' } }}
+                      >
+                        Pre-Sale Faulty
+                      </Typography>
+                      <Typography 
+                        variant="h6" 
+                        fontWeight={700} 
+                        color="warning.main" 
+                        sx={{ my: 1, fontSize: { xs: '1rem', sm: '1.25rem' } }}
+                      >
                         {formatCurrency(reportsData.faultyLosses.preSaleLoss)}
                       </Typography>
                       <Chip 
                         label={`${reportsData.faultyLosses.preSaleCount} item(s)`}
                         size="small"
-                        sx={{ mt: 0.5 }}
+                        sx={{ mt: 0.5, fontSize: { xs: '0.688rem', sm: '0.75rem' }, height: { xs: 20, sm: 24 } }}
                       />
                     </Paper>
                   </Grid>
-                  <Grid size={6}>
-                    <Paper sx={{ p: 2, bgcolor: 'background.paper', borderRadius: 2 }}>
-                      <Typography variant="caption" color="text.secondary" fontWeight={600}>Post-Sale Returns</Typography>
-                      <Typography variant="h6" fontWeight={700} color="secondary.main" sx={{ my: 1 }}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <Paper sx={{ p: { xs: 1.5, sm: 2 }, bgcolor: 'background.paper', borderRadius: 2 }}>
+                      <Typography 
+                        variant="caption" 
+                        color="text.secondary" 
+                        fontWeight={600}
+                        sx={{ fontSize: { xs: '0.75rem', sm: '0.813rem' } }}
+                      >
+                        Post-Sale Returns
+                      </Typography>
+                      <Typography 
+                        variant="h6" 
+                        fontWeight={700} 
+                        color="secondary.main" 
+                        sx={{ my: 1, fontSize: { xs: '1rem', sm: '1.25rem' } }}
+                      >
                         {formatCurrency(reportsData.faultyLosses.postSaleLoss)}
                       </Typography>
                       <Chip 
                         label={`${reportsData.faultyLosses.postSaleCount} item(s)`}
                         size="small"
-                        sx={{ mt: 0.5 }}
+                        sx={{ mt: 0.5, fontSize: { xs: '0.688rem', sm: '0.75rem' }, height: { xs: 20, sm: 24 } }}
                       />
                     </Paper>
                   </Grid>
                 </Grid>
-                <Divider sx={{ my: 2 }} />
-                <Typography variant="caption" color="text.secondary">
+                <Divider sx={{ my: { xs: 1.5, sm: 2 } }} />
+                <Typography 
+                  variant="caption" 
+                  color="text.secondary"
+                  sx={{ fontSize: { xs: '0.75rem', sm: '0.813rem' } }}
+                >
                   Total faulty items: <strong>{reportsData.faultyLosses.count}</strong>
                 </Typography>
               </Paper>
@@ -708,53 +852,101 @@ export default function ReportsPageClient({
               <Paper
                 elevation={2}
                 sx={{
-                  p: 3,
+                  p: { xs: 2, sm: 3 },
                   border: 2,
                   borderColor: 'success.main',
                   bgcolor: '#f0fdf4',
                   height: '100%',
                 }}
               >
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                  <Typography variant="h6" fontWeight={600}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2, flexWrap: 'wrap' }}>
+                  <Typography 
+                    variant="h6" 
+                    fontWeight={600}
+                    sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}
+                  >
                     Replacement Orders
                   </Typography>
                   <Tooltip title="Free replacement orders for faulty items (not included in revenue)">
                     <InfoOutlinedIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
                   </Tooltip>
                 </Box>
-                <Divider sx={{ my: 2 }} />
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, p: 2, bgcolor: 'background.paper', borderRadius: 2 }}>
-                  <Typography variant="body2" color="text.secondary" fontWeight={600}>Total Replacements</Typography>
-                  <Typography variant="h4" fontWeight={700} color="success.main">
+                <Divider sx={{ my: { xs: 1.5, sm: 2 } }} />
+                <Box sx={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  alignItems: 'center', 
+                  mb: { xs: 2, sm: 3 }, 
+                  p: { xs: 1.5, sm: 2 }, 
+                  bgcolor: 'background.paper', 
+                  borderRadius: 2,
+                  gap: 1,
+                  flexWrap: 'wrap'
+                }}>
+                  <Typography 
+                    variant="body2" 
+                    color="text.secondary" 
+                    fontWeight={600}
+                    sx={{ fontSize: { xs: '0.813rem', sm: '0.875rem' } }}
+                  >
+                    Total Replacements
+                  </Typography>
+                  <Typography 
+                    variant="h4" 
+                    fontWeight={700} 
+                    color="success.main"
+                    sx={{ fontSize: { xs: '1.75rem', sm: '2.125rem' } }}
+                  >
                     {reportsData.replacementOrders?.length || 0}
                   </Typography>
                 </Box>
                 <Alert severity="info" sx={{ mb: 2 }}>
-                  <Typography variant="body2">
+                  <Typography 
+                    variant="body2"
+                    sx={{ fontSize: { xs: '0.813rem', sm: '0.875rem' } }}
+                  >
                     Replacement orders are free replacements for faulty items and do not count towards revenue.
                   </Typography>
                 </Alert>
                 {reportsData.replacementOrders && reportsData.replacementOrders.length > 0 && (
                   <Box>
-                    <Typography variant="subtitle2" fontWeight={600} gutterBottom>
+                    <Typography 
+                      variant="subtitle2" 
+                      fontWeight={600} 
+                      gutterBottom
+                      sx={{ fontSize: { xs: '0.813rem', sm: '0.875rem' } }}
+                    >
                       Recent Replacements:
                     </Typography>
-                    <Paper sx={{ maxHeight: 150, overflowY: 'auto', p: 1.5, bgcolor: 'background.paper' }}>
+                    <Paper sx={{ maxHeight: 150, overflowY: 'auto', p: { xs: 1, sm: 1.5 }, bgcolor: 'background.paper' }}>
                       {reportsData.replacementOrders.slice(0, 5).map((order) => (
                         <Box 
                           key={order.id} 
                           sx={{ 
                             display: 'flex', 
                             justifyContent: 'space-between',
-                            py: 1,
+                            alignItems: 'center',
+                            py: { xs: 0.75, sm: 1 },
                             borderBottom: 1,
                             borderColor: 'divider',
+                            gap: 1,
                             '&:last-child': { borderBottom: 0 }
                           }}
                         >
-                          <Chip label={order.orderNumber} size="small" variant="outlined" />
-                          <Typography variant="caption" color="text.secondary">
+                          <Chip 
+                            label={order.orderNumber} 
+                            size="small" 
+                            variant="outlined"
+                            sx={{ 
+                              fontSize: { xs: '0.688rem', sm: '0.75rem' },
+                              height: { xs: 20, sm: 24 }
+                            }}
+                          />
+                          <Typography 
+                            variant="caption" 
+                            color="text.secondary"
+                            sx={{ fontSize: { xs: '0.688rem', sm: '0.75rem' } }}
+                          >
                             {formatDate(order.createdAt)}
                           </Typography>
                         </Box>
@@ -768,19 +960,27 @@ export default function ReportsPageClient({
         )}
 
         {/* Product Breakdown */}
-        <Paper elevation={2} sx={{ mb: 4 }}>
-          <Box sx={{ p: 3, borderBottom: 1, borderColor: 'divider' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Typography variant="h6" fontWeight={600}>
+        <Paper elevation={2} sx={{ mb: { xs: 3, sm: 4 } }}>
+          <Box sx={{ p: { xs: 2, sm: 3 }, borderBottom: 1, borderColor: 'divider' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+              <Typography 
+                variant="h6" 
+                fontWeight={600}
+                sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}
+              >
                 Product Breakdown
               </Typography>
               {isPending && <CircularProgress size={20} />}
             </Box>
-            <Typography variant="body2" color="text.secondary">
+            <Typography 
+              variant="body2" 
+              color="text.secondary"
+              sx={{ fontSize: { xs: '0.813rem', sm: '0.875rem' } }}
+            >
               Sales breakdown by product for the selected period
             </Typography>
           </Box>
-          <Box sx={{ p: 3 }}>
+          <Box sx={{ p: { xs: 0, sm: 3 } }}>
             {!reportsData.productBreakdown || reportsData.productBreakdown.length === 0 ? (
               <Box sx={{ textAlign: 'center', py: 8 }}>
                 <Typography variant="body1" color="text.secondary">
@@ -788,50 +988,66 @@ export default function ReportsPageClient({
                 </Typography>
               </Box>
             ) : (
-              <TableContainer>
-                <Table>
+              <TableContainer sx={{ overflowX: 'auto' }}>
+                <Table sx={{ minWidth: { xs: 500, sm: 'auto' } }}>
                   <TableHead>
                     <TableRow>
-                      <TableCell>
+                      <TableCell sx={{ py: { xs: 1.5, sm: 2 } }}>
                         <TableSortLabel
                           active={sortBy === "product"}
                           direction={sortBy === "product" ? sortDirection : "asc"}
                           onClick={() => handleSort("product")}
                         >
-                          <Typography variant="body2" fontWeight={600}>
+                          <Typography 
+                            variant="body2" 
+                            fontWeight={600}
+                            sx={{ fontSize: { xs: '0.813rem', sm: '0.875rem' } }}
+                          >
                             Product
                           </Typography>
                         </TableSortLabel>
                       </TableCell>
-                      <TableCell align="right">
+                      <TableCell align="right" sx={{ py: { xs: 1.5, sm: 2 } }}>
                         <TableSortLabel
                           active={sortBy === "quantity"}
                           direction={sortBy === "quantity" ? sortDirection : "asc"}
                           onClick={() => handleSort("quantity")}
                         >
-                          <Typography variant="body2" fontWeight={600}>
-                            Quantity Sold
+                          <Typography 
+                            variant="body2" 
+                            fontWeight={600}
+                            sx={{ fontSize: { xs: '0.813rem', sm: '0.875rem' } }}
+                          >
+                            Qty
                           </Typography>
                         </TableSortLabel>
                       </TableCell>
-                      <TableCell align="right">
+                      <TableCell align="right" sx={{ py: { xs: 1.5, sm: 2 } }}>
                         <TableSortLabel
                           active={sortBy === "revenue"}
                           direction={sortBy === "revenue" ? sortDirection : "asc"}
                           onClick={() => handleSort("revenue")}
                         >
-                          <Typography variant="body2" fontWeight={600}>
-                            Total Revenue
+                          <Typography 
+                            variant="body2" 
+                            fontWeight={600}
+                            sx={{ fontSize: { xs: '0.813rem', sm: '0.875rem' } }}
+                          >
+                            Revenue
                           </Typography>
                         </TableSortLabel>
                       </TableCell>
-                      <TableCell align="right">
+                      <TableCell align="right" sx={{ py: { xs: 1.5, sm: 2 }, display: { xs: 'none', sm: 'table-cell' } }}>
                         <TableSortLabel
                           active={sortBy === "orders"}
                           direction={sortBy === "orders" ? sortDirection : "asc"}
                           onClick={() => handleSort("orders")}
                         >
-                          <Typography variant="body2" fontWeight={600}>
+                          <Typography 
+                            variant="body2" 
+                            fontWeight={600}
+                            sx={{ fontSize: { xs: '0.813rem', sm: '0.875rem' } }}
+                          >
                             Orders
                           </Typography>
                         </TableSortLabel>
@@ -847,39 +1063,59 @@ export default function ReportsPageClient({
                           transition: 'background-color 0.2s'
                         }}
                       >
-                        <TableCell>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <TableCell sx={{ py: { xs: 1, sm: 2 } }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.5, sm: 1 } }}>
                             <Chip 
                               label={index + 1} 
                               size="small" 
                               sx={{ 
-                                width: 32, 
-                                height: 24,
-                                fontSize: '0.75rem',
+                                width: { xs: 24, sm: 32 }, 
+                                height: { xs: 20, sm: 24 },
+                                fontSize: { xs: '0.688rem', sm: '0.75rem' },
                                 bgcolor: 'grey.200',
                                 fontWeight: 600
                               }} 
                             />
-                            <Typography variant="body2" fontWeight={600}>
+                            <Typography 
+                              variant="body2" 
+                              fontWeight={600}
+                              sx={{ 
+                                fontSize: { xs: '0.813rem', sm: '0.875rem' },
+                                wordBreak: 'break-word'
+                              }}
+                            >
                               {product.productName}
                             </Typography>
                           </Box>
                         </TableCell>
-                        <TableCell align="right">
+                        <TableCell align="right" sx={{ py: { xs: 1, sm: 2 } }}>
                           <Chip 
                             label={product.totalQuantity}
                             size="small"
                             color="primary"
                             variant="outlined"
+                            sx={{ 
+                              height: { xs: 20, sm: 24 },
+                              fontSize: { xs: '0.688rem', sm: '0.75rem' }
+                            }}
                           />
                         </TableCell>
-                        <TableCell align="right">
-                          <Typography variant="body2" fontWeight={700} color="success.main">
+                        <TableCell align="right" sx={{ py: { xs: 1, sm: 2 } }}>
+                          <Typography 
+                            variant="body2" 
+                            fontWeight={700} 
+                            color="success.main"
+                            sx={{ fontSize: { xs: '0.813rem', sm: '0.875rem' } }}
+                          >
                             {formatCurrency(product.totalRevenue)}
                           </Typography>
                         </TableCell>
-                        <TableCell align="right">
-                          <Typography variant="body2" color="text.secondary">
+                        <TableCell align="right" sx={{ py: { xs: 1, sm: 2 }, display: { xs: 'none', sm: 'table-cell' } }}>
+                          <Typography 
+                            variant="body2" 
+                            color="text.secondary"
+                            sx={{ fontSize: { xs: '0.813rem', sm: '0.875rem' } }}
+                          >
                             {product.orderCount}
                           </Typography>
                         </TableCell>
@@ -887,21 +1123,36 @@ export default function ReportsPageClient({
                     ))}
                   </TableBody>
                   <TableRow sx={{ bgcolor: 'primary.light', '&:hover': { bgcolor: 'primary.light !important' } }}>
-                    <TableCell>
-                      <Typography variant="body1" fontWeight={700} color="white">
+                    <TableCell sx={{ py: { xs: 1.5, sm: 2 } }}>
+                      <Typography 
+                        variant="body1" 
+                        fontWeight={700} 
+                        color="white"
+                        sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}
+                      >
                         Total
                       </Typography>
                     </TableCell>
-                    <TableCell align="right">
-                      <Typography variant="body1" fontWeight={700} color="white">
+                    <TableCell align="right" sx={{ py: { xs: 1.5, sm: 2 } }}>
+                      <Typography 
+                        variant="body1" 
+                        fontWeight={700} 
+                        color="white"
+                        sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}
+                      >
                         {sortedProductBreakdown.reduce(
                           (sum, p) => sum + p.totalQuantity,
                           0,
                         )}
                       </Typography>
                     </TableCell>
-                    <TableCell align="right">
-                      <Typography variant="body1" fontWeight={700} color="white">
+                    <TableCell align="right" sx={{ py: { xs: 1.5, sm: 2 } }}>
+                      <Typography 
+                        variant="body1" 
+                        fontWeight={700} 
+                        color="white"
+                        sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}
+                      >
                         {formatCurrency(
                           sortedProductBreakdown.reduce(
                             (sum, p) => sum + p.totalRevenue,
@@ -910,8 +1161,13 @@ export default function ReportsPageClient({
                         )}
                       </Typography>
                     </TableCell>
-                    <TableCell align="right">
-                      <Typography variant="body1" fontWeight={700} color="white">
+                    <TableCell align="right" sx={{ py: { xs: 1.5, sm: 2 }, display: { xs: 'none', sm: 'table-cell' } }}>
+                      <Typography 
+                        variant="body1" 
+                        fontWeight={700} 
+                        color="white"
+                        sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}
+                      >
                         {reportsData.orders
                           .filter((order) => order.status !== "CANCELLED")
                           .length}
@@ -926,24 +1182,33 @@ export default function ReportsPageClient({
 
         {/* Transactions List */}
         <Paper elevation={2}>
-          <Box sx={{ p: 3, borderBottom: 1, borderColor: 'divider' }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 2 }}>
-              <Box>
-                <Typography variant="h6" fontWeight={600} gutterBottom>
+          <Box sx={{ p: { xs: 2, sm: 3 }, borderBottom: 1, borderColor: 'divider' }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2, flexWrap: 'wrap', gap: 2 }}>
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Typography 
+                  variant="h6" 
+                  fontWeight={600} 
+                  gutterBottom
+                  sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}
+                >
                   Transactions
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
+                <Typography 
+                  variant="body2" 
+                  color="text.secondary"
+                  sx={{ fontSize: { xs: '0.813rem', sm: '0.875rem' } }}
+                >
                   {filteredTransactions.length} transaction{filteredTransactions.length !== 1 ? "s" : ""} 
                   {transactionSearch && ` matching "${transactionSearch}"`}
                 </Typography>
               </Box>
               <TextField
-                placeholder="Search transactions..."
+                placeholder="Search..."
                 value={transactionSearch}
                 onChange={(e) => setTransactionSearch(e.target.value)}
                 size="small"
                 sx={{ 
-                  minWidth: 250,
+                  minWidth: { xs: '100%', sm: 250 },
                   '& .MuiOutlinedInput-root': { 
                     borderRadius: '8px'
                   } 
@@ -958,10 +1223,14 @@ export default function ReportsPageClient({
               />
             </Box>
           </Box>
-          <Box sx={{ p: 3 }}>
+          <Box sx={{ p: { xs: 2, sm: 3 } }}>
             {filteredTransactions.length === 0 ? (
-              <Box sx={{ textAlign: 'center', py: 8 }}>
-                <Typography variant="body1" color="text.secondary">
+              <Box sx={{ textAlign: 'center', py: { xs: 4, sm: 8 } }}>
+                <Typography 
+                  variant="body1" 
+                  color="text.secondary"
+                  sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}
+                >
                   {transactionSearch 
                     ? `No transactions found matching "${transactionSearch}"`
                     : "No transactions found in the selected date range"}
@@ -969,21 +1238,28 @@ export default function ReportsPageClient({
               </Box>
             ) : (
               <>
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 2, sm: 3 } }}>
                   {displayedTransactions.map((order) => (
                     <Box
                       key={order.id}
                       sx={{
                         borderBottom: 1,
                         borderColor: 'divider',
-                        pb: 3,
+                        pb: { xs: 2, sm: 3 },
                         '&:last-child': { borderBottom: 0, pb: 0 },
                       }}
                     >
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 2 }}>
-                        <Box>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                            <Typography variant="h6" fontWeight={600}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2, flexWrap: 'wrap', gap: 1 }}>
+                        <Box sx={{ flex: 1, minWidth: 0 }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5, flexWrap: 'wrap' }}>
+                            <Typography 
+                              variant="h6" 
+                              fontWeight={600}
+                              sx={{ 
+                                fontSize: { xs: '1rem', sm: '1.25rem' },
+                                wordBreak: 'break-word'
+                              }}
+                            >
                               {order.username}
                             </Typography>
                             {order.orderNumber && (
@@ -991,53 +1267,104 @@ export default function ReportsPageClient({
                                 label={order.orderNumber} 
                                 size="small" 
                                 variant="outlined"
-                                sx={{ fontFamily: 'monospace' }}
+                                sx={{ 
+                                  fontFamily: 'monospace',
+                                  fontSize: { xs: '0.688rem', sm: '0.75rem' },
+                                  height: { xs: 20, sm: 24 }
+                                }}
                               />
                             )}
                           </Box>
-                          <Typography variant="body2" color="text.secondary">
+                          <Typography 
+                            variant="body2" 
+                            color="text.secondary"
+                            sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+                          >
                             {formatDate(order.createdAt)}
                           </Typography>
                         </Box>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 2 }, flexShrink: 0 }}>
                           <Chip
                             label={order.status}
                             color={getStatusColor(order.status)}
                             size="small"
-                            sx={{ fontWeight: 600 }}
+                            sx={{ 
+                              fontWeight: 600,
+                              fontSize: { xs: '0.688rem', sm: '0.75rem' },
+                              height: { xs: 20, sm: 24 }
+                            }}
                           />
-                          <Typography variant="h6" fontWeight={700}>
+                          <Typography 
+                            variant="h6" 
+                            fontWeight={700}
+                            sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}
+                          >
                             {formatCurrency(totalValue(order))}
                           </Typography>
                         </Box>
                       </Box>
-                      <Divider sx={{ my: 2 }} />
-                      <Typography variant="subtitle2" fontWeight={600} gutterBottom>
+                      <Divider sx={{ my: { xs: 1.5, sm: 2 } }} />
+                      <Typography 
+                        variant="subtitle2" 
+                        fontWeight={600} 
+                        gutterBottom
+                        sx={{ fontSize: { xs: '0.813rem', sm: '0.875rem' } }}
+                      >
                         Items:
                       </Typography>
                       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                         {order.items.map((item) => (
                           <Box
                             key={item.id}
-                            sx={{ display: 'flex', justifyContent: 'space-between' }}
+                            sx={{ 
+                              display: 'flex', 
+                              justifyContent: 'space-between',
+                              gap: 1,
+                              alignItems: 'flex-start'
+                            }}
                           >
-                            <Typography variant="body2" color="text.secondary">
+                            <Typography 
+                              variant="body2" 
+                              color="text.secondary"
+                              sx={{ 
+                                fontSize: { xs: '0.813rem', sm: '0.875rem' },
+                                flex: 1,
+                                wordBreak: 'break-word'
+                              }}
+                            >
                               {item.product.name}
                               {item.flavour && ` (${item.flavour})`} × {item.quantity}
                             </Typography>
-                            <Typography variant="body2" fontWeight={600}>
+                            <Typography 
+                              variant="body2" 
+                              fontWeight={600}
+                              sx={{ 
+                                fontSize: { xs: '0.813rem', sm: '0.875rem' },
+                                flexShrink: 0
+                              }}
+                            >
                               {formatCurrency(Number(item.priceAtTime) * item.quantity)}
                             </Typography>
                           </Box>
                         ))}
                       </Box>
                       {order.manualDiscount && order.manualDiscount > 0 && (
-                        <Box sx={{ mt: 2, pt: 2, borderTop: 1, borderColor: 'divider' }}>
-                          <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <Typography variant="body2" color="warning.main" fontWeight={600}>
+                        <Box sx={{ mt: { xs: 1.5, sm: 2 }, pt: { xs: 1.5, sm: 2 }, borderTop: 1, borderColor: 'divider' }}>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1 }}>
+                            <Typography 
+                              variant="body2" 
+                              color="warning.main" 
+                              fontWeight={600}
+                              sx={{ fontSize: { xs: '0.813rem', sm: '0.875rem' } }}
+                            >
                               Manual Discount
                             </Typography>
-                            <Typography variant="body2" color="warning.main" fontWeight={600}>
+                            <Typography 
+                              variant="body2" 
+                              color="warning.main" 
+                              fontWeight={600}
+                              sx={{ fontSize: { xs: '0.813rem', sm: '0.875rem' } }}
+                            >
                               -{formatCurrency(Number(order.manualDiscount))}
                             </Typography>
                           </Box>
@@ -1045,7 +1372,11 @@ export default function ReportsPageClient({
                       )}
                       {order.totalOverride && (
                         <Box sx={{ mt: 1 }}>
-                          <Typography variant="caption" color="info.main">
+                          <Typography 
+                            variant="caption" 
+                            color="info.main"
+                            sx={{ fontSize: { xs: '0.688rem', sm: '0.75rem' } }}
+                          >
                             Total Override Applied
                           </Typography>
                         </Box>
@@ -1055,12 +1386,17 @@ export default function ReportsPageClient({
                 </Box>
                 
                 {filteredTransactions.length > 10 && (
-                  <Box sx={{ textAlign: 'center', mt: 3 }}>
+                  <Box sx={{ textAlign: 'center', mt: { xs: 2, sm: 3 } }}>
                     <Button
                       variant="outlined"
                       onClick={() => setShowAllTransactions(!showAllTransactions)}
                       endIcon={showAllTransactions ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-                      sx={{ borderRadius: '8px' }}
+                      fullWidth={Boolean(typeof window !== 'undefined' && window.innerWidth < 600)}
+                      sx={{ 
+                        borderRadius: '8px',
+                        maxWidth: { xs: '100%', sm: 300 },
+                        fontSize: { xs: '0.813rem', sm: '0.875rem' }
+                      }}
                     >
                       {showAllTransactions 
                         ? 'Show Less' 
