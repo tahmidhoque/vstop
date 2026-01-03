@@ -56,7 +56,7 @@ interface ReportsPageClientProps {
   initialStatusFilters: StatusFilters;
 }
 
-type DatePreset = '7days' | '30days' | 'thisMonth' | 'lastMonth' | 'custom';
+type DatePreset = 'allTime' | '7days' | '30days' | 'thisMonth' | 'lastMonth' | 'custom';
 
 export default function ReportsPageClient({
   initialData,
@@ -78,7 +78,7 @@ export default function ReportsPageClient({
     "product" | "quantity" | "revenue" | "orders"
   >("revenue");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
-  const [selectedPreset, setSelectedPreset] = useState<DatePreset>('7days');
+  const [selectedPreset, setSelectedPreset] = useState<DatePreset>('allTime');
   const [showFilters, setShowFilters] = useState(false);
   const [transactionSearch, setTransactionSearch] = useState('');
   const [showAllTransactions, setShowAllTransactions] = useState(false);
@@ -133,6 +133,11 @@ export default function ReportsPageClient({
     let end = new Date();
 
     switch (preset) {
+      case 'allTime':
+        // Set to a very early date (e.g., 2020-01-01) to get all records
+        start = new Date('2020-01-01');
+        end = today;
+        break;
       case '7days':
         start.setDate(today.getDate() - 7);
         break;
@@ -385,10 +390,23 @@ export default function ReportsPageClient({
               {/* Mobile-friendly preset buttons */}
               <Box sx={{ 
                 display: 'grid',
-                gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(5, 1fr)' },
+                gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)' },
                 gap: 1,
                 mb: 3
               }}>
+                <Button
+                  onClick={() => handleDatePreset('allTime')}
+                  variant={selectedPreset === 'allTime' ? 'contained' : 'outlined'}
+                  disabled={isPending}
+                  fullWidth
+                  sx={{ 
+                    borderRadius: '8px',
+                    fontSize: { xs: '0.813rem', sm: '0.875rem' },
+                    py: 1
+                  }}
+                >
+                  All Time
+                </Button>
                 <Button
                   onClick={() => handleDatePreset('7days')}
                   variant={selectedPreset === '7days' ? 'contained' : 'outlined'}
