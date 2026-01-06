@@ -12,10 +12,9 @@ export default async function ReportsPage() {
     redirect("/admin/login");
   }
 
-  // Default to last 7 days
+  // Default to all time (from 2020-01-01 to today)
   const endDate = new Date();
-  const startDate = new Date();
-  startDate.setDate(startDate.getDate() - 7);
+  const startDate = new Date('2020-01-01');
   startDate.setHours(0, 0, 0, 0);
   endDate.setHours(23, 59, 59, 999);
 
