@@ -518,12 +518,16 @@ export async function deleteOrder(orderId: string) {
 }
 
 export async function deleteAllOrders() {
-  // Delete all orders (items will be deleted automatically due to cascade)
+  // Delete all orders and faulty returns (items will be deleted automatically due to cascade).
   // Note: We do NOT restore stock here as this is for deleting historical records,
   // not cancelling active orders. Stock was already deducted when orders were created.
-  await db.order.deleteMany({});
+  await db.$transaction(async (tx) => {
+    await tx.faultyReturn.deleteMany({});
+    await tx.order.deleteMany({});
+  });
 
   revalidatePath("/admin/orders");
+  revalidatePath("/admin/faulty");
 }
 
 export async function getProducts(includeHidden: boolean = false) {
@@ -1349,6 +1353,30 @@ export async function updateFaultyReturnStatus(
         }
       : null,
   };
+}
+
+export async function deleteFaultyReturn(faultyReturnId: string) {
+  const faultyReturn = await db.faultyReturn.findUnique({
+    where: { id: faultyReturnId },
+    select: { replacementOrderId: true },
+  });
+
+  if (!faultyReturn) {
+    throw new Error("Faulty return not found");
+  }
+
+  await db.$transaction(async (tx) => {
+    await tx.faultyReturn.delete({ where: { id: faultyReturnId } });
+
+    if (faultyReturn.replacementOrderId) {
+      await tx.order.deleteMany({
+        where: { id: faultyReturn.replacementOrderId },
+      });
+    }
+  });
+
+  revalidatePath("/admin/faulty");
+  revalidatePath("/admin/orders");
 }
 
 export async function createReplacementOrder(

@@ -1,7 +1,8 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { formatDate } from "@/lib/date-utils";
+import { deleteFaultyReturn } from "@/lib/actions";
 import type { FaultyReturn } from "@/types";
 import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';
@@ -20,20 +21,26 @@ import CardActions from '@mui/material/CardActions';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
+import DeleteIcon from '@mui/icons-material/Delete';
+import { useSnackbar } from '@/components/common/SnackbarProvider';
 
 interface FaultyReturnListProps {
   faultyReturns: FaultyReturn[];
   onViewDetails: (faultyReturn: FaultyReturn) => void;
+  onDeleted: () => void | Promise<void>;
   isPending: boolean;
 }
 
 export default function FaultyReturnList({
   faultyReturns,
   onViewDetails,
+  onDeleted,
   isPending,
 }: FaultyReturnListProps) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const { showSnackbar } = useSnackbar();
 
   const getStatusColor = (status: string): "warning" | "info" | "success" | "default" => {
     switch (status) {
@@ -60,6 +67,30 @@ export default function FaultyReturnList({
 
   const calculateLoss = (product: { price: number }, quantity: number) => {
     return product.price * quantity;
+  };
+
+  const handleDelete = async (faultyReturn: FaultyReturn) => {
+    const replacementNote = faultyReturn.replacementOrderId
+      ? " This will also delete its replacement order."
+      : "";
+    const confirmed = confirm(
+      `Are you sure you want to delete ${faultyReturn.returnNumber}?${replacementNote} This action cannot be undone.`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setDeletingId(faultyReturn.id);
+    try {
+      await deleteFaultyReturn(faultyReturn.id);
+      showSnackbar('Faulty return deleted successfully', 'success');
+      await onDeleted();
+    } catch (error) {
+      showSnackbar('Failed to delete faulty return', 'error');
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   if (isPending) {
@@ -136,7 +167,7 @@ export default function FaultyReturnList({
                   )}
                 </Box>
               </CardContent>
-              <CardActions>
+              <CardActions sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                 <Button
                   fullWidth
                   variant="outlined"
@@ -144,6 +175,17 @@ export default function FaultyReturnList({
                   size="small"
                 >
                   View Details
+                </Button>
+                <Button
+                  fullWidth
+                  variant="outlined"
+                  color="error"
+                  startIcon={<DeleteIcon />}
+                  onClick={() => handleDelete(fr)}
+                  size="small"
+                  disabled={deletingId === fr.id}
+                >
+                  {deletingId === fr.id ? "Deleting..." : "Delete"}
                 </Button>
               </CardActions>
             </Card>
@@ -221,13 +263,25 @@ export default function FaultyReturnList({
                     </Typography>
                   </TableCell>
                   <TableCell>
-                    <Button
-                      size="small"
-                      variant="outlined"
-                      onClick={() => onViewDetails(fr)}
-                    >
-                      View
-                    </Button>
+                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={() => onViewDetails(fr)}
+                      >
+                        View
+                      </Button>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        color="error"
+                        startIcon={<DeleteIcon />}
+                        onClick={() => handleDelete(fr)}
+                        disabled={deletingId === fr.id}
+                      >
+                        {deletingId === fr.id ? "Deleting..." : "Delete"}
+                      </Button>
+                    </Box>
                   </TableCell>
                 </TableRow>
               ))}

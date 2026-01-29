@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { formatDate } from "@/lib/date-utils";
-import { updateFaultyReturnStatus } from "@/lib/actions";
+import { deleteFaultyReturn, updateFaultyReturnStatus } from "@/lib/actions";
 import type { FaultyReturn, ReturnStatus } from "@/types";
 import CreateReplacementOrderModal from "./CreateReplacementOrderModal";
 import Box from '@mui/material/Box';
@@ -19,6 +19,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import IconButton from '@mui/material/IconButton';
 import Grid from '@mui/material/Grid';
 import CloseIcon from '@mui/icons-material/Close';
+import DeleteIcon from '@mui/icons-material/Delete';
 import { useSnackbar } from '@/components/common/SnackbarProvider';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
@@ -33,6 +34,7 @@ export default function FaultyReturnModal({
   onClose,
 }: FaultyReturnModalProps) {
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [showReplacementModal, setShowReplacementModal] = useState(false);
   const [error, setError] = useState("");
   const theme = useTheme();
@@ -59,6 +61,33 @@ export default function FaultyReturnModal({
     setShowReplacementModal(false);
     showSnackbar('Replacement order created successfully', 'success');
     onClose();
+  };
+
+  const handleDelete = async () => {
+    const replacementNote = faultyReturn.replacementOrderId
+      ? " This will also delete its replacement order."
+      : "";
+    const confirmed = confirm(
+      `Are you sure you want to delete ${faultyReturn.returnNumber}?${replacementNote} This action cannot be undone.`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setError("");
+    setIsDeleting(true);
+
+    try {
+      await deleteFaultyReturn(faultyReturn.id);
+      showSnackbar('Faulty return deleted successfully', 'success');
+      onClose();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to delete faulty return");
+      showSnackbar('Failed to delete faulty return', 'error');
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const calculateLoss = () => {
@@ -249,7 +278,7 @@ export default function FaultyReturnModal({
                   <Button
                     variant="contained"
                     onClick={() => handleStatusUpdate("INSPECTED")}
-                    disabled={isUpdating}
+                    disabled={isUpdating || isDeleting}
                     size="large"
                   >
                     {isUpdating ? <CircularProgress size={20} color="inherit" /> : "Mark as Inspected"}
@@ -260,7 +289,7 @@ export default function FaultyReturnModal({
                     variant="contained"
                     color="inherit"
                     onClick={() => handleStatusUpdate("DISPOSED")}
-                    disabled={isUpdating}
+                    disabled={isUpdating || isDeleting}
                     size="large"
                   >
                     {isUpdating ? <CircularProgress size={20} color="inherit" /> : "Mark as Disposed"}
@@ -279,6 +308,7 @@ export default function FaultyReturnModal({
                   color="success"
                   onClick={() => setShowReplacementModal(true)}
                   size="large"
+                  disabled={isDeleting}
                 >
                   Create Replacement Order
                 </Button>
@@ -286,9 +316,26 @@ export default function FaultyReturnModal({
           </Box>
         </DialogContent>
 
-        <DialogActions sx={{ p: 2 }}>
-          <Button onClick={onClose} variant="outlined" fullWidth={isMobile} size="large">
+        <DialogActions sx={{ px: 3, py: 2, gap: 2, flexWrap: 'wrap' }}>
+          <Button
+            onClick={onClose}
+            variant="outlined"
+            fullWidth={isMobile}
+            size="large"
+            disabled={isDeleting}
+          >
             Close
+          </Button>
+          <Button
+            onClick={handleDelete}
+            variant="contained"
+            color="error"
+            fullWidth={isMobile}
+            size="large"
+            disabled={isDeleting || isUpdating}
+            startIcon={isDeleting ? <CircularProgress size={20} color="inherit" /> : <DeleteIcon />}
+          >
+            {isDeleting ? "Deleting..." : "Delete Return"}
           </Button>
         </DialogActions>
       </Dialog>
