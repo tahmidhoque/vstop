@@ -35,20 +35,21 @@ export default function FaultyPageClient({
     null,
   );
 
-  const handleFilterChange = (type: FaultyReturnType | "ALL") => {
-    setActiveTab(type);
+  const refreshReturns = (type: FaultyReturnType | "ALL" = activeTab) => {
     startTransition(async () => {
       const returns = await getFaultyReturns({ type });
       setFaultyReturns(returns);
     });
   };
 
+  const handleFilterChange = (type: FaultyReturnType | "ALL") => {
+    setActiveTab(type);
+    refreshReturns(type);
+  };
+
   const handleCreateSuccess = () => {
     setShowCreateForm(false);
-    startTransition(async () => {
-      const returns = await getFaultyReturns({ type: activeTab });
-      setFaultyReturns(returns);
-    });
+    refreshReturns();
   };
 
   const handleViewDetails = (faultyReturn: FaultyReturn) => {
@@ -57,10 +58,7 @@ export default function FaultyPageClient({
 
   const handleModalClose = () => {
     setSelectedReturn(null);
-    startTransition(async () => {
-      const returns = await getFaultyReturns({ type: activeTab });
-      setFaultyReturns(returns);
-    });
+    refreshReturns();
   };
 
   return (
@@ -105,6 +103,7 @@ export default function FaultyPageClient({
         <FaultyReturnList
           faultyReturns={faultyReturns}
           onViewDetails={handleViewDetails}
+          onDeleted={refreshReturns}
           isPending={isPending}
         />
 

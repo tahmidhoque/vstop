@@ -91,10 +91,10 @@ export default function OrderList({ orders }: OrderListProps) {
     setDeletingAll(true);
     try {
       await deleteAllOrders();
-      showSnackbar('All orders deleted successfully', 'success');
+      showSnackbar('All orders and faulty returns deleted successfully', 'success');
       window.location.reload();
     } catch (error) {
-      showSnackbar('Failed to delete all orders', 'error');
+      showSnackbar('Failed to delete all orders and faulty returns', 'error');
       setDeletingAll(false);
       setShowDeleteAllConfirm(false);
     }
@@ -176,7 +176,7 @@ export default function OrderList({ orders }: OrderListProps) {
             size="small"
             sx={{ flexShrink: 0, width: { xs: '100%', sm: 'auto' }, mt: { xs: 1, sm: 0 } }}
           >
-            Delete All
+            Delete All Orders & Faulty Returns
           </Button>
         )}
       </Box>
@@ -425,11 +425,12 @@ export default function OrderList({ orders }: OrderListProps) {
         maxWidth="sm"
         fullWidth
       >
-        <DialogTitle>Delete All Orders</DialogTitle>
+        <DialogTitle>Delete All Orders & Faulty Returns</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Are you sure you want to delete all {orders.length} order{orders.length !== 1 ? "s" : ""}? 
-            This action cannot be undone. This will permanently delete all order history.
+            Are you sure you want to delete all {orders.length} order{orders.length !== 1 ? "s" : ""}?
+            This action cannot be undone. This will permanently delete all order history,
+            including replacement orders, and all faulty returns.
           </DialogContentText>
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
@@ -447,7 +448,7 @@ export default function OrderList({ orders }: OrderListProps) {
             color="error"
             startIcon={deletingAll ? <CircularProgress size={20} color="inherit" /> : <DeleteIcon />}
           >
-            {deletingAll ? "Deleting..." : "Delete All Orders"}
+            {deletingAll ? "Deleting..." : "Delete All Orders & Faulty Returns"}
           </Button>
         </DialogActions>
       </Dialog>
